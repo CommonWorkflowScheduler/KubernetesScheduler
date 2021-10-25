@@ -1,21 +1,21 @@
 package fonda.scheduler.config;
 
-import fonda.scheduler.model.KubernetesClientHolder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import fonda.scheduler.client.KubernetesClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class Beans {
 
-    private static KubernetesClientHolder kubernetesClientHolder;
+    private static KubernetesClient kubernetesClient;
 
     @Bean
-    KubernetesClientHolder getClientHolder(){
-        if(kubernetesClientHolder == null) {
-            kubernetesClientHolder = new KubernetesClientHolder();
+    KubernetesClient getClient(){
+        if(kubernetesClient == null) {
+            kubernetesClient = new KubernetesClient();
+            kubernetesClient.getConfiguration().setNamespace(null);
         }
-        return kubernetesClientHolder;
+        return kubernetesClient;
     }
 
 }

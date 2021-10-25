@@ -1,6 +1,6 @@
 package fonda.scheduler.rest;
 
-import fonda.scheduler.model.KubernetesClientHolder;
+import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.scheduler.RandomScheduler;
 import fonda.scheduler.scheduler.Scheduler;
 import fonda.scheduler.model.SchedulerConfig;
@@ -19,17 +19,17 @@ import java.util.Map;
 @Slf4j
 public class SchedulerRestController {
 
-    private final KubernetesClientHolder clientHolder;
+    private final KubernetesClient client;
 
     /**
      * Holds the scheduler for one execution
      * Execution: String in lowercase
      * Scheduler: An instance of a scheduler with the requested type
      */
-    private final Map< Pair<String,String>, Scheduler > schedulerHolder = new HashMap<>();
+    private static final Map< Pair<String,String>, Scheduler > schedulerHolder = new HashMap<>();
 
-    public SchedulerRestController( @Autowired KubernetesClientHolder clientHolder ){
-        this.clientHolder = clientHolder;
+    public SchedulerRestController( @Autowired KubernetesClient client ){
+        this.client = client;
     }
 
     /**
@@ -54,7 +54,7 @@ public class SchedulerRestController {
         switch ( strategy.toLowerCase() ){
             case "fifo" :
             case "random" :
-            case "fifo-random" : scheduler = new RandomScheduler(execution, clientHolder.getClient( namespace ), config ); break;
+            case "fifo-random" : scheduler = new RandomScheduler(execution, client, namespace ); break;
             default: return new ResponseEntity( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
         }
 
