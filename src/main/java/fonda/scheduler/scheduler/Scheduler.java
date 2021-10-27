@@ -1,9 +1,7 @@
 package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
-import fonda.scheduler.model.NodeWithAlloc;
-import fonda.scheduler.model.PodWithAge;
-import fonda.scheduler.model.TaskConfig;
+import fonda.scheduler.model.*;
 import io.fabric8.kubernetes.api.model.Binding;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectReference;
@@ -30,18 +28,13 @@ public abstract class Scheduler {
     private boolean close;
 
     final KubernetesClient client;
-    private final Map<String, Pod> podsByUID = new HashMap<>();
     private final String namespace;
-    final private List<Pod> unscheduledPods = new ArrayList<>(100);
-
-
-    final Map<String, Map<String, TaskConfig>> taskConfigs = new HashMap<>();
-    final Map<String, TaskConfig> taskConfigsByHash = new HashMap<>();
-
-
-    private final SchedulerThread schedulerThread;
-
+    final private List<Task> unscheduledTasks = new ArrayList<>(100);
+    final private List<Task> unfinishedTasks = new ArrayList<>(100);
+    final Map<String, Task> tasksByHash = new HashMap<>();
     private final Watch watcher;
+    private final TaskprocessingThread schedulingThread;
+    private final TaskprocessingThread finishThread;
 
     Scheduler(String name, KubernetesClient client, String namespace){
         this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + name;
@@ -54,14 +47,112 @@ public abstract class Scheduler {
         watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
         log.info("Watching");
 
-        schedulerThread = new SchedulerThread( unscheduledPods,this );
-        schedulerThread.start();
+        schedulingThread = new TaskprocessingThread( unscheduledTasks, this::schedule );
+        schedulingThread.start();
+
+        finishThread = new TaskprocessingThread(unfinishedTasks, this::terminateTasks );
+        finishThread.start();
     }
 
-    public abstract void schedule( final List<Pod> unscheduledPods );
+    /* Abstract methods */
+
+    /**
+     *
+     * @param unscheduledTasks
+     * @return the number of unscheduled Tasks
+     */
+    abstract int schedule( final List<Task> unscheduledTasks );
+
+    abstract int terminateTasks( final List<Task> finishedTasks );
+
+    /* Pod Event */
+
     void podEventReceived(Watcher.Action action, Pod pod){}
+
     void onPodTermination( Pod pod ){
-        //todo run in thread
+        Task t = changeStateOfTask( pod, State.PROCESSING_FINISHED );
+
+        //If null, task was already changed
+        if( t == null ) return;
+
+        synchronized (unfinishedTasks){
+            unfinishedTasks.add( t );
+            unfinishedTasks.notifyAll();
+        }
+    }
+
+    void taskWasFinished( Task task ){
+        synchronized (unfinishedTasks){
+            unfinishedTasks.remove( task );
+        }
+        task.getState().setState(State.FINISHED);
+    }
+
+    public void schedulePod(Pod pod ) {
+        Task t = changeStateOfTask( pod, State.UNSCHEDULED );
+        //If null, task was already unscheduled
+        if ( t == null ) return;
+        t.setPod( pod );
+        synchronized (unscheduledTasks){
+            unscheduledTasks.add( t );
+            unscheduledTasks.notifyAll();
+        }
+    }
+
+    public void taskWasScheduled(Task task ) {
+        synchronized (unscheduledTasks){
+            unscheduledTasks.remove( task );
+        }
+        task.getState().setState( State.SCHEDULED );
+    }
+
+    public void markPodAsDeleted( Pod pod ) {
+        changeStateOfTask( pod, State.DELETED );
+    }
+
+    /* External access to Tasks */
+
+    public void addTask( TaskConfig conf ) {
+        synchronized (tasksByHash) {
+            if( ! tasksByHash.containsKey( conf.getHash() ) ){
+                tasksByHash.put( conf.getHash(), new Task(conf) );
+            }
+        }
+    }
+
+    TaskConfig getConfigFor( String hash ){
+        synchronized (tasksByHash) {
+            if( tasksByHash.containsKey( hash ) ){
+                return tasksByHash.get( hash ).getConfig();
+            }
+        }
+        return null;
+    }
+
+    public Map<String, Object> getSchedulerParams( String taskname, String name ){
+        Map<String, Object> result = new HashMap();
+        return result;
+    }
+
+    public TaskState getTaskState(String taskid) {
+        synchronized (tasksByHash) {
+            if( tasksByHash.containsKey( taskid ) ){
+                return tasksByHash.get( taskid ).getState();
+            }
+        }
+        return null;
+    }
+
+    /* Nodes */
+
+    public void newNode(NodeWithAlloc node) {
+        informResourceChange();
+    }
+
+    public void removedNode(NodeWithAlloc node) {}
+
+    List<NodeWithAlloc> getNodeList(){
+        return client.getAllNodes();
     }
 
     /**
@@ -100,99 +191,67 @@ public abstract class Scheduler {
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
     }
 
+    /* Helper */
+
     /**
-     * Close used resources
+     *
+     * @param pod
+     * @param state
+     * @return returns the task, if the state was changed
      */
-    public void close(){
-        watcher.close();
-        schedulerThread.interrupt();
-        this.close = true;
-    }
-
-    public void addUnscheduledPod( Pod pod ) {
-        synchronized ( unscheduledPods ){
-            unscheduledPods.add( pod );
-            unscheduledPods.notifyAll();
+    private Task changeStateOfTask( Pod pod, State state ){
+        Task t = getTaskByPod( pod );
+        if( t != null ){
+            synchronized ( t.getState() ){
+                if( t.getState().getState() != state ){
+                    t.getState().setState( state );
+                    return t;
+                } else {
+                    return null;
+                }
+            }
         }
-    }
-
-    public void scheduledPod( Pod pod ) {
-        synchronized ( unscheduledPods ){
-            unscheduledPods.remove( pod );
-        }
-    }
-
-    public void informResourceChange() {
-        synchronized ( unscheduledPods ){
-            unscheduledPods.notifyAll();
-        }
-    }
-
-
-    public void addPod( Pod pod ) {
-        synchronized (podsByUID){
-            podsByUID.put( pod.getMetadata().getUid(), pod );
-        }
-    }
-
-    public void removePod( Pod pod ) {
-        synchronized (podsByUID){
-            podsByUID.remove( pod.getMetadata().getUid() );
-        }
-    }
-
-    List<NodeWithAlloc> getNodeList(){
-        return client.getAllNodes();
+        return null;
     }
 
     String getWorkingDir( Pod pod ){
         return pod.getSpec().getContainers().get(0).getWorkingDir();
     }
 
+    @Deprecated
     PodResource<Pod> findPodByName(String name ){
         return client.pods().withName( name );
     }
+    
+    public void informResourceChange() {
+        synchronized (unscheduledTasks){
+            unscheduledTasks.notifyAll();
+        }
+    }
 
-    public void addTaskConfig( String name, TaskConfig config ) {
-
-        Map< String, TaskConfig> conf;
-        synchronized (taskConfigs) {
-            if( taskConfigs.containsKey( name ) ){
-                conf = taskConfigs.get( name );
-            } else {
-                conf = new HashMap<>();
-                taskConfigs.put( name, conf );
+    private Task getTaskByPod( Pod pod ) {
+        Task t = null;
+        synchronized (tasksByHash) {
+            if( tasksByHash.containsKey( pod.getMetadata().getName() ) ){
+                t = tasksByHash.get( pod.getMetadata().getName() );
             }
         }
-        synchronized ( conf ){
-            conf.put( config.getName(), config );
+
+        if ( t == null ){
+            throw new IllegalStateException( "No task with config found for: " + pod.getMetadata().getName() );
         }
-        synchronized ( taskConfigsByHash ){
-            taskConfigsByHash.put ( config.getHash(), config );
-        }
+
+        return t;
     }
 
-    TaskConfig getConfigFor(String taskname, String name ){
-        return taskConfigs.get( taskname ).get( name );
+    /**
+     * Close used resources
+     */
+    public void close(){
+        watcher.close();
+        schedulingThread.interrupt();
+        this.close = true;
     }
-
-    TaskConfig getConfigFor(String hash ){
-        return taskConfigsByHash.get( hash );
-    }
-
-    public Map<String, Object> getSchedulerParams( String taskname, String name ){
-        TaskConfig config = getConfigFor(taskname, name);
-        Map<String, Object> result = new HashMap();
-        config.getSchedulerParams().entrySet().forEach( x -> result.put( x.getKey(), x.getValue().get(0)) );
-        return result;
-    }
-
-    public void newNode(NodeWithAlloc node) {
-        informResourceChange();
-    }
-
-    public void removedNode(NodeWithAlloc node) {}
-
 
     static class PodWatcher implements Watcher<Pod> {
 
@@ -225,9 +284,8 @@ public abstract class Scheduler {
 
             switch (action) {
                 case ADDED:
-                    scheduler.addPod(pwa);
                     if (pwa.getSpec().getNodeName() == null && pwa.getSpec().getSchedulerName().equalsIgnoreCase( scheduler.name )) {
-                        scheduler.addUnscheduledPod ( pwa );
+                        scheduler.schedulePod( pwa );
                     }
                     break;
                 case MODIFIED:
@@ -236,7 +294,7 @@ public abstract class Scheduler {
                     }
                     break;
                 case DELETED:
-                    scheduler.removePod(pwa);
+                    scheduler.markPodAsDeleted(pwa);
             }
 
         }

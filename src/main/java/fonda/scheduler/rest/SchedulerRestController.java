@@ -83,10 +83,30 @@ public class SchedulerRestController {
             return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
         }
 
-        scheduler.addTaskConfig( config.getTask(), config );
+        scheduler.addTask( config );
         Map<String, Object> schedulerParams = scheduler.getSchedulerParams(config.getTask(), config.getName());
 
         return new ResponseEntity( schedulerParams, HttpStatus.OK );
+
+    }
+
+    /**
+     * Check Task state
+     * @param namespace namespace where the workflow runs
+     * @param execution unique name of the execution
+     * @param taskid unique name of task (nf-XYZ...)
+     * @return boolean
+     */
+    @GetMapping("/scheduler/taskstate/{namespace}/{execution}/{taskid}")
+    ResponseEntity getTaskState(@PathVariable String namespace, @PathVariable String execution, @PathVariable String taskid ) {
+
+        final Pair<String, String> key = new Pair(namespace.toLowerCase(), execution.toLowerCase());
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null ){
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+
+        return new ResponseEntity( scheduler.getTaskState( taskid ), HttpStatus.OK );
 
     }
 

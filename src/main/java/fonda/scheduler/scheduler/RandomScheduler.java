@@ -2,6 +2,8 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.NodeWithAlloc;
+import fonda.scheduler.model.State;
+import fonda.scheduler.model.Task;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
 import lombok.extern.slf4j.Slf4j;
@@ -20,18 +22,31 @@ public class RandomScheduler extends Scheduler {
     }
 
     @Override
-    public void schedule( final List<Pod> unscheduledPods ) {
+    public int schedule( final List<Task> unscheduledTasks ) {
+        log.info("Schedule " + this.getName());
         List<NodeWithAlloc> items = getNodeList();
-        for ( final Pod pod : unscheduledPods) {
-            if(isClose()) return;
-            Optional<NodeWithAlloc> node = items.stream().filter(x -> x.canSchedule(pod)).findFirst();
+        int unscheduled = 0;
+        for ( final Task task : unscheduledTasks) {
+            if(isClose()) return -1;
+            Optional<NodeWithAlloc> node = items.stream().filter(x -> x.canSchedule(task.getPod())).findFirst();
             if( node.isPresent() ){
-                assignPodToNode( pod, node.get() );
-                super.scheduledPod( pod );
+                log.info("Task needs: " + task.getConfig().getInputs().toString());
+                assignPodToNode( task.getPod(), node.get() );
+                super.taskWasScheduled( task );
             } else {
-                log.info( "No node with enough resources for {}", pod.getMetadata().getName() );
+                log.info( "No node with enough resources for {}", task.getPod().getMetadata().getName() );
+                unscheduled++;
             }
         }
+        return unscheduled;
+    }
+
+    @Override
+    int terminateTasks(List<Task> finishedTasks) {
+        for (Task finishedTask : finishedTasks) {
+            super.taskWasFinished( finishedTask );
+        }
+        return 0;
     }
 
     @Override
