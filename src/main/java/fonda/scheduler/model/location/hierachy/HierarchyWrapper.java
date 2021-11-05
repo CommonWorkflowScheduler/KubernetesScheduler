@@ -18,6 +18,7 @@ public class HierarchyWrapper {
     private final ConcurrentMap<String, Folder> workDirs = new ConcurrentHashMap<>(2);
 
     public HierarchyWrapper( String workdir ) {
+        if ( workdir == null ) throw new IllegalArgumentException( "Workdir is not defined" );
         this.workdir = Paths.get( workdir ).normalize();
     }
 
