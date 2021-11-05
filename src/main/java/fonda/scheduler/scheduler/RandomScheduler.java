@@ -6,6 +6,7 @@ import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.model.Task;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.Watcher;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
