@@ -4,13 +4,11 @@ import java.util.List;
 
 public class SchedulerConfig {
 
-    final public String podName;
     final public List<LocalClaim> localClaims;
     final public List<VolumeClaim> volumeClaims;
     final public String workDir;
 
     private SchedulerConfig(){
-        this.podName = null;
         this.localClaims = null;
         this.volumeClaims = null;
         this.workDir = null;
@@ -24,6 +22,14 @@ public class SchedulerConfig {
             this.mountPath = null;
             this.hostPath = null;
         }
+
+        @Override
+        public String toString() {
+            return "LocalClaim{" +
+                    "mountPath='" + mountPath + '\'' +
+                    ", hostPath='" + hostPath + '\'' +
+                    '}';
+        }
     }
 
     static public class VolumeClaim {
@@ -36,6 +42,23 @@ public class SchedulerConfig {
             this.claimName = null;
             this.subPath = null;
         }
+
+        @Override
+        public String toString() {
+            return "VolumeClaim{" +
+                    "mountPath='" + mountPath + '\'' +
+                    ", claimName='" + claimName + '\'' +
+                    ", subPath='" + subPath + '\'' +
+                    '}';
+        }
     }
 
+    @Override
+    public String toString() {
+        return "SchedulerConfig{" +
+                "localClaims=" + localClaims +
+                ", volumeClaims=" + volumeClaims +
+                ", workDir='" + workDir + '\'' +
+                '}';
+    }
 }
