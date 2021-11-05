@@ -16,7 +16,7 @@ public class RealFileTest {
     @Test
     public void addLocation() {
 
-        final RealFile realFile = new RealFile();
+        final RealFile realFile = new RealFile( 10 );
         List<Location> locations = new LinkedList<>();
 
         locations.add( NodeLocation.getLocation("Node1") );
@@ -38,7 +38,7 @@ public class RealFileTest {
 
     @Test
     public void addEmptyLocation() {
-        final RealFile realFile = new RealFile();
+        final RealFile realFile = new RealFile( 10 );
         assertThrows(IllegalArgumentException.class, () -> realFile.addLocation( null ));
         assertThrows(IllegalArgumentException.class, () -> realFile.addLocation());
         assertThrows(IllegalArgumentException.class, () -> realFile.addLocation( new Location[0] ));
@@ -47,7 +47,7 @@ public class RealFileTest {
 
     @Test
     public void addInParallel() {
-        final RealFile realFile = new RealFile();
+        final RealFile realFile = new RealFile( 10 );
 
         List<Location> locations = new LinkedList<>();
         for (int i = 0; i < 10_000; i++) {
@@ -68,13 +68,14 @@ public class RealFileTest {
     @Test
     public void changeFile() {
 
-        final RealFile realFile = new RealFile();
+        final RealFile realFile = new RealFile( 4 );
         realFile.addLocation( NodeLocation.getLocation("Node1") );
         realFile.addLocation( NodeLocation.getLocation("Node2") );
         realFile.addLocation( NodeLocation.getLocation("Node3") );
 
-        realFile.changeFile( NodeLocation.getLocation("NodeNew") );
+        realFile.changeFile( 5, NodeLocation.getLocation("NodeNew") );
         Location[] expected = { NodeLocation.getLocation("NodeNew") };
+        assertEquals( 5, realFile.getSizeInBytes() );
         assertArrayEquals( expected, realFile.getLocations() );
 
     }
@@ -82,11 +83,11 @@ public class RealFileTest {
     @Test
     public void changeFileEmpty() {
 
-        final RealFile realFile = new RealFile();
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile(null ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile() );
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile( new Location[0] ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile( new Location[1] ));
+        final RealFile realFile = new RealFile( 10 );
+        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile(1,null ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile(1) );
+        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile( 1,new Location[0] ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile( 1,new Location[1] ));
 
     }
 

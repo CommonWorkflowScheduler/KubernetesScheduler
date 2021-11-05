@@ -70,7 +70,7 @@ public class HierarchyWrapper {
      * @param locations locations where the file is located
      * @return false if file can not be created
      */
-    public boolean addFile( String path, Location... locations ){
+    public boolean addFile( String path, long sizeInBytes, Location... locations ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return false;
@@ -87,7 +87,7 @@ public class HierarchyWrapper {
                 current = (Folder) file;
             } else {
                 //file
-                return current.addFile( p.toString(), locations );
+                return current.addFile( p.toString(), sizeInBytes, locations );
             }
         }
         //This would add a file in working hierarchy

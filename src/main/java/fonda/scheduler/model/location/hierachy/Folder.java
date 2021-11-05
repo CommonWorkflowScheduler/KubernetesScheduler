@@ -58,10 +58,10 @@ public class Folder extends File {
         }
     }
 
-    public boolean addFile( String p, Location... locations ) {
+    public boolean addFile( String p, long sizeInBytes, Location... locations ) {
         File file = children.get(p);
         if( file == null ){
-            children.putIfAbsent( p, new RealFile() );
+            children.putIfAbsent( p, new RealFile(sizeInBytes) );
             file = children.get( p );
         }
         if ( !file.isDirectory() ) ((RealFile) file).addLocation( locations );

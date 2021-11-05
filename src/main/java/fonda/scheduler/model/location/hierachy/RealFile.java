@@ -11,8 +11,12 @@ public class RealFile extends File {
 
     @Getter
     private Location[] locations = null;
+    @Getter
+    private long sizeInBytes;
 
-    RealFile(){}
+    RealFile(long sizeInBytes) {
+        this.sizeInBytes = sizeInBytes;
+    }
 
     @Override
     public boolean isDirectory(){
@@ -56,9 +60,10 @@ public class RealFile extends File {
         }
     }
 
-    public void changeFile( Location... location ){
+    public void changeFile( long sizeInBytes, Location... location ){
         checkIfValidInput( location );
         synchronized ( this ) {
+            this.sizeInBytes = sizeInBytes;
             locations = location;
         }
     }

@@ -37,7 +37,7 @@ public class HierarchyWrapperTest {
         files.add( temporaryDir + "b/c/test.abc" );
         files.add( temporaryDir + "bc/file.abc" );
 
-        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x,node1)));
+        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x,0, node1)));
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
     }
@@ -88,7 +88,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileinFile() {
-        assertFalse(hw.addFile(temporaryDir + "test/b.txt", node1));
+        assertFalse(hw.addFile(temporaryDir + "test/b.txt", 10, node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -96,7 +96,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileinWorkdir() {
-        assertFalse(hw.addFile(workdir + "ab/b.txt", node1));
+        assertFalse(hw.addFile(workdir + "ab/b.txt", 10, node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -104,8 +104,8 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileOutOfScope() {
-        assertFalse(hw.addFile("/somewhere/test.txt", node1));
-        assertFalse(hw.addFile("/somewhere/on/the/machine/very/deep/hierarchy/test.txt", node1));
+        assertFalse(hw.addFile("/somewhere/test.txt", 10, node1));
+        assertFalse(hw.addFile("/somewhere/on/the/machine/very/deep/hierarchy/test.txt", 10, node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -113,7 +113,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileTwice() {
-        assertTrue(hw.addFile(temporaryDir + "bc/file.abc", node1));
+        assertTrue(hw.addFile(temporaryDir + "bc/file.abc", 10, node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -121,7 +121,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileButWasFolder() {
-        assertFalse(hw.addFile(temporaryDir + "bc", node1));
+        assertFalse(hw.addFile(temporaryDir + "bc", 10, node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -156,7 +156,7 @@ public class HierarchyWrapperTest {
 
         intialMem = finalMem;
 
-        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x, node1)));
+        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x, 10, node1)));
 
         finalMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         log.info( "Memory hierachy: {}mb", (finalMem - intialMem) / 1024 / 1024 );
@@ -190,7 +190,7 @@ public class HierarchyWrapperTest {
 
         int index = 0;
         for (String file : files) {
-            assertTrue(hw.addFile(file,NodeLocation.getLocation( "Node" + index )));
+            assertTrue(hw.addFile(file,10, NodeLocation.getLocation( "Node" + index )));
         }
 
         result = hw.getAllFilesInDir(temporaryDir);
