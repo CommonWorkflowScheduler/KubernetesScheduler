@@ -43,7 +43,7 @@ public class SchedulerRestController {
     @PostMapping("/scheduler/registerScheduler/{namespace}/{execution}/{strategy}")
     ResponseEntity registerScheduler(@PathVariable String namespace, @PathVariable String execution, @PathVariable String strategy, @RequestBody(required = false) SchedulerConfig config ) {
 
-        log.trace("Register execution: " + execution + " strategy: " + strategy);
+        log.trace("Register execution: {} strategy: {} config: {}", execution, strategy, config);
 
         Scheduler scheduler = null;
 
@@ -54,7 +54,7 @@ public class SchedulerRestController {
         switch ( strategy.toLowerCase() ){
             case "fifo" :
             case "random" :
-            case "fifo-random" : scheduler = new RandomScheduler(execution, client, namespace ); break;
+            case "fifo-random" : scheduler = new RandomScheduler(execution, client, namespace, config ); break;
             default: return new ResponseEntity( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
         }
 

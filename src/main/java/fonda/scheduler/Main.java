@@ -1,6 +1,7 @@
 package fonda.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
+import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.scheduler.RandomScheduler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class Main {
     @PostConstruct
     public void afterStart(){
         log.info( "Started with namespace: {}", client.getNamespace() );
-        new RandomScheduler("testscheduler", client, "default" );
+        new RandomScheduler("testscheduler", client, "default", null);
     }
 
 }

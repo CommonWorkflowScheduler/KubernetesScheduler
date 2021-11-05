@@ -2,6 +2,7 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
+import fonda.scheduler.model.location.hierachy.HierarchyWrapper;
 import io.fabric8.kubernetes.api.model.Binding;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectReference;
@@ -25,33 +26,40 @@ public abstract class Scheduler {
     @Getter
     private final String name;
     @Getter
+    private final String execution;
+    @Getter
+    private final String namespace;
+    @Getter
     private boolean close;
 
     final KubernetesClient client;
-    private final String namespace;
     final private List<Task> unscheduledTasks = new ArrayList<>(100);
     final private List<Task> unfinishedTasks = new ArrayList<>(100);
     final Map<String, Task> tasksByHash = new HashMap<>();
     private final Watch watcher;
     private final TaskprocessingThread schedulingThread;
     private final TaskprocessingThread finishThread;
+    final HierarchyWrapper hierarchyWrapper;
 
-    Scheduler(String name, KubernetesClient client, String namespace){
-        this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + name;
+    Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
+        this.execution = execution;
+        this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + execution;
         this.namespace = namespace;
         log.trace( "Register scheduler for " + this.name );
         this.client = client;
+        this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
 
         PodWatcher podWatcher = new PodWatcher(this);
-        log.info("Start watching");
-        watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
-        log.info("Watching");
 
         schedulingThread = new TaskprocessingThread( unscheduledTasks, this::schedule );
         schedulingThread.start();
 
         finishThread = new TaskprocessingThread(unfinishedTasks, this::terminateTasks );
         finishThread.start();
+
+        log.info("Start watching");
+        watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
+        log.info("Watching");
     }
 
     /* Abstract methods */
@@ -212,10 +220,6 @@ public abstract class Scheduler {
             }
         }
         return null;
-    }
-
-    String getWorkingDir( Pod pod ){
-        return pod.getSpec().getContainers().get(0).getWorkingDir();
     }
 
     @Deprecated
