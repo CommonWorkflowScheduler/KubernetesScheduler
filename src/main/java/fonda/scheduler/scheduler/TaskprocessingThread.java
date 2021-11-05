@@ -35,6 +35,7 @@ public class TaskprocessingThread extends Thread {
             } catch (InterruptedException e){
                 Thread.currentThread().interrupt();
             } catch (Exception e){
+                unscheduled = -1;
                 log.info("Error while processing",e);
             }
         }
