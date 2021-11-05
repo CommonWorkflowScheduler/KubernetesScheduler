@@ -22,4 +22,8 @@ public class Task {
     public Task(TaskConfig config) {
         this.config = config;
     }
+
+    public String getWorkingDir(){
+        return pod.getSpec().getContainers().get(0).getWorkingDir();
+    }
 }
