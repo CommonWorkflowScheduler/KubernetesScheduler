@@ -1,5 +1,6 @@
 package fonda.scheduler.model.location.hierachy;
 
+import fonda.scheduler.model.location.Location;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
@@ -65,9 +66,10 @@ public class HierarchyWrapper {
     /**
      *
      * @param path file to add (absolute path)
+     * @param locations locations where the file is located
      * @return false if file can not be created
      */
-    public boolean addFile( String path ){
+    public boolean addFile( String path, Location... locations ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return false;
@@ -84,10 +86,38 @@ public class HierarchyWrapper {
                 current = (Folder) file;
             } else {
                 //file
-                return current.addFile( p.toString() );
+                return current.addFile( p.toString(), locations );
             }
         }
         //This would add a file in working hierarchy
         return false;
+    }
+
+    /**
+     *
+     * @param path file to get (absolute path)
+     * @return File or null if file does not exist
+     */
+    public RealFile getFile( String path ){
+        final Path relativePath = relativize( path );
+        if (relativePath.startsWith("..")){
+            return null;
+        }
+        Iterator<Path> iterator = relativePath.iterator();
+        Folder current = getWorkdir( iterator, true );
+        if( current == null ) return null;
+        while(iterator.hasNext()) {
+            Path p = iterator.next();
+            final File file = current.get( p.toString() );
+            if( iterator.hasNext() && file.isDirectory() ){
+                //folder
+                current = (Folder) file;
+            } else if ( !iterator.hasNext() && !file.isDirectory() ) {
+                //file
+                return (RealFile) file;
+            } else
+                break;
+        }
+        return null;
     }
 }

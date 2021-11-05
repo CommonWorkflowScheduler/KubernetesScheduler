@@ -1,5 +1,7 @@
 package fonda.scheduler.model.location.hierachy;
 
+import fonda.scheduler.model.location.Location;
+import fonda.scheduler.model.location.NodeLocation;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,6 +21,7 @@ public class HierarchyWrapperTest {
     List<String> files;
     List<Path> result;
     String temporaryDir = workdir + "/ab/abcdasdasd/test/./abcd/";
+    Location node1 = NodeLocation.getLocation("Node1");
 
     @Before
     public void init() {
@@ -34,7 +37,7 @@ public class HierarchyWrapperTest {
         files.add( temporaryDir + "b/c/test.abc" );
         files.add( temporaryDir + "bc/file.abc" );
 
-        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x)));
+        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x,node1)));
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
     }
@@ -85,7 +88,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileinFile() {
-        assertFalse(hw.addFile(temporaryDir + "test/b.txt"));
+        assertFalse(hw.addFile(temporaryDir + "test/b.txt", node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -93,7 +96,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileinWorkdir() {
-        assertFalse(hw.addFile(workdir + "ab/b.txt"));
+        assertFalse(hw.addFile(workdir + "ab/b.txt", node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -101,8 +104,8 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileOutOfScope() {
-        assertFalse(hw.addFile("/somewhere/test.txt"));
-        assertFalse(hw.addFile("/somewhere/on/the/machine/very/deep/hierarchy/test.txt"));
+        assertFalse(hw.addFile("/somewhere/test.txt", node1));
+        assertFalse(hw.addFile("/somewhere/on/the/machine/very/deep/hierarchy/test.txt", node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -110,7 +113,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileTwice() {
-        assertTrue(hw.addFile(temporaryDir + "bc/file.abc"));
+        assertTrue(hw.addFile(temporaryDir + "bc/file.abc", node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -118,7 +121,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileButWasFolder() {
-        assertFalse(hw.addFile(temporaryDir + "bc"));
+        assertFalse(hw.addFile(temporaryDir + "bc", node1));
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -153,7 +156,7 @@ public class HierarchyWrapperTest {
 
         intialMem = finalMem;
 
-        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x)));
+        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x, node1)));
 
         finalMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         log.info( "Memory hierachy: {}mb", (finalMem - intialMem) / 1024 / 1024 );
@@ -170,4 +173,54 @@ public class HierarchyWrapperTest {
             compare( entry.getValue(), result);
         }
     }
+
+    @Test
+    public void testGetFile() {
+
+        hw = new HierarchyWrapper(workdir);
+        files = new LinkedList();
+
+        files.add( temporaryDir + "test" );
+        files.add( temporaryDir + "file.abc" );
+        files.add( temporaryDir + "a/test.abc" );
+        files.add( temporaryDir + "a/file.abc" );
+        files.add( temporaryDir + "d/test" );
+        files.add( temporaryDir + "d/e/file.txt" );
+        files.add( temporaryDir + "b/c/test.abc" );
+
+        int index = 0;
+        for (String file : files) {
+            assertTrue(hw.addFile(file,NodeLocation.getLocation( "Node" + index )));
+        }
+
+        result = hw.getAllFilesInDir(temporaryDir);
+        compare( files, result);
+
+        index = 0;
+        for (String file : files) {
+            RealFile realFile = hw.getFile(file);
+
+            final Location[] locations = realFile.getLocations();
+            assertEquals(NodeLocation.getLocation( "Node" + index ), locations[0]);
+            assertEquals(1,locations.length);
+        }
+    }
+
+    @Test
+    public void testGetFileOutOfScope() {
+        assertNull(hw.getFile( "/file.txt" ));
+        assertNull(hw.getFile( "/somewhere/on/the/machine/very/deep/hierarchy/file.txt" ));
+    }
+
+    @Test
+    public void testGetFileWorkdir() {
+        assertNull(hw.getFile( workdir + "ab/test.txt" ));
+    }
+
+    @Test
+    public void testGetFileButIsDir() {
+        assertNull(hw.getFile( temporaryDir + "d" ));
+    }
+
+
 }

@@ -1,5 +1,6 @@
 package fonda.scheduler.model.location.hierachy;
 
+import fonda.scheduler.model.location.Location;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
@@ -13,6 +14,8 @@ import java.util.concurrent.ConcurrentMap;
 public class Folder extends File {
 
     private final ConcurrentMap<String, File> children = new ConcurrentHashMap<>();
+
+    Folder(){}
 
     @Override
     public boolean isDirectory() {
@@ -55,12 +58,13 @@ public class Folder extends File {
         }
     }
 
-    public boolean addFile( String p ) {
+    public boolean addFile( String p, Location... locations ) {
         File file = children.get(p);
         if( file == null ){
-            children.putIfAbsent( p, File.get() );
+            children.putIfAbsent( p, new RealFile() );
             file = children.get( p );
         }
+        if ( !file.isDirectory() ) ((RealFile) file).addLocation( locations );
         return !file.isDirectory();
     }
 
