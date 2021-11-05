@@ -10,7 +10,7 @@ RUN mvn package -Dmaven.repo.local=/mvn/.m2nrepo/repository
 #
 FROM openjdk:11-jre-slim
 WORKDIR /app
-RUN groupadd -r javauser && useradd --no-log-init -r -g javauser javauser
+RUN groupadd -r javauser && useradd --no-log-init -r -g javauser javauser && mkdir data
 COPY --from=build /build/target/k8s-scheduler*.jar k8s-scheduler.jar
 RUN chown -R javauser:javauser /app
 USER javauser

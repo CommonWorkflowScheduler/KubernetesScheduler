@@ -1,0 +1,6 @@
+FROM maven:3.8.3-jdk-11-slim AS build
+WORKDIR /build
+COPY pom.xml pom.xml
+RUN mkdir data/ && mvn dependency:go-offline -B -Dmaven.repo.local=/mvn/.m2nrepo/repository
+COPY src/ src/
+RUN mvn package -Dmaven.repo.local=/mvn/.m2nrepo/repository
