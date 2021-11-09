@@ -8,6 +8,12 @@ public class SchedulerConfig {
     final public List<VolumeClaim> volumeClaims;
     final public String workDir;
 
+    public SchedulerConfig(List<LocalClaim> localClaims, List<VolumeClaim> volumeClaims, String workDir) {
+        this.localClaims = localClaims;
+        this.volumeClaims = volumeClaims;
+        this.workDir = workDir;
+    }
+
     private SchedulerConfig(){
         this.localClaims = null;
         this.volumeClaims = null;

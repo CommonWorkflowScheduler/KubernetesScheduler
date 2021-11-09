@@ -30,7 +30,7 @@ public class Main {
     @PostConstruct
     public void afterStart(){
         log.info( "Started with namespace: {}", client.getNamespace() );
-        new RandomScheduler("testscheduler", client, "default", null);
+        new RandomScheduler("testscheduler", client, "default", new SchedulerConfig(null,null,"/localwork/"));
     }
 
 }
