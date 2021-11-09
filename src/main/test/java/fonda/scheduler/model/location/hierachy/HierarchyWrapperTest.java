@@ -9,6 +9,8 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -88,7 +90,10 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileinFile() {
-        assertFalse(hw.addFile(temporaryDir + "test/b.txt", 10, node1));
+        assertTrue(hw.addFile(temporaryDir + "test/b.txt", 10, node1));
+
+        files.remove( temporaryDir + "test" );
+        files.add( temporaryDir + "test/b.txt" );
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -121,7 +126,10 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileButWasFolder() {
-        assertFalse(hw.addFile(temporaryDir + "bc", 10, node1));
+        assertTrue(hw.addFile(temporaryDir + "bc", 10, node1));
+
+        files.remove( temporaryDir + "bc/file.abc" );
+        files.add( temporaryDir + "bc" );
 
         result = hw.getAllFilesInDir(temporaryDir);
         compare( files, result);
@@ -222,5 +230,11 @@ public class HierarchyWrapperTest {
         assertNull(hw.getFile( temporaryDir + "d" ));
     }
 
-
+    @Test
+    public void testFileIsNowDir(){
+        assertTrue(hw.addFile( temporaryDir + "d", 120, NodeLocation.getLocation("nodeXY") ));
+        result = hw.getAllFilesInDir( temporaryDir );
+        assertNotNull( hw.getFile( temporaryDir + "d" ) );
+        assertNull( hw.getFile( temporaryDir + "d/e/file.txt" ) );
+    }
 }

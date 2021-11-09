@@ -82,9 +82,7 @@ public class HierarchyWrapper {
             Path p = iterator.next();
             if( iterator.hasNext() ){
                 //folder
-                final File file = current.getFileOrCreateFolder( p.toString() );
-                if ( !file.isDirectory() ) return false;
-                current = (Folder) file;
+                current = current.getOrCreateFolder( p.toString() );
             } else {
                 //file
                 return current.addFile( p.toString(), sizeInBytes, locations );

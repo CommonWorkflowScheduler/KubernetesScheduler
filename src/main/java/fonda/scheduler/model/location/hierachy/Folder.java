@@ -31,13 +31,12 @@ public class Folder extends File {
      * @param name name of the folder to create
      * @return the file with the name, or the new created folder
      */
-    public File getFileOrCreateFolder( String name ){
+    public Folder getOrCreateFolder(String name ){
         final File file = children.get(name);
-        if( file == null ){
-            children.putIfAbsent( name, new Folder() );
-            return children.get( name );
+        if( file == null || !file.isDirectory() ){
+            return (Folder) children.compute( name, (key,value) -> (value == null || !value.isDirectory()) ? new Folder() : value );
         }
-        return file;
+        return (Folder) file;
     }
 
     public List<Path> getAllChildren(Path currentPath ){
@@ -59,13 +58,10 @@ public class Folder extends File {
     }
 
     public boolean addFile( String p, long sizeInBytes, Location... locations ) {
-        File file = children.get(p);
-        if( file == null ){
-            children.putIfAbsent( p, new RealFile(sizeInBytes) );
-            file = children.get( p );
-        }
-        if ( !file.isDirectory() ) ((RealFile) file).addLocation( locations );
-        return !file.isDirectory();
+        final RealFile realFile = new RealFile(sizeInBytes);
+        realFile.addLocation( locations );
+        children.put ( p, realFile );
+        return true;
     }
 
 }
