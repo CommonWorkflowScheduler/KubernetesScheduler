@@ -26,4 +26,14 @@ public class Task {
     public String getWorkingDir(){
         return pod.getSpec().getContainers().get(0).getWorkingDir();
     }
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "state=" + state +
+                ", pod=" + pod.getMetadata().getName() +
+                ", nodeName='" + nodeName + '\'' +
+                ", workDir='" + getWorkingDir() + '\'' +
+                '}';
+    }
 }

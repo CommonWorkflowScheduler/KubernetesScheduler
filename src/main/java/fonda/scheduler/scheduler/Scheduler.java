@@ -173,7 +173,9 @@ public abstract class Scheduler {
         return node.canSchedule( pod );
     }
 
-    void assignPodToNode( Pod pod, NodeWithAlloc node ){
+    void assignTaskToNode( Task task, NodeWithAlloc node ){
+
+        final Pod pod = task.getPod();
 
         node.addPod( pod );
 
