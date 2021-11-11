@@ -23,8 +23,8 @@ public class HierarchyWrapper {
         this.workdir = Paths.get( workdir ).normalize();
     }
 
-    private Path relativize( String path ){
-        return workdir.relativize(Paths.get( path )).normalize();
+    private Path relativize( Path path ){
+        return workdir.relativize( path ).normalize();
     }
 
     private Folder getWorkdir( Iterator<Path> iterator, boolean create ){
@@ -46,7 +46,7 @@ public class HierarchyWrapper {
      * @param path get all files recursively in this folder (absolute path)
      * @return Null if folder is empty, or not found
      */
-    public Map<Path, RealFile> getAllFilesInDir(String path ){
+    public Map<Path, RealFile> getAllFilesInDir( final Path path ){
         final Path relativePath = relativize( path );
         Iterator<Path> iterator = relativePath.iterator();
         File current = getWorkdir( iterator, false );
@@ -60,7 +60,7 @@ public class HierarchyWrapper {
             }
         }
         if( current.isDirectory() )
-            return ((Folder) current).getAllChildren( Paths.get(path).normalize() );
+            return ((Folder) current).getAllChildren( path.normalize() );
         else
             return null;
     }
@@ -71,7 +71,7 @@ public class HierarchyWrapper {
      * @param locations locations where the file is located
      * @return false if file can not be created
      */
-    public boolean addFile( final String path, final LocationWrapper... locations ){
+    public boolean addFile( final Path path, final LocationWrapper... locations ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return false;
@@ -98,7 +98,7 @@ public class HierarchyWrapper {
      * @param path file to get (absolute path)
      * @return File or null if file does not exist
      */
-    public RealFile getFile( String path ){
+    public RealFile getFile( Path path ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return null;
