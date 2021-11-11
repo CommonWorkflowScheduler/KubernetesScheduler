@@ -10,12 +10,11 @@ import java.util.List;
 public class RealFile extends File {
 
     @Getter
-    private Location[] locations = null;
-    @Getter
-    private long sizeInBytes;
+    private LocationWrapper[] locations;
 
-    RealFile(long sizeInBytes) {
-        this.sizeInBytes = sizeInBytes;
+    public RealFile( LocationWrapper... locations ) {
+        checkIfValidInput( locations );
+        this.locations = locations;
     }
 
     @Override
@@ -23,48 +22,36 @@ public class RealFile extends File {
         return false;
     }
 
-    private void checkIfValidInput( Location[] location ){
+    private void checkIfValidInput( LocationWrapper[] location ){
         if ( location == null || location.length == 0 )
             throw new IllegalArgumentException( "location was null or empty" );
-        for (Location loc : location) {
+        for (LocationWrapper loc : location) {
             if ( loc == null ) throw new IllegalArgumentException( "location contains null value" );
         }
     }
 
-    public void addLocation( Location... location ){
+    public void addOrUpdateLocation( LocationWrapper... location ){
         checkIfValidInput( location );
         synchronized ( this ){
-            if ( locations == null ){
-                locations = location;
-                return;
-            }
-            List<Location> newLocationList = new ArrayList<>( location.length );
-            for (Location newLoc : location) {
+            int index = 0;
+            LocationWrapper[] newLocationsTmp = new LocationWrapper[location.length];
+            for (LocationWrapper newLoc : location) {
                 boolean foundEqual = false;
-                for (Location l : locations) {
-                    if ( newLoc.equals(l) ) {
+                for (int i = 0; i < locations.length; i++) {
+                    if ( newLoc.getLocation().equals( locations[i].getLocation() ) ) {
                         foundEqual = true;
+                        if ( newLoc.getTimestamp() > locations[i].getTimestamp() )
+                            locations[i] = newLoc;
                         break;
                     }
                 }
                 if ( !foundEqual ){
-                    newLocationList.add( newLoc );
+                    newLocationsTmp[index++] = newLoc;
                 }
             }
-            final Location[] newLocation = Arrays.copyOf(locations, locations.length + newLocationList.size() );
-            int index = locations.length;
-            for (Location l : newLocationList) {
-                newLocation[index ++ ] = l;
-            }
+            final LocationWrapper[] newLocation = Arrays.copyOf(locations, locations.length + index );
+            System.arraycopy( newLocationsTmp, 0, newLocation, locations.length, index );
             locations = newLocation;
-        }
-    }
-
-    public void changeFile( long sizeInBytes, Location... location ){
-        checkIfValidInput( location );
-        synchronized ( this ) {
-            this.sizeInBytes = sizeInBytes;
-            locations = location;
         }
     }
 

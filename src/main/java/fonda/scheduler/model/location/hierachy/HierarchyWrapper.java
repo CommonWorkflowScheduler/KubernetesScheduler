@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -45,7 +46,7 @@ public class HierarchyWrapper {
      * @param path get all files recursively in this folder (absolute path)
      * @return Null if folder is empty, or not found
      */
-    public List<Path> getAllFilesInDir( String path ){
+    public Map<Path, RealFile> getAllFilesInDir(String path ){
         final Path relativePath = relativize( path );
         Iterator<Path> iterator = relativePath.iterator();
         File current = getWorkdir( iterator, false );
@@ -70,7 +71,7 @@ public class HierarchyWrapper {
      * @param locations locations where the file is located
      * @return false if file can not be created
      */
-    public boolean addFile( String path, long sizeInBytes, Location... locations ){
+    public boolean addFile( final String path, final LocationWrapper... locations ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return false;
@@ -85,7 +86,7 @@ public class HierarchyWrapper {
                 current = current.getOrCreateFolder( p.toString() );
             } else {
                 //file
-                return current.addFile( p.toString(), sizeInBytes, locations );
+                return current.addOrUpdateFile( p.toString(), locations );
             }
         }
         //This would add a file in working hierarchy

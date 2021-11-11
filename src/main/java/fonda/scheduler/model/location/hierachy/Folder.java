@@ -1,12 +1,12 @@
 package fonda.scheduler.model.location.hierachy;
 
-import fonda.scheduler.model.location.Location;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -39,28 +39,32 @@ public class Folder extends File {
         return (Folder) file;
     }
 
-    public List<Path> getAllChildren(Path currentPath ){
-        List<Path> result = new LinkedList<>();
+    public Map<Path,RealFile> getAllChildren( Path currentPath ){
+        Map<Path,RealFile> result = new TreeMap<>();
         getAllChildren( result, currentPath );
         return result;
     }
 
-    private void getAllChildren(final List<Path> result, Path currentPath){
+    private void getAllChildren( final Map<Path,RealFile> result, Path currentPath ){
         for (Map.Entry<String, File> entry : children.entrySet()) {
             Path resolve = currentPath.resolve(entry.getKey());
             if ( entry.getValue().isDirectory() ){
                 final Folder value = (Folder) entry.getValue();
                 value.getAllChildren( result, resolve );
             } else {
-                result.add( resolve );
+                result.put( resolve, (RealFile) entry.getValue());
             }
         }
     }
 
-    public boolean addFile( String p, long sizeInBytes, Location... locations ) {
-        final RealFile realFile = new RealFile(sizeInBytes);
-        realFile.addLocation( locations );
-        children.put ( p, realFile );
+    public boolean addOrUpdateFile( final String name, final LocationWrapper... locations ) {
+        children.compute( name, (k,v) -> {
+            if (v == null || v.isDirectory())
+                return new RealFile( locations );
+            final RealFile file = (RealFile) v;
+            file.addOrUpdateLocation( locations );
+            return v;
+        } );
         return true;
     }
 

@@ -1,6 +1,5 @@
 package fonda.scheduler.model.location.hierachy;
 
-import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.NodeLocation;
 import org.junit.Test;
 
@@ -12,52 +11,63 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RealFileTest {
 
+    private LocationWrapper getLocationWrapper( String location ){
+        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, "processA" );
+    }
+
 
     @Test
     public void addLocation() {
 
-        final RealFile realFile = new RealFile( 10 );
-        List<Location> locations = new LinkedList<>();
+        List<LocationWrapper> locations = new LinkedList<>();
 
-        locations.add( NodeLocation.getLocation("Node1") );
-        realFile.addLocation(NodeLocation.getLocation("Node1"));
+
+        final LocationWrapper node1 = getLocationWrapper("Node1");
+        locations.add(node1);
+        final RealFile realFile = new RealFile(node1);
         assertArrayEquals( locations.toArray(), realFile.getLocations() );
 
-        locations.add( NodeLocation.getLocation("Node2") );
-        realFile.addLocation(NodeLocation.getLocation("Node2"));
+        final LocationWrapper node2 = getLocationWrapper("Node2");
+        locations.add(node2);
+        realFile.addOrUpdateLocation(node2);
         assertArrayEquals( locations.toArray(), realFile.getLocations() );
 
-        locations.add( NodeLocation.getLocation("Node3") );
-        realFile.addLocation(NodeLocation.getLocation("Node3"));
+        final LocationWrapper node3 = getLocationWrapper("Node3");
+        locations.add(node3);
+        realFile.addOrUpdateLocation(node3);
         assertArrayEquals( locations.toArray(), realFile.getLocations() );
 
-        realFile.addLocation(NodeLocation.getLocation("Node1"));
-        assertArrayEquals( locations.toArray(), realFile.getLocations() );
+        final LocationWrapper node1New = getLocationWrapper("Node1");
+        realFile.addOrUpdateLocation(node1New);
+        assertArrayEquals( locations.toArray(), realFile.getLocations());
 
     }
 
     @Test
     public void addEmptyLocation() {
-        final RealFile realFile = new RealFile( 10 );
-        assertThrows(IllegalArgumentException.class, () -> realFile.addLocation( null ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.addLocation());
-        assertThrows(IllegalArgumentException.class, () -> realFile.addLocation( new Location[0] ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.addLocation( new Location[1] ));
+        final RealFile realFile = new RealFile( getLocationWrapper("node1") );
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( null ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation());
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( new LocationWrapper[0] ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( new LocationWrapper[1] ));
     }
 
     @Test
     public void addInParallel() {
-        final RealFile realFile = new RealFile( 10 );
+        final LocationWrapper node0 = getLocationWrapper("Node0");
+        final RealFile realFile = new RealFile(node0);
 
-        List<Location> locations = new LinkedList<>();
-        for (int i = 0; i < 10_000; i++) {
-            locations.add( NodeLocation.getLocation( "Node" + i ) );
+        List<LocationWrapper> locations = new LinkedList<>();
+
+        for (int i = 1; i < 10_000; i++) {
+            locations.add( getLocationWrapper( "Node" + i ) );
         }
 
         Collections.shuffle(locations);
 
-        locations.parallelStream().forEach( realFile::addLocation );
+        locations.parallelStream().forEach( realFile::addOrUpdateLocation );
 
+        locations.add( node0 );
         assertEquals(
                 new HashSet<>(locations),
                 new HashSet<>(Arrays.asList(realFile.getLocations()))
@@ -68,26 +78,36 @@ public class RealFileTest {
     @Test
     public void changeFile() {
 
-        final RealFile realFile = new RealFile( 4 );
-        realFile.addLocation( NodeLocation.getLocation("Node1") );
-        realFile.addLocation( NodeLocation.getLocation("Node2") );
-        realFile.addLocation( NodeLocation.getLocation("Node3") );
+        final LocationWrapper node0 = getLocationWrapper("Node0");
+        final RealFile realFile = new RealFile(node0);
+        final LocationWrapper node1 = getLocationWrapper("Node1");
+        realFile.addOrUpdateLocation(node1);
+        final LocationWrapper node2 = getLocationWrapper("Node2");
+        realFile.addOrUpdateLocation(node2);
+        final LocationWrapper node3 = getLocationWrapper("Node3");
+        realFile.addOrUpdateLocation(node3);
 
-        realFile.changeFile( 5, NodeLocation.getLocation("NodeNew") );
-        Location[] expected = { NodeLocation.getLocation("NodeNew") };
-        assertEquals( 5, realFile.getSizeInBytes() );
+        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("NodeNew"), 5, 120, "processB");
+        realFile.addOrUpdateLocation( nodeNew );
+        LocationWrapper[] expected = { node0, node1, node2, node3, nodeNew };
         assertArrayEquals( expected, realFile.getLocations() );
 
     }
 
     @Test
-    public void changeFileEmpty() {
+    public void changeFileOnExistingLocation() {
 
-        final RealFile realFile = new RealFile( 10 );
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile(1,null ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile(1) );
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile( 1,new Location[0] ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.changeFile( 1,new Location[1] ));
+        final RealFile realFile = new RealFile( getLocationWrapper("Node0") );
+
+        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("Node0"), 5, 120, "processA");
+        realFile.addOrUpdateLocation( nodeNew );
+        LocationWrapper[] expected = { nodeNew };
+        assertArrayEquals( expected, realFile.getLocations() );
+
+        final LocationWrapper nodeNew2 = new LocationWrapper(NodeLocation.getLocation("Node0"), 6, 170, "processB");
+        realFile.addOrUpdateLocation( nodeNew2 );
+        LocationWrapper[] expected2 = { nodeNew2 };
+        assertArrayEquals( expected2, realFile.getLocations() );
 
     }
 
