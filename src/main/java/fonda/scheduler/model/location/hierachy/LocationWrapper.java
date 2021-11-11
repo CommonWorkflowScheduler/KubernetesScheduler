@@ -1,5 +1,6 @@
 package fonda.scheduler.model.location.hierachy;
 
+import fonda.scheduler.model.Process;
 import fonda.scheduler.model.location.Location;
 import lombok.Getter;
 
@@ -9,9 +10,9 @@ public class LocationWrapper {
     private final Location location;
     private final long timestamp;
     private final long sizeInBytes;
-    private final String process;
+    private final Process process;
 
-    public LocationWrapper(Location location, long timestamp, long sizeInBytes, String process) {
+    public LocationWrapper(Location location, long timestamp, long sizeInBytes, Process process) {
         this.location = location;
         this.timestamp = timestamp;
         this.sizeInBytes = sizeInBytes;

@@ -1,5 +1,6 @@
 package fonda.scheduler.model.location.hierachy;
 
+import fonda.scheduler.model.Process;
 import fonda.scheduler.model.location.NodeLocation;
 import org.junit.Test;
 
@@ -12,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class RealFileTest {
 
     private LocationWrapper getLocationWrapper( String location ){
-        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, "processA" );
+        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, Process.getProcess("processA") );
     }
 
 
@@ -87,7 +88,7 @@ public class RealFileTest {
         final LocationWrapper node3 = getLocationWrapper("Node3");
         realFile.addOrUpdateLocation(node3);
 
-        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("NodeNew"), 5, 120, "processB");
+        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("NodeNew"), 5, 120, Process.getProcess("processB") );
         realFile.addOrUpdateLocation( nodeNew );
         LocationWrapper[] expected = { node0, node1, node2, node3, nodeNew };
         assertArrayEquals( expected, realFile.getLocations() );
@@ -99,12 +100,12 @@ public class RealFileTest {
 
         final RealFile realFile = new RealFile( getLocationWrapper("Node0") );
 
-        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("Node0"), 5, 120, "processA");
+        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("Node0"), 5, 120, Process.getProcess("processA") );
         realFile.addOrUpdateLocation( nodeNew );
         LocationWrapper[] expected = { nodeNew };
         assertArrayEquals( expected, realFile.getLocations() );
 
-        final LocationWrapper nodeNew2 = new LocationWrapper(NodeLocation.getLocation("Node0"), 6, 170, "processB");
+        final LocationWrapper nodeNew2 = new LocationWrapper(NodeLocation.getLocation("Node0"), 6, 170, Process.getProcess("processB") );
         realFile.addOrUpdateLocation( nodeNew2 );
         LocationWrapper[] expected2 = { nodeNew2 };
         assertArrayEquals( expected2, realFile.getLocations() );

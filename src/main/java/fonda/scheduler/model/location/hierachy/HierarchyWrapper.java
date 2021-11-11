@@ -1,12 +1,10 @@
 package fonda.scheduler.model.location.hierachy;
 
-import fonda.scheduler.model.location.Location;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

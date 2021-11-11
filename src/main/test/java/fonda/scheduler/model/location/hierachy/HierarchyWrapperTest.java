@@ -1,5 +1,6 @@
 package fonda.scheduler.model.location.hierachy;
 
+import fonda.scheduler.model.Process;
 import fonda.scheduler.model.location.NodeLocation;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -23,7 +24,7 @@ public class HierarchyWrapperTest {
     LocationWrapper node1 = getLocationWrapper("Node1");
 
     private LocationWrapper getLocationWrapper( String location ){
-        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, "processA" );
+        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, Process.getProcess("processA") );
     }
 
     @Before
