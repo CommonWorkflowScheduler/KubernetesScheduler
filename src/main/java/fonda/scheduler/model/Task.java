@@ -1,8 +1,10 @@
 package fonda.scheduler.model;
 
+import fonda.scheduler.model.location.NodeLocation;
 import io.fabric8.kubernetes.api.model.Pod;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.tomcat.jni.Proc;
 
 public class Task {
 
@@ -12,15 +14,19 @@ public class Task {
     private final TaskState state = new TaskState();
 
     @Getter
+    private final Process process;
+
+    @Getter
     @Setter
     private Pod pod = null;
 
     @Getter
     @Setter
-    private String nodeName = null;
+    private NodeLocation node = null;
 
     public Task(TaskConfig config) {
         this.config = config;
+        this.process = Process.getProcess( config.getTask() );
     }
 
     public String getWorkingDir(){
@@ -32,7 +38,7 @@ public class Task {
         return "Task{" +
                 "state=" + state +
                 ", pod=" + pod.getMetadata().getName() +
-                ", nodeName='" + nodeName + '\'' +
+                ", node='" + (node != null ? node.getIdentifier() : "--") + '\'' +
                 ", workDir='" + getWorkingDir() + '\'' +
                 '}';
     }
