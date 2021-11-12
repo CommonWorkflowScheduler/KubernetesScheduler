@@ -4,6 +4,8 @@ import fonda.scheduler.model.Process;
 import fonda.scheduler.model.location.Location;
 import lombok.Getter;
 
+import java.util.Objects;
+
 @Getter
 public class LocationWrapper {
 
@@ -27,5 +29,21 @@ public class LocationWrapper {
                 ", sizeInBytes=" + sizeInBytes +
                 ", process='" + process + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LocationWrapper)) return false;
+        LocationWrapper that = (LocationWrapper) o;
+        return getTimestamp() == that.getTimestamp()
+                && getSizeInBytes() == that.getSizeInBytes()
+                && Objects.equals(getLocation(), that.getLocation())
+                && Objects.equals(getProcess(), that.getProcess());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getLocation(), getTimestamp(), getSizeInBytes(), getProcess());
     }
 }
