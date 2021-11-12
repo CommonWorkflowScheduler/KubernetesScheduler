@@ -1,24 +1,18 @@
 package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
-import fonda.scheduler.model.NodeWithAlloc;
-import fonda.scheduler.model.SchedulerConfig;
-import fonda.scheduler.model.Task;
+import fonda.scheduler.model.*;
 import io.fabric8.kubernetes.api.model.Pod;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.nio.file.Paths;
+import java.util.*;
 
 @Slf4j
 public class RandomScheduler extends SchedulerWithDaemonSet {
-
-    private final Map<String, String> workdirNode = new HashMap<>();
 
     public RandomScheduler(String name, KubernetesClient client, String namespace, SchedulerConfig config) {
         super(name, client, namespace, config);
@@ -49,31 +43,34 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
     void assignTaskToNode( Task task, NodeWithAlloc node ) {
 
         //Create initData
-        log.info( "Task: {}", task );
 
         File file = new File(task.getWorkingDir() + '/' + ".command.init");
 
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter( file );
-            pw.println( "echo \"Task init successful\"" );
+        try (PrintWriter pw = new PrintWriter(file)) {
+            pw.println("echo \"Task init successful\"");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } finally {
-            if ( pw != null ){
-                pw.close();
-            }
         }
+
+        task.setNode( node.getNodeLocation() );
 
         super.assignTaskToNode(task, node);
     }
 
     @Override
     int terminateTasks(List<Task> finishedTasks) {
-        for (Task finishedTask : finishedTasks) {
-            //TODO store new Data
+        final TaskResultParser taskResultParser = new TaskResultParser();
+        finishedTasks.parallelStream().forEach( finishedTask -> {
+            final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
+                                                                            Paths.get(finishedTask.getWorkingDir()),
+                                                                            finishedTask.getNode(),
+                                                                            finishedTask.getProcess()
+                                                                    );
+            for (PathLocationWrapperPair newAndUpdatedFile : newAndUpdatedFiles) {
+                hierarchyWrapper.addFile( newAndUpdatedFile.getPath(), newAndUpdatedFile.getLocationWrapper() );
+            }
             super.taskWasFinished( finishedTask );
-        }
+        });
         return 0;
     }
 
