@@ -1,5 +1,6 @@
 package fonda.scheduler.model;
 
+import fonda.scheduler.model.location.NodeLocation;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -18,6 +19,9 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     Map<String, PodRequirements> assignedPods;
 
+    @Getter
+    private final NodeLocation nodeLocation;
+
     public NodeWithAlloc(Node node) {
 
         this.setApiVersion( node.getApiVersion() );
@@ -35,6 +39,8 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         max_resources = new PodRequirements( max_cpu, max_ram);
 
         assignedPods = new HashMap<>();
+
+        this.nodeLocation = NodeLocation.getLocation( node );
 
         log.info("Node {} has RAM: {} and CPU: {}", node.getMetadata().getName(), max_ram, max_cpu);
     }
