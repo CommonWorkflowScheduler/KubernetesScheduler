@@ -1,25 +1,38 @@
 package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
-import fonda.scheduler.model.SchedulerConfig;
+import fonda.scheduler.model.*;
+import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
+import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Paths;
+import java.util.*;
 
 @Slf4j
 public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     private final Map<String, String> daemonByNode = new HashMap<>();
+    @Getter
+    private final CopyStrategy copyStrategy;
 
     SchedulerWithDaemonSet(String execution, KubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
+        if ( config.copyStrategy == null ) throw new IllegalArgumentException( "Copy strategy is null" );
+        switch ( config.copyStrategy ){
+            case "ftp":
+            case "copy":
+                copyStrategy = new FTPstrategy();
+                break;
+            default:
+                throw new IllegalArgumentException( "Copy strategy is unknown " + config.copyStrategy );
+        }
     }
 
     public String getDaemonOnNode( String node ){
@@ -60,6 +73,33 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             }
         } while ( i++ < 10 );
         throw new RuntimeException( "Can not upload file: " + file + " to node: " + node.getMetadata().getName() );
+    }
+
+    @Override
+    void assignTaskToNode(Task task, NodeWithAlloc node ) {
+
+        getCopyStrategy().generateCopyScript( task );
+
+        task.setNode( node.getNodeLocation() );
+
+        super.assignTaskToNode(task, node);
+    }
+
+    @Override
+    int terminateTasks(List<Task> finishedTasks) {
+        final TaskResultParser taskResultParser = new TaskResultParser();
+        finishedTasks.parallelStream().forEach( finishedTask -> {
+            final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
+                    Paths.get(finishedTask.getWorkingDir()),
+                    finishedTask.getNode(),
+                    finishedTask.getProcess()
+            );
+            for (PathLocationWrapperPair newAndUpdatedFile : newAndUpdatedFiles) {
+                hierarchyWrapper.addFile( newAndUpdatedFile.getPath(), newAndUpdatedFile.getLocationWrapper() );
+            }
+            super.taskWasFinished( finishedTask );
+        });
+        return 0;
     }
 
     @Override

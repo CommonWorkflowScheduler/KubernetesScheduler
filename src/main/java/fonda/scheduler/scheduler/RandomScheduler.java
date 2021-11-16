@@ -5,10 +5,6 @@ import fonda.scheduler.model.*;
 import io.fabric8.kubernetes.api.model.Pod;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.nio.file.Paths;
 import java.util.*;
 
 @Slf4j
@@ -37,41 +33,6 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
             }
         }
         return unscheduled;
-    }
-
-    @Override
-    void assignTaskToNode( Task task, NodeWithAlloc node ) {
-
-        //Create initData
-
-        File file = new File(task.getWorkingDir() + '/' + ".command.init");
-
-        try (PrintWriter pw = new PrintWriter(file)) {
-            pw.println("echo \"Task init successful\"");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        task.setNode( node.getNodeLocation() );
-
-        super.assignTaskToNode(task, node);
-    }
-
-    @Override
-    int terminateTasks(List<Task> finishedTasks) {
-        final TaskResultParser taskResultParser = new TaskResultParser();
-        finishedTasks.parallelStream().forEach( finishedTask -> {
-            final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
-                                                                            Paths.get(finishedTask.getWorkingDir()),
-                                                                            finishedTask.getNode(),
-                                                                            finishedTask.getProcess()
-                                                                    );
-            for (PathLocationWrapperPair newAndUpdatedFile : newAndUpdatedFiles) {
-                hierarchyWrapper.addFile( newAndUpdatedFile.getPath(), newAndUpdatedFile.getLocationWrapper() );
-            }
-            super.taskWasFinished( finishedTask );
-        });
-        return 0;
     }
 
 }
