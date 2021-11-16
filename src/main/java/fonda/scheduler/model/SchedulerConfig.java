@@ -8,12 +8,18 @@ public class SchedulerConfig {
     final public List<VolumeClaim> volumeClaims;
     final public String workDir;
     final public String dns;
+    final public String copyStrategy;
 
-    public SchedulerConfig(List<LocalClaim> localClaims, List<VolumeClaim> volumeClaims, String workDir, String dns) {
+    public SchedulerConfig(List<LocalClaim> localClaims,
+                           List<VolumeClaim> volumeClaims,
+                           String workDir,
+                           String dns,
+                           String copyStrategy) {
         this.localClaims = localClaims;
         this.volumeClaims = volumeClaims;
         this.workDir = workDir;
         this.dns = dns;
+        this.copyStrategy = copyStrategy;
     }
 
     private SchedulerConfig(){
@@ -21,6 +27,7 @@ public class SchedulerConfig {
         this.volumeClaims = null;
         this.workDir = null;
         this.dns = null;
+        this.copyStrategy = null;
     }
 
     static public class LocalClaim {

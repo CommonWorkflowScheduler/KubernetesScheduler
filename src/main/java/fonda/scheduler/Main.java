@@ -29,8 +29,13 @@ public class Main {
 
     @PostConstruct
     public void afterStart(){
-        log.info( "Started with namespace: {}", client.getNamespace() );
-        final RandomScheduler randomScheduler = new RandomScheduler("testscheduler", client, "default", new SchedulerConfig(null, null, "/localwork/", null));
+        try{
+            log.info( "Started with namespace: {}", client.getNamespace() );
+            final RandomScheduler randomScheduler = new RandomScheduler("testscheduler", client, "default", new SchedulerConfig(null, null, "/localwork/", null, "ftp"));
+        } catch (Exception e){
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
 }
