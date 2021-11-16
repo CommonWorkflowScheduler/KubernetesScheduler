@@ -22,14 +22,14 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         super(execution, client, namespace, config);
     }
 
-    String getDaemonOnNode( String node ){
+    public String getDaemonOnNode( String node ){
         synchronized ( daemonByNode ) {
             return daemonByNode.get( node );
         }
     }
 
     String getDaemonOnNode( Node node ){
-        return  getDaemonOnNode( node.getMetadata().getName() );
+        return getDaemonOnNode( node.getMetadata().getName() );
     }
     
     String getOneDaemon() {
@@ -81,7 +81,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                             daemonByNode.remove(nodeName);
                         }
                     } else if ( pod.getStatus().getPhase().equals("Running") ) {
-                        daemonByNode.put( nodeName, podName);
+                        daemonByNode.put( nodeName, pod.getStatus().getPodIP());
                         informResourceChange();
                     } else if ( podIsCurrentDaemon ) {
                         daemonByNode.remove(nodeName);
@@ -93,6 +93,5 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             }
         }
     }
-
 
 }
