@@ -33,6 +33,10 @@ public class SchedulerRestController {
         this.client = client;
     }
 
+    public static void addScheduler(Pair<String,String> key, Scheduler scheduler ){
+        schedulerHolder.put( key, scheduler );
+    }
+
     /**
      * Register a sheduler for a workflow execution
      * @param namespace namespace where the workflow runs
