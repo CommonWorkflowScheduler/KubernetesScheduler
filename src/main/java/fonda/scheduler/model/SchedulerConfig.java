@@ -7,17 +7,20 @@ public class SchedulerConfig {
     final public List<LocalClaim> localClaims;
     final public List<VolumeClaim> volumeClaims;
     final public String workDir;
+    final public String dns;
 
-    public SchedulerConfig(List<LocalClaim> localClaims, List<VolumeClaim> volumeClaims, String workDir) {
+    public SchedulerConfig(List<LocalClaim> localClaims, List<VolumeClaim> volumeClaims, String workDir, String dns) {
         this.localClaims = localClaims;
         this.volumeClaims = volumeClaims;
         this.workDir = workDir;
+        this.dns = dns;
     }
 
     private SchedulerConfig(){
         this.localClaims = null;
         this.volumeClaims = null;
         this.workDir = null;
+        this.dns = null;
     }
 
     static public class LocalClaim {

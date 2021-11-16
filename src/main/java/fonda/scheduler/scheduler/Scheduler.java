@@ -30,6 +30,8 @@ public abstract class Scheduler {
     @Getter
     private final String namespace;
     @Getter
+    private final String dns;
+    @Getter
     private boolean close;
 
     final KubernetesClient client;
@@ -48,6 +50,7 @@ public abstract class Scheduler {
         log.trace( "Register scheduler for " + this.name );
         this.client = client;
         this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
+        this.dns = config.dns;
 
         PodWatcher podWatcher = new PodWatcher(this);
 
