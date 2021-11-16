@@ -18,11 +18,17 @@ import java.util.*;
 public class TaskResultParser {
 
     private String getRootDir( File file ){
+        Scanner sc = null;
         try {
-            Scanner sc = new Scanner( file );
+            sc = new Scanner( file );
             if( sc.hasNext() ) return sc.next().split(";")[0];
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        } finally {
+            if ( sc != null )
+                try{
+                    sc.close();
+                } catch ( Exception e ){}
         }
         return null;
     }
@@ -30,6 +36,8 @@ public class TaskResultParser {
     /**
      *
      * @param workdir
+     * @param location
+     * @param process
      * @return A list of all new or updated files
      */
     public Set<PathLocationWrapperPair> getNewAndUpdatedFiles(final Path workdir, Location location, Process process ){
@@ -85,7 +93,7 @@ public class TaskResultParser {
     }
 
     private long fileTimeFromString(String date) {
-        if( date == null || date == "-" ) {
+        if( date == null || date.equals("-")) {
             return -1;
         }
         String[] parts = date.split(" ");
