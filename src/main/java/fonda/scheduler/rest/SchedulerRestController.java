@@ -5,6 +5,7 @@ import fonda.scheduler.scheduler.RandomScheduler;
 import fonda.scheduler.scheduler.Scheduler;
 import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.model.TaskConfig;
+import fonda.scheduler.scheduler.SchedulerWithDaemonSet;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,6 +130,27 @@ public class SchedulerRestController {
         schedulerHolder.remove( key );
         scheduler.close();
         return new ResponseEntity( HttpStatus.OK );
+    }
+
+    @GetMapping("/daemon/{namespace}/{execution}/{node}")
+    ResponseEntity getDaemonName(@PathVariable String namespace, @PathVariable String execution, @PathVariable String node ) {
+
+        log.info( "Got request: {}{}{}", namespace, execution, node );
+
+        final Pair<String, String> key = new Pair(namespace.toLowerCase(), execution.toLowerCase());
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null || !(scheduler instanceof SchedulerWithDaemonSet) ){
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+
+        String daemon = ((SchedulerWithDaemonSet) scheduler).getDaemonOnNode( node );
+
+        if ( daemon == null ){
+            return new ResponseEntity( "No daemon for node found: " + node , HttpStatus.NOT_FOUND );
+        }
+
+        return new ResponseEntity( daemon, HttpStatus.OK );
+
     }
 
     @GetMapping ("/health")
