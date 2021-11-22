@@ -210,7 +210,7 @@ public class HierarchyWrapperTest {
 
         index = 0;
         for ( Path file : files) {
-            RealFile realFile = hw.getFile(file);
+            RealFile realFile = (RealFile) hw.getFile(file);
 
             final LocationWrapper[] locations = realFile.getLocations();
             assertEquals(lw[index++], locations[0]);
@@ -231,7 +231,9 @@ public class HierarchyWrapperTest {
 
     @Test
     public void testGetFileButIsDir() {
-        assertNull(hw.getFile( Paths.get(temporaryDir + "d" )));
+        final File file = hw.getFile(Paths.get(temporaryDir + "d"));
+        assertNotNull( file );
+        assertTrue( file.isDirectory() );
     }
 
     @Test

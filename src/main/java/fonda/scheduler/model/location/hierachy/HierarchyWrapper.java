@@ -96,7 +96,7 @@ public class HierarchyWrapper {
      * @param path file to get (absolute path)
      * @return File or null if file does not exist
      */
-    public RealFile getFile( Path path ){
+    public File getFile( Path path ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return null;
@@ -110,12 +110,15 @@ public class HierarchyWrapper {
             if( iterator.hasNext() && file.isDirectory() ){
                 //folder
                 current = (Folder) file;
-            } else if ( !iterator.hasNext() && !file.isDirectory() ) {
-                //file
-                return (RealFile) file;
+            } else if ( !iterator.hasNext() ) {
+                return file;
             } else
                 break;
         }
         return null;
+    }
+
+    public boolean isInScope( Path path ){
+        return path.startsWith( workdir );
     }
 }
