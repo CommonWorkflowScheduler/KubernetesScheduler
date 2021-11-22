@@ -41,7 +41,6 @@ public abstract class Scheduler {
     private final Watch watcher;
     private final TaskprocessingThread schedulingThread;
     private final TaskprocessingThread finishThread;
-    final HierarchyWrapper hierarchyWrapper;
 
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
@@ -49,7 +48,6 @@ public abstract class Scheduler {
         this.namespace = namespace;
         log.trace( "Register scheduler for " + this.name );
         this.client = client;
-        this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
         this.dns = config.dns;
 
         PodWatcher podWatcher = new PodWatcher(this);

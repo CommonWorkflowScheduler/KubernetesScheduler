@@ -2,6 +2,7 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
+import fonda.scheduler.model.location.hierachy.HierarchyWrapper;
 import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
 import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
 import io.fabric8.kubernetes.api.model.Node;
@@ -21,9 +22,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final Map<String, String> daemonByNode = new HashMap<>();
     @Getter
     private final CopyStrategy copyStrategy;
+    final HierarchyWrapper hierarchyWrapper;
 
     SchedulerWithDaemonSet(String execution, KubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
+        this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
         if ( config.copyStrategy == null ) throw new IllegalArgumentException( "Copy strategy is null" );
         switch ( config.copyStrategy ){
             case "ftp":
