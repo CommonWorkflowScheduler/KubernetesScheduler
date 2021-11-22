@@ -4,6 +4,10 @@ import fonda.scheduler.model.Task;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 
 public abstract class CopyStrategy {
 
@@ -24,6 +28,8 @@ public abstract class CopyStrategy {
                     pw.println(line);
                 }
 
+                Set<PosixFilePermission> executable = PosixFilePermissions.fromString("rwxrwxrwx");
+                Files.setPosixFilePermissions( file.toPath(), executable );
             } catch (IOException e) {
                 e.printStackTrace();
             }
