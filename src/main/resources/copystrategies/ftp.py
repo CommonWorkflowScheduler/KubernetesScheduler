@@ -88,17 +88,13 @@ print("Start to setup the environment")
 
 exitIfFileWasNotFound = False
 
-if ( len(sys.argv) < 2 ):
-    print( "Configfile not specified" )
-    exit(101)
-
-configFilePath = sys.argv[1]
+configFilePath = ".command.inputs.json"
 
 if not os.path.isfile( configFilePath ):
     print ("Config file not found:", configFilePath )
     exit(102)
 
-configFile = open(configFile,)
+configFile = open(configFilePath)
 config = json.load( configFile )
 print( config )
 dns = config["dns"]
