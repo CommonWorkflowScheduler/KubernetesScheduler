@@ -1,14 +1,19 @@
 package fonda.scheduler.model.location.hierachy;
 
+import fonda.scheduler.model.Process;
 import fonda.scheduler.model.location.Location;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class RealFile extends File {
 
+    /**
+     * This field contains the newest LocationWrapper of one file for each node.
+     */
     @Getter
     private LocationWrapper[] locations;
 
@@ -53,6 +58,10 @@ public class RealFile extends File {
             System.arraycopy( newLocationsTmp, 0, newLocation, locations.length, index );
             locations = newLocation;
         }
+    }
+
+    public List<LocationWrapper> getFilesForProcess( Process process ){
+        return Arrays.asList( locations );
     }
 
 }
