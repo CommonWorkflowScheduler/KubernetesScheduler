@@ -1,6 +1,7 @@
 package fonda.scheduler.model;
 
 import fonda.scheduler.model.location.NodeLocation;
+import fonda.scheduler.scheduler.util.Batch;
 import io.fabric8.kubernetes.api.model.Pod;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,10 @@ public class Task {
     @Getter
     @Setter
     private NodeLocation node = null;
+
+    @Getter
+    @Setter
+    private Batch batch;
 
     public Task(TaskConfig config) {
         this.config = config;

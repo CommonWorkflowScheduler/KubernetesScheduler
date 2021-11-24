@@ -95,6 +95,32 @@ public class SchedulerRestController {
 
     }
 
+    @PostMapping("/scheduler/startBatch/{namespace}/{execution}")
+    ResponseEntity startBatch(@PathVariable String namespace, @PathVariable String execution ) {
+
+        final Pair<String, String> key = getKey( namespace, execution );
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null ){
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+        scheduler.startBatch();
+        return new ResponseEntity( HttpStatus.OK );
+
+    }
+
+    @PostMapping("/scheduler/endBatch/{namespace}/{execution}")
+    ResponseEntity endBatch(@PathVariable String namespace, @PathVariable String execution, @RequestBody(required = true) int tasksInBatch ) {
+
+        final Pair<String, String> key = getKey( namespace, execution );
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null ){
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+        scheduler.endBatch( tasksInBatch );
+        return new ResponseEntity( HttpStatus.OK );
+
+    }
+
     /**
      * Check Task state
      * @param namespace namespace where the workflow runs

@@ -2,6 +2,7 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
+import fonda.scheduler.scheduler.util.Batch;
 import fonda.scheduler.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Binding;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -14,10 +15,7 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 public abstract class Scheduler {
@@ -34,7 +32,12 @@ public abstract class Scheduler {
     @Getter
     private boolean close;
 
+    private final Object batchHelper = new Object();
+    private int currentBatch = 0;
+    private Batch currentBatchInstance = null;
+
     final KubernetesClient client;
+    final private Set<Task> upcomingTasks = new HashSet<>();
     final private List<Task> unscheduledTasks = new ArrayList<>(100);
     final private List<Task> unfinishedTasks = new ArrayList<>(100);
     final Map<String, Task> tasksByHash = new HashMap<>();
@@ -113,13 +116,35 @@ public abstract class Scheduler {
     }
 
     public void schedulePod(Pod pod ) {
-        Task t = changeStateOfTask( pod, State.UNSCHEDULED );
+        Task task = changeStateOfTask( pod, State.UNSCHEDULED );
         //If null, task was already unscheduled
-        if ( t == null ) return;
-        t.setPod( pod );
-        synchronized (unscheduledTasks){
-            unscheduledTasks.add( t );
-            unscheduledTasks.notifyAll();
+        if ( task == null ) return;
+        task.setPod( pod );
+        if ( task.getBatch() == null ){
+            synchronized (unscheduledTasks){
+                unscheduledTasks.add( task );
+                unscheduledTasks.notifyAll();
+                synchronized ( upcomingTasks ){
+                    upcomingTasks.remove( task );
+                }
+            }
+        } else {
+            Batch batch = task.getBatch();
+            batch.informScheduable( task );
+            tryToScheduleBatch( batch );
+        }
+    }
+
+    private void tryToScheduleBatch( Batch batch ){
+        if ( batch.canSchedule() ){
+            synchronized (unscheduledTasks){
+                final List<Task> tasksToScheduleAndDestroy = batch.getTasksToScheduleAndDestroy();
+                unscheduledTasks.addAll(tasksToScheduleAndDestroy);
+                unscheduledTasks.notifyAll();
+                synchronized ( upcomingTasks ){
+                    upcomingTasks.removeAll( tasksToScheduleAndDestroy );
+                }
+            }
         }
     }
 
@@ -137,10 +162,17 @@ public abstract class Scheduler {
     /* External access to Tasks */
 
     public void addTask( TaskConfig conf ) {
+        final Task task = new Task(conf);
         synchronized (tasksByHash) {
             if( ! tasksByHash.containsKey( conf.getHash() ) ){
-                tasksByHash.put( conf.getHash(), new Task(conf) );
+                tasksByHash.put( conf.getHash(), task );
             }
+        }
+        synchronized ( upcomingTasks ){
+            upcomingTasks.add( task );
+        }
+        if( currentBatchInstance != null ){
+            currentBatchInstance.registerTask( task );
         }
     }
 
@@ -221,6 +253,21 @@ public abstract class Scheduler {
 
     /* Helper */
 
+    public void startBatch(){
+        synchronized (batchHelper){
+            if ( currentBatchInstance == null || currentBatchInstance.isClosed() ){
+                currentBatchInstance = new Batch( currentBatch++ );
+            }
+        }
+    }
+
+    public void endBatch( int tasksInBatch ){
+        synchronized (batchHelper){
+            currentBatchInstance.close( tasksInBatch );
+            tryToScheduleBatch( currentBatchInstance );
+        }
+    }
+
     /**
      *
      * @param pod
@@ -266,6 +313,10 @@ public abstract class Scheduler {
         }
 
         return t;
+    }
+
+    LinkedList<Task> getUpcomingTasksCopy() {
+        return new LinkedList<>( upcomingTasks );
     }
 
     /**
