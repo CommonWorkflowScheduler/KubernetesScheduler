@@ -13,22 +13,16 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 public class TaskResultParser {
 
     private String getRootDir( File file ){
-        Scanner sc = null;
-        try {
-            sc = new Scanner( file );
+        try ( Scanner sc  = new Scanner( file ) ) {
             if( sc.hasNext() ) return sc.next().split(";")[0];
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } finally {
-            if ( sc != null )
-                try{
-                    sc.close();
-                } catch ( Exception e ){}
         }
         return null;
     }
@@ -52,8 +46,12 @@ public class TaskResultParser {
 
         Set<PathLocationWrapperPair> newOrUpdated = new HashSet<>();
 
-        try {
-            Files.lines( infile ).skip( 1 )
+        try (
+                Stream<String> in = Files.lines(infile);
+                Stream<String> out = Files.lines(outfile)
+        ) {
+
+            in.skip( 1 )
                 .forEach( line -> {
                     String[] data = line.split(";");
                     String path = data[1].equals("") ? data[0].substring( taskRootDir.length() + 1 ) : data[1];
@@ -63,7 +61,7 @@ public class TaskResultParser {
 
             log.info( "{}", inputdata );
 
-            Files.lines( outfile ).skip( 1 )
+            out.skip( 1 )
                 .forEach( line -> {
                     String[] data = line.split(";");
                     boolean realFile = data[1].equals("");
