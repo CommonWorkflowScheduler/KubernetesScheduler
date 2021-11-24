@@ -5,6 +5,7 @@ import os
 import json
 import urllib.request
 import sys
+from pathlib import Path
 
 def getIP( node ):
     ip = urllib.request.urlopen(dns + node).read()
@@ -53,8 +54,8 @@ def download( node, files ):
         try:
             if os.path.exists( filename ):
                 os.remove(filename)
+            Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
             ftp.retrbinary( 'RETR %s' % filename, open( filename, 'wb').write, 102400)
-            files.pop(0)
         except ftplib.error_perm as err:
             if( str(err) == "550 Failed to open file." ):
                 print( "File not found:", node + filename )
