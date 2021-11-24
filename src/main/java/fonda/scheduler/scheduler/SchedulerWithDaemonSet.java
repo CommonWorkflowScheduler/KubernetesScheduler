@@ -5,12 +5,15 @@ import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.location.hierachy.Folder;
 import fonda.scheduler.model.location.hierachy.HierarchyWrapper;
-import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.location.hierachy.RealFile;
 import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
 import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
+import fonda.scheduler.scheduler.util.NodeTaskAlignment;
+import fonda.scheduler.scheduler.util.NodeTaskFilesAlignment;
+import fonda.scheduler.scheduler.util.PathFileLocationTriple;
+import fonda.scheduler.util.FilePath;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
@@ -57,44 +60,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return getDaemonOnNode( node.getMetadata().getName() );
     }
     
-    String getOneDaemon() {
-        synchronized ( daemonByNode ) {
-            final Collection<String> values = daemonByNode.values();
-            return values.stream().skip(values.size()).findFirst().get();
-        }
-    }
-
-    void uploadDataToNode ( Node node, File file, Path dest ) {
-        int i = 0;
-        do {
-            log.info( "Upload {} to {} ({})", file, dest, node.getMetadata().getName() );
-            try {
-                final boolean result = client.pods()
-                        .inNamespace(getNamespace())
-                        .withName(getDaemonOnNode(node))
-                        .file(dest.toString())
-                        .upload(file.toPath());
-                if (result) return;
-            } catch (Exception e){
-                e.printStackTrace();
-            }
-            try {
-                Thread.sleep((long) (Math.pow(2,i) * 100) );
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } while ( i++ < 10 );
-        throw new RuntimeException( "Can not upload file: " + file + " to node: " + node.getMetadata().getName() );
-    }
-
     @Override
-    void assignTaskToNode(Task task, NodeWithAlloc node ) {
-
-        getCopyStrategy().generateCopyScript( task );
-
-        task.setNode( node.getNodeLocation() );
-
-        super.assignTaskToNode(task, node);
+    void assignTaskToNode( NodeTaskAlignment alignment ) {
+        writeInitConfig( (NodeTaskFilesAlignment) alignment );
+        getCopyStrategy().generateCopyScript( alignment.task );
+        super.assignTaskToNode( alignment );
     }
 
     @Override
@@ -114,15 +84,30 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return 0;
     }
 
-    void generateConfigFile( File config, Map<String,List<String>> filesByNode ) throws IOException {
-        final Inputs inputs = new Inputs(this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/");
-        for (Map.Entry<String, List<String>> entry : filesByNode.entrySet()) {
-            inputs.data.add( new InputEntry( getDaemonOnNode( entry.getKey() ), entry.getKey(), entry.getValue() ) );
+    boolean writeInitConfig( NodeTaskFilesAlignment alignment ) {
+
+        final File config = new File(alignment.task.getWorkingDir() + '/' + ".command.inputs.json");
+        try {
+            final Inputs inputs = new Inputs(
+                    this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/"
+            );
+            for (Map.Entry<String, List<FilePath>> entry : alignment.nodeFileAlignment.entrySet()) {
+                if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) continue;
+                final List<String> collect = entry  .getValue()
+                                                    .stream()
+                                                    .map(x -> x.path)
+                                                    .collect(Collectors.toList());
+                inputs.data.add( new InputEntry( getDaemonOnNode( entry.getKey() ), entry.getKey(), collect ) );
+            }
+            new ObjectMapper().writeValue( config, inputs );
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        new ObjectMapper().writeValue( config, inputs );
+        return false;
     }
 
-    private Stream<AbstractMap.SimpleImmutableEntry<Path, List<LocationWrapper>>> streamFile(
+    private Stream<PathFileLocationTriple> streamFile(
                 final fonda.scheduler.model.location.hierachy.File file,
                 final Task task,
                 final Path sourcePath )
@@ -131,20 +116,23 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             return ((Folder) file).getAllChildren( sourcePath )
                     .entrySet()
                     .stream()
-                    .map( y -> new AbstractMap.SimpleImmutableEntry<>(
+                    .map( y -> new PathFileLocationTriple(
                                     y.getKey(),
-                                    ((RealFile) y.getValue()).getFilesForProcess( task.getProcess() )
+                                    y.getValue(),
+                                    y.getValue().getFilesForProcess( task.getProcess() )
                             )
                     );
         }
-        return Stream.of( new AbstractMap.SimpleImmutableEntry<>(
+        final RealFile realFile = (RealFile) file;
+        return Stream.of( new PathFileLocationTriple(
                         sourcePath,
-                        ((RealFile) file).getFilesForProcess( task.getProcess() )
+                        realFile,
+                        realFile.getFilesForProcess( task.getProcess() )
                 )
         );
     }
 
-    private Map<Path, List<LocationWrapper>> getInputsOfTask(Task task ){
+    List<PathFileLocationTriple> getInputsOfTask( Task task ){
         return task.getConfig()
                 .getInputs()
                 .parallelStream()
@@ -165,29 +153,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     }
                     return Stream.empty();
                 })
-                .collect(Collectors.toMap( Map.Entry::getKey, Map.Entry::getValue ));
+                .collect(Collectors.toList());
     }
-
-    boolean getInputsFromNodes( Task task, NodeWithAlloc node ) {
-
-        Map<Path, List<LocationWrapper>> inputsOfTask = getInputsOfTask(task);
-        Map< String, List<String> > inputsByNode = scheduleFiles( task, inputsOfTask, node );
-
-        final File config = new File(task.getWorkingDir() + '/' + ".command.inputs.json");
-        try {
-            generateConfigFile( config, inputsByNode );
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    abstract Map<String, List<String>> scheduleFiles(
-            Task task,
-            Map<Path, List<LocationWrapper>> inputsOfTask,
-            NodeWithAlloc node
-    );
 
     @Override
     void podEventReceived(Watcher.Action action, Pod pod){

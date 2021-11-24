@@ -2,7 +2,7 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
-import fonda.scheduler.model.location.hierachy.HierarchyWrapper;
+import fonda.scheduler.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Binding;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectReference;
@@ -70,7 +70,22 @@ public abstract class Scheduler {
      * @param unscheduledTasks
      * @return the number of unscheduled Tasks
      */
-    abstract int schedule( final List<Task> unscheduledTasks );
+    public int schedule( final List<Task> unscheduledTasks ) {
+        final List<NodeTaskAlignment> taskNodeAlignment = getTaskNodeAlignment(unscheduledTasks);
+        //check if still possible...
+        boolean possible = true;
+        if (!possible) return taskNodeAlignment.size();
+
+        for (NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment) {
+            if (isClose()) return -1;
+            assignTaskToNode( nodeTaskAlignment );
+            taskWasScheduled(nodeTaskAlignment.task);
+
+        }
+        return unscheduledTasks.size() - taskNodeAlignment.size();
+    }
+
+    abstract List<NodeTaskAlignment> getTaskNodeAlignment( final List<Task> unscheduledTasks );
 
     abstract int terminateTasks( final List<Task> finishedTasks );
 
@@ -108,7 +123,7 @@ public abstract class Scheduler {
         }
     }
 
-    public void taskWasScheduled(Task task ) {
+    void taskWasScheduled(Task task ) {
         synchronized (unscheduledTasks){
             unscheduledTasks.remove( task );
         }
@@ -174,13 +189,15 @@ public abstract class Scheduler {
         return node.canSchedule( pod );
     }
 
-    void assignTaskToNode( Task task, NodeWithAlloc node ){
+    void assignTaskToNode( NodeTaskAlignment alignment ){
 
-        final Pod pod = task.getPod();
+        alignment.task.setNode( alignment.node.getNodeLocation() );
 
-        node.addPod( pod );
+        final Pod pod = alignment.task.getPod();
 
-        log.info ( "Assign pod: " + pod.getMetadata().getName() + " to node: " + node.getMetadata().getName() );
+        alignment.node.addPod( pod );
+
+        log.info ( "Assign pod: " + pod.getMetadata().getName() + " to node: " + alignment.node.getMetadata().getName() );
 
         Binding b1 = new Binding();
 
@@ -192,13 +209,13 @@ public abstract class Scheduler {
         ObjectReference objectReference = new ObjectReference();
         objectReference.setApiVersion("v1");
         objectReference.setKind("Node");
-        objectReference.setName(node.getMetadata().getName());
+        objectReference.setName(alignment.node.getMetadata().getName());
 
         b1.setTarget(objectReference);
 
         client.bindings().create(b1);
 
-        pod.getSpec().setNodeName( node.getMetadata().getName() );
+        pod.getSpec().setNodeName( alignment.node.getMetadata().getName() );
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
     }
 
