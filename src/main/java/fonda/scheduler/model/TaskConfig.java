@@ -15,6 +15,8 @@ public class TaskConfig {
     private final Map< String, List<Object>> schedulerParams;
     private final List<Input> inputs;
     private final String hash;
+    private final int cpus;
+    private final long memoryInBytes;
 
     private TaskConfig() {
         this.name = null;
@@ -22,6 +24,8 @@ public class TaskConfig {
         this.inputs = null;
         this.hash = null;
         this.task = null;
+        this.cpus = 0;
+        this.memoryInBytes = 0;
     }
 
     @Getter
