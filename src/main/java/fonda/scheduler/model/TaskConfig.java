@@ -13,7 +13,7 @@ public class TaskConfig {
     private final String task;
     private final String name;
     private final Map< String, List<Object>> schedulerParams;
-    private final List<Input> inputs;
+    private final TaskInput inputs;
     private final String hash;
     private final int cpus;
     private final long memoryInBytes;

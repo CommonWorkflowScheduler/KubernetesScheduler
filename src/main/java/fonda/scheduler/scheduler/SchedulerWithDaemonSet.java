@@ -137,24 +137,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     List<PathFileLocationTriple> getInputsOfTask( Task task ){
         return task.getConfig()
                 .getInputs()
+                .fileInputs
                 .parallelStream()
-                .flatMap(x -> {
-                    if ( !(x.getValue() instanceof List) ) return Stream.empty();
-                    for (Object o : (List) x.getValue()) {
-                        if (o instanceof Map) {
-                            Map<String, Object> input = (Map<String, Object>) o;
-                            if (input.containsKey("sourceObj")) {
-                                String sourceObj = (String) input.get("sourceObj");
-                                Path sourcePath = Paths.get(sourceObj);
-                                log.info("Src: {}", sourceObj);
-                                if (this.hierarchyWrapper.isInScope(sourcePath)) {
-                                    return streamFile( hierarchyWrapper.getFile(sourcePath), task, sourcePath );
-                                }
-                            }
-                        }
-                    }
-                    return Stream.empty();
-                })
+                .map( x -> Path.of(x.value.storePath) )
+                .filter( x -> this.hierarchyWrapper.isInScope(x) )
+                .flatMap( sourcePath -> streamFile( hierarchyWrapper.getFile(sourcePath), task, sourcePath ))
                 .collect(Collectors.toList());
     }
 
