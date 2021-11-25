@@ -80,7 +80,7 @@ def download( node, files ):
         try:
             ftp.quit()
             ftp.close()
-        except:
+        except BaseException as err:
             print(f"Unexpected {err=}, {type(err)=}")
 
 
