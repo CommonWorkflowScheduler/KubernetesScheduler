@@ -38,6 +38,10 @@ public class Task {
         return pod.getSpec().getContainers().get(0).getWorkingDir();
     }
 
+    public boolean wasSuccessfullyExecuted(){
+        return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode() == 0;
+    }
+
     @Override
     public String toString() {
         return "Task{" +

@@ -101,6 +101,7 @@ public abstract class Scheduler {
 
         //If null, task was already changed
         if( t == null ) return;
+        t.setPod( pod );
 
         synchronized (unfinishedTasks){
             unfinishedTasks.add( t );
@@ -112,7 +113,7 @@ public abstract class Scheduler {
         synchronized (unfinishedTasks){
             unfinishedTasks.remove( task );
         }
-        task.getState().setState(State.FINISHED);
+        task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
     }
 
     public void schedulePod(Pod pod ) {
@@ -156,7 +157,8 @@ public abstract class Scheduler {
     }
 
     public void markPodAsDeleted( Pod pod ) {
-        changeStateOfTask( pod, State.DELETED );
+        final Task task = changeStateOfTask(pod, State.DELETED);
+        task.setPod( pod );
     }
 
     /* External access to Tasks */
@@ -357,15 +359,19 @@ public abstract class Scheduler {
                 log.debug("Got pod " + pod.getMetadata().getName() + " scheduler: " + pwa.getSpec().getSchedulerName());
             }
 
+
             switch (action) {
                 case ADDED:
-                    if (pwa.getSpec().getNodeName() == null && pwa.getSpec().getSchedulerName().equalsIgnoreCase( scheduler.name )) {
+                    if ( pwa.getSpec().getNodeName() == null ) {
                         scheduler.schedulePod( pwa );
                     }
                     break;
                 case MODIFIED:
                     if (pod.getStatus().getContainerStatuses().size() > 0 && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null) {
                         scheduler.onPodTermination(pwa);
+                    } else {
+                        final Task task = scheduler.getTaskByPod(pwa);
+                        task.setPod( pwa );
                     }
                     break;
                 case DELETED:

@@ -71,13 +71,15 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     int terminateTasks(List<Task> finishedTasks) {
         final TaskResultParser taskResultParser = new TaskResultParser();
         finishedTasks.parallelStream().forEach( finishedTask -> {
-            final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
-                    Paths.get(finishedTask.getWorkingDir()),
-                    finishedTask.getNode(),
-                    finishedTask.getProcess()
-            );
-            for (PathLocationWrapperPair newAndUpdatedFile : newAndUpdatedFiles) {
-                hierarchyWrapper.addFile( newAndUpdatedFile.getPath(), newAndUpdatedFile.getLocationWrapper() );
+            if( finishedTask.wasSuccessfullyExecuted() ) {
+                final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
+                        Paths.get(finishedTask.getWorkingDir()),
+                        finishedTask.getNode(),
+                        finishedTask.getProcess()
+                );
+                for (PathLocationWrapperPair newAndUpdatedFile : newAndUpdatedFiles) {
+                    hierarchyWrapper.addFile(newAndUpdatedFile.getPath(), newAndUpdatedFile.getLocationWrapper());
+                }
             }
             super.taskWasFinished( finishedTask );
         });
