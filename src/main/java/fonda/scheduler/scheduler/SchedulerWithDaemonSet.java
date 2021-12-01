@@ -3,8 +3,13 @@ package fonda.scheduler.scheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
+import fonda.scheduler.model.location.Location;
+import fonda.scheduler.model.location.LocationType;
+import fonda.scheduler.model.location.NodeDaemonPair;
+import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.Folder;
 import fonda.scheduler.model.location.hierachy.HierarchyWrapper;
+import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.location.hierachy.RealFile;
 import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
 import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
@@ -143,6 +148,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 .filter( x -> this.hierarchyWrapper.isInScope(x) )
                 .flatMap( sourcePath -> streamFile( hierarchyWrapper.getFile(sourcePath), task, sourcePath ))
                 .collect(Collectors.toList());
+    }
+
+    public NodeDaemonPair nodeOfLastFileVersion(String path ){
+        final RealFile file = (RealFile) hierarchyWrapper.getFile(Paths.get(path));
+        String node = file.getLastUpdate( LocationType.NODE ).getLocation().getIdentifier();
+        return new NodeDaemonPair( node, getDaemonOnNode( node ), node.equals( workflowEngineNode ) );
     }
 
     @Override

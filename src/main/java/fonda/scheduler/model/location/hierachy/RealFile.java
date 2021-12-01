@@ -2,6 +2,7 @@ package fonda.scheduler.model.location.hierachy;
 
 import fonda.scheduler.model.Process;
 import fonda.scheduler.model.location.Location;
+import fonda.scheduler.model.location.LocationType;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -66,6 +67,16 @@ public class RealFile extends File {
 
     public List<LocationWrapper> getFilesForProcess( Process process ){
         return Arrays.asList( locations );
+    }
+
+    public LocationWrapper getLastUpdate( LocationType type ){
+        LocationWrapper lastLocation = null;
+        for (LocationWrapper location : locations) {
+            if( location.getLocation().getType() == type && (lastLocation == null || lastLocation.getCreateTime() < location.getCreateTime() )){
+                lastLocation = location;
+            }
+        }
+        return lastLocation;
     }
 
 }

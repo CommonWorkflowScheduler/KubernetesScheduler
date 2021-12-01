@@ -13,6 +13,7 @@ public class LocationWrapper {
     private final long timestamp;
     private final long sizeInBytes;
     private final Process process;
+    private final long createTime = System.currentTimeMillis();
 
     public LocationWrapper(Location location, long timestamp, long sizeInBytes, Process process) {
         this.location = location;

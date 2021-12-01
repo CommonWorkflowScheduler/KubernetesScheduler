@@ -1,6 +1,7 @@
 package fonda.scheduler.rest;
 
 import fonda.scheduler.client.KubernetesClient;
+import fonda.scheduler.model.location.NodeDaemonPair;
 import fonda.scheduler.scheduler.RandomScheduler;
 import fonda.scheduler.scheduler.Scheduler;
 import fonda.scheduler.model.SchedulerConfig;
@@ -183,7 +184,26 @@ public class SchedulerRestController {
 
     }
 
-    @GetMapping ("/health")
+    @PostMapping("/file/{namespace}/{execution}")
+    ResponseEntity getNodeForFile(@PathVariable String namespace, @PathVariable String execution, @RequestBody String path ) {
+
+        log.info( "Get file location request: {} {} {}", namespace, execution, path );
+
+        final Pair<String, String> key = getKey( namespace, execution );
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null || !(scheduler instanceof SchedulerWithDaemonSet) ){
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+
+        NodeDaemonPair nodeDaemonPair = ((SchedulerWithDaemonSet) scheduler).nodeOfLastFileVersion( path );
+
+        if ( nodeDaemonPair == null ){
+            return new ResponseEntity( "No node for file found: " + path , HttpStatus.NOT_FOUND );
+        }
+
+        return new ResponseEntity( nodeDaemonPair, HttpStatus.OK );
+
+    }    @GetMapping ("/health")
     ResponseEntity checkHealth() {
         return new ResponseEntity( HttpStatus.OK );
     }

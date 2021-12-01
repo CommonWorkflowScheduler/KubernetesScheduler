@@ -1,12 +1,14 @@
 package fonda.scheduler.model.location;
 
+import lombok.Getter;
+
 import java.util.Objects;
 
 public abstract class Location {
 
-    abstract String getIdentifier();
+    public abstract String getIdentifier();
 
-    abstract LocationType getType();
+    public abstract LocationType getType();
 
     @Override
     public boolean equals(Object o) {
