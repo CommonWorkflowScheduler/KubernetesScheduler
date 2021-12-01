@@ -1,6 +1,7 @@
 package fonda.scheduler.client;
 
 import fonda.scheduler.model.NodeWithAlloc;
+import fonda.scheduler.model.PodWithAge;
 import fonda.scheduler.scheduler.Scheduler;
 import io.fabric8.kubernetes.api.model.ListOptions;
 import io.fabric8.kubernetes.api.model.Node;
@@ -171,7 +172,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 NodeWithAlloc node = kubernetesClient.nodeHolder.get( pod.getSpec().getNodeName() );
                 switch ( action ){
                     case ADDED:
-                        node.addPod( pod ); break;
+                        node.addPod( new PodWithAge(pod) ); break;
                     case DELETED:
                     case ERROR:
                         node.removePod( pod );

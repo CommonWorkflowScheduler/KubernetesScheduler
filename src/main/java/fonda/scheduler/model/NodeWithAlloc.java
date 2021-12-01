@@ -45,8 +45,8 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         log.info("Node {} has RAM: {} and CPU: {}", node.getMetadata().getName(), max_ram, max_cpu);
     }
 
-    public void addPod( Pod pod ){
-        PodRequirements request = getRequest(pod);
+    public void addPod( PodWithAge pod ){
+        PodRequirements request = pod.getRequest();
         synchronized (assignedPods) {
             assignedPods.put( pod.getMetadata().getUid(), request );;
         }
@@ -69,24 +69,15 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         return max_resources.sub(getRequestedResources());
     }
 
-    private PodRequirements getRequest(final Pod pod){
-        return pod
-                .getSpec().getContainers().stream()
-                .filter( x -> x.getResources() != null
-                        && x.getResources().getRequests() != null )
-                .map( x ->
-                        new PodRequirements(
-                                x.getResources().getRequests().get("cpu") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("cpu")),
-                                x.getResources().getRequests().get("memory") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("memory"))
-                        )
-                ).reduce( new PodRequirements(), PodRequirements::addToThis );
+    public boolean canSchedule( PodWithAge pod ){
+        final PodRequirements request = pod.getRequest();
+        PodRequirements availableResources = getAvailableResources();
+        return request.getCpu().compareTo(availableResources.getCpu()) <= 0
+                && request.getRam().compareTo(availableResources.getRam()) <= 0;
     }
 
-    public boolean canSchedule( Pod pod ){
-        final PodRequirements request = getRequest(pod);
-        PodRequirements availableResources = getAvailableResources();
-        return request.getRequested_cpu().compareTo(availableResources.getRequested_cpu()) <= 0
-                && request.getRequested_ram().compareTo(availableResources.getRequested_ram()) <= 0;
+    public String getName(){
+        return this.getMetadata().getName();
     }
 
     @Override
@@ -98,50 +89,4 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         }
     }
 
-    private static class PodRequirements {
-
-        @Getter
-        private BigDecimal requested_cpu;
-        @Getter
-        private BigDecimal requested_ram;
-
-        public PodRequirements(BigDecimal requested_cpu, BigDecimal requested_ram) {
-            this.requested_cpu = requested_cpu == null ? BigDecimal.ZERO : requested_cpu;
-            this.requested_ram = requested_ram == null ? BigDecimal.ZERO : requested_ram;
-        }
-
-        private PodRequirements(){
-            this( BigDecimal.ZERO, BigDecimal.ZERO );
-        }
-
-        public PodRequirements addToThis( PodRequirements podRequirements ){
-            this.requested_cpu = this.requested_cpu.add(podRequirements.requested_cpu);
-            this.requested_ram = this.requested_ram.add(podRequirements.requested_ram);
-            return this;
-        }
-
-        public PodRequirements addRAMtoThis( BigDecimal requested_ram ){
-            this.requested_ram = this.requested_ram.add( requested_ram );
-            return this;
-        }
-
-        public PodRequirements addCPUtoThis( BigDecimal requested_cpu ){
-            this.requested_cpu = this.requested_cpu.add( requested_cpu );
-            return this;
-        }
-
-        public PodRequirements subFromThis( PodRequirements podRequirements ){
-            this.requested_cpu = this.requested_cpu.subtract(podRequirements.requested_cpu);
-            this.requested_ram = this.requested_ram.subtract(podRequirements.requested_ram);
-            return this;
-        }
-
-        public PodRequirements sub( PodRequirements podRequirements ){
-            return new PodRequirements(
-                this.requested_cpu.subtract(podRequirements.requested_cpu),
-                this.requested_ram.subtract(podRequirements.requested_ram)
-            );
-        }
-
-    }
 }

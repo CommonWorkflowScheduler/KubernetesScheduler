@@ -96,7 +96,7 @@ public abstract class Scheduler {
 
     void podEventReceived(Watcher.Action action, Pod pod){}
 
-    void onPodTermination( Pod pod ){
+    void onPodTermination( PodWithAge pod ){
         Task t = changeStateOfTask( pod, State.PROCESSING_FINISHED );
 
         //If null, task was already changed
@@ -116,7 +116,7 @@ public abstract class Scheduler {
         task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
     }
 
-    public void schedulePod(Pod pod ) {
+    public void schedulePod(PodWithAge pod ) {
         Task task = changeStateOfTask( pod, State.UNSCHEDULED );
         //If null, task was already unscheduled
         if ( task == null ) return;
@@ -156,7 +156,7 @@ public abstract class Scheduler {
         task.getState().setState( State.SCHEDULED );
     }
 
-    public void markPodAsDeleted( Pod pod ) {
+    public void markPodAsDeleted( PodWithAge pod ) {
         final Task task = changeStateOfTask(pod, State.DELETED);
         task.setPod( pod );
     }
@@ -219,7 +219,7 @@ public abstract class Scheduler {
      * @param node
      * @return
      */
-    boolean canPodBeScheduled( Pod pod, NodeWithAlloc node ){
+    boolean canPodBeScheduled( PodWithAge pod, NodeWithAlloc node ){
         return node.canSchedule( pod );
     }
 
@@ -227,7 +227,7 @@ public abstract class Scheduler {
 
         alignment.task.setNode( alignment.node.getNodeLocation() );
 
-        final Pod pod = alignment.task.getPod();
+        final PodWithAge pod = alignment.task.getPod();
 
         alignment.node.addPod( pod );
 

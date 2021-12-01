@@ -19,7 +19,7 @@ public class Task {
 
     @Getter
     @Setter
-    private Pod pod = null;
+    private PodWithAge pod = null;
 
     @Getter
     @Setter

@@ -1,9 +1,6 @@
 package fonda.scheduler.model;
 
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.PodStatus;
+import io.fabric8.kubernetes.api.model.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,4 +24,23 @@ public class PodWithAge extends Pod {
         super(pod.getApiVersion(), pod.getKind(), pod.getMetadata(), pod.getSpec(), pod.getStatus());
         this.age = BigDecimal.ZERO;
     }
+
+    public PodRequirements getRequest(){
+        return this
+                .getSpec().getContainers().stream()
+                .filter( x -> x.getResources() != null
+                        && x.getResources().getRequests() != null )
+                .map( x ->
+                        new PodRequirements(
+                                x.getResources().getRequests().get("cpu") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("cpu")),
+                                x.getResources().getRequests().get("memory") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("memory"))
+                        )
+                ).reduce( new PodRequirements(), PodRequirements::addToThis );
+    }
+
+    public String getName(){
+        return this.getMetadata().getName();
+    }
+
+
 }
