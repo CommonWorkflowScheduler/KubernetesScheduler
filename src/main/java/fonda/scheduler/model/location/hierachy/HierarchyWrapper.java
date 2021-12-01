@@ -70,6 +70,10 @@ public class HierarchyWrapper {
      * @return false if file can not be created
      */
     public boolean addFile( final Path path, final LocationWrapper... locations ){
+        return addFile( path, false, locations );
+    }
+
+    public boolean addFile( final Path path, boolean overwrite, final LocationWrapper... locations ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return false;
@@ -84,7 +88,7 @@ public class HierarchyWrapper {
                 current = current.getOrCreateFolder( p.toString() );
             } else {
                 //file
-                return current.addOrUpdateFile( p.toString(), locations );
+                return current.addOrUpdateFile( p.toString(), overwrite, locations );
             }
         }
         //This would add a file in working hierarchy

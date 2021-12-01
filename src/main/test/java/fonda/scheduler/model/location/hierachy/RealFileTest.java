@@ -30,16 +30,16 @@ public class RealFileTest {
 
         final LocationWrapper node2 = getLocationWrapper("Node2");
         locations.add(node2);
-        realFile.addOrUpdateLocation(node2);
+        realFile.addOrUpdateLocation( false, node2);
         assertArrayEquals( locations.toArray(), realFile.getLocations() );
 
         final LocationWrapper node3 = getLocationWrapper("Node3");
         locations.add(node3);
-        realFile.addOrUpdateLocation(node3);
+        realFile.addOrUpdateLocation( false, node3);
         assertArrayEquals( locations.toArray(), realFile.getLocations() );
 
         final LocationWrapper node1New = getLocationWrapper("Node1");
-        realFile.addOrUpdateLocation(node1New);
+        realFile.addOrUpdateLocation( false, node1New);
         assertArrayEquals( locations.toArray(), realFile.getLocations());
 
     }
@@ -47,10 +47,10 @@ public class RealFileTest {
     @Test
     public void addEmptyLocation() {
         final RealFile realFile = new RealFile( getLocationWrapper("node1") );
-        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( null ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation());
-        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( new LocationWrapper[0] ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( new LocationWrapper[1] ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  null ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  new LocationWrapper[0] ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  new LocationWrapper[1] ));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class RealFileTest {
 
         Collections.shuffle(locations);
 
-        locations.parallelStream().forEach( realFile::addOrUpdateLocation );
+        locations.parallelStream().forEach( r -> realFile.addOrUpdateLocation( false, r ) );
 
         locations.add( node0 );
         assertEquals(
@@ -82,14 +82,14 @@ public class RealFileTest {
         final LocationWrapper node0 = getLocationWrapper("Node0");
         final RealFile realFile = new RealFile(node0);
         final LocationWrapper node1 = getLocationWrapper("Node1");
-        realFile.addOrUpdateLocation(node1);
+        realFile.addOrUpdateLocation( false, node1);
         final LocationWrapper node2 = getLocationWrapper("Node2");
-        realFile.addOrUpdateLocation(node2);
+        realFile.addOrUpdateLocation( false, node2);
         final LocationWrapper node3 = getLocationWrapper("Node3");
-        realFile.addOrUpdateLocation(node3);
+        realFile.addOrUpdateLocation( false, node3);
 
         final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("NodeNew"), 5, 120, Process.getProcess("processB") );
-        realFile.addOrUpdateLocation( nodeNew );
+        realFile.addOrUpdateLocation( false,  nodeNew );
         LocationWrapper[] expected = { node0, node1, node2, node3, nodeNew };
         assertArrayEquals( expected, realFile.getLocations() );
 
@@ -101,12 +101,12 @@ public class RealFileTest {
         final RealFile realFile = new RealFile( getLocationWrapper("Node0") );
 
         final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("Node0"), 5, 120, Process.getProcess("processA") );
-        realFile.addOrUpdateLocation( nodeNew );
+        realFile.addOrUpdateLocation( false,  nodeNew );
         LocationWrapper[] expected = { nodeNew };
         assertArrayEquals( expected, realFile.getLocations() );
 
         final LocationWrapper nodeNew2 = new LocationWrapper(NodeLocation.getLocation("Node0"), 6, 170, Process.getProcess("processB") );
-        realFile.addOrUpdateLocation( nodeNew2 );
+        realFile.addOrUpdateLocation( false,  nodeNew2 );
         LocationWrapper[] expected2 = { nodeNew2 };
         assertArrayEquals( expected2, realFile.getLocations() );
 

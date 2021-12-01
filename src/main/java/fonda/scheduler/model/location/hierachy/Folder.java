@@ -57,12 +57,12 @@ public class Folder extends File {
         }
     }
 
-    public boolean addOrUpdateFile( final String name, final LocationWrapper... locations ) {
+    public boolean addOrUpdateFile( final String name, boolean overwrite, final LocationWrapper... locations ) {
         children.compute( name, (k,v) -> {
             if (v == null || v.isDirectory())
                 return new RealFile( locations );
             final RealFile file = (RealFile) v;
-            file.addOrUpdateLocation( locations );
+            file.addOrUpdateLocation( overwrite, locations );
             return v;
         } );
         return true;

@@ -35,8 +35,12 @@ public class RealFile extends File {
         }
     }
 
-    public void addOrUpdateLocation( LocationWrapper... location ){
+    public void addOrUpdateLocation( boolean overwrite, LocationWrapper... location ){
         checkIfValidInput( location );
+        if ( overwrite ){
+            this.locations = location;
+            return;
+        }
         synchronized ( this ){
             int index = 0;
             LocationWrapper[] newLocationsTmp = new LocationWrapper[location.length];
