@@ -18,6 +18,15 @@ import java.util.stream.Stream;
 @Slf4j
 public class TaskResultParser {
 
+    static final int VIRTUAL_PATH = 0;
+    static final int FILE_EXISTS = 1;
+    static final int REAL_PATH = 2;
+    static final int SIZE = 3;
+    static final int FILE_TYPE = 4;
+    static final int CREATION_DATE = 5;
+    static final int ACCESS_DATE = 6;
+    static final int MODIFICATION_DATE = 7;
+
     private String getRootDir( File file ){
         try ( Scanner sc  = new Scanner( file ) ) {
             if( sc.hasNext() ) return sc.next().split(";")[0];
@@ -54,8 +63,9 @@ public class TaskResultParser {
             in.skip( 1 )
                 .forEach( line -> {
                     String[] data = line.split(";");
-                    String path = data[1].equals("") ? data[0].substring( taskRootDir.length() + 1 ) : data[1];
-                    String modificationDate = data[6];
+                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
+                    String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ].substring( taskRootDir.length() + 1 ) : data[ REAL_PATH ];
+                    String modificationDate = data[ MODIFICATION_DATE ];
                     inputdata.put( path , modificationDate );
                 });
 
@@ -64,10 +74,11 @@ public class TaskResultParser {
             out.skip( 1 )
                 .forEach( line -> {
                     String[] data = line.split(";");
-                    boolean realFile = data[1].equals("");
-                    String path = realFile ? data[0] : data[1];
-                    String modificationDate = data[6];
-                    if ( "directory".equals(data[3]) ) return;
+                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
+                    boolean realFile = data[ REAL_PATH ].equals("");
+                    String path = realFile ? data[ VIRTUAL_PATH ] : data[ REAL_PATH ];
+                    String modificationDate = data[ MODIFICATION_DATE ];
+                    if ( "directory".equals(data[ FILE_TYPE ]) ) return;
                     String lockupPath = realFile ? path.substring( outputRootDir.length() + 1 ) : path;
                     if ( !inputdata.containsKey(lockupPath)
                             ||
@@ -76,7 +87,7 @@ public class TaskResultParser {
                             final LocationWrapper locationWrapper = new LocationWrapper(
                                                                             location,
                                                                             fileTimeFromString(modificationDate),
-                                                                            Long.parseLong(data[2]),
+                                                                            Long.parseLong(data[ SIZE ]),
                                                                             process
                                                                     );
                             newOrUpdated.add( new PathLocationWrapperPair( Paths.get(path), locationWrapper ) );
