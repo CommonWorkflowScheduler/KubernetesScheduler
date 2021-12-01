@@ -121,6 +121,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 final Task task,
                 final Path sourcePath )
     {
+        if( file == null ){
+            log.info( "File to stream was null: {}", sourcePath );
+            return Stream.empty();
+        }
         if( file.isDirectory() ){
             return ((Folder) file).getAllChildren( sourcePath )
                     .entrySet()
@@ -154,7 +158,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     public NodeDaemonPair nodeOfLastFileVersion(String path ){
         final RealFile file = (RealFile) hierarchyWrapper.getFile(Paths.get(path));
-        String node = file.getLastUpdate( LocationType.NODE ).getLocation().getIdentifier();
+        if( file == null ) return null;
+        final LocationWrapper lastUpdate = file.getLastUpdate(LocationType.NODE);
+        if( lastUpdate == null ) return null;
+        String node = lastUpdate.getLocation().getIdentifier();
         return new NodeDaemonPair( node, getDaemonOnNode( node ), node.equals( workflowEngineNode ) );
     }
 
