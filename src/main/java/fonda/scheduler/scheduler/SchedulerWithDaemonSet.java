@@ -38,6 +38,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     private final Map<String, String> daemonByNode = new HashMap<>();
     @Getter
+    private String workflowEngineNode = null;
+    @Getter
     private final CopyStrategy copyStrategy;
     final HierarchyWrapper hierarchyWrapper;
 
@@ -156,8 +158,18 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return new NodeDaemonPair( node, getDaemonOnNode( node ), node.equals( workflowEngineNode ) );
     }
 
+    public void addFile( String path, long size, long timestamp, boolean overwrite, String node ){
+        final NodeLocation location = NodeLocation.getLocation( node == null ? workflowEngineNode : node );
+        final LocationWrapper locationWrapper = new LocationWrapper( location, timestamp, size, null);
+        hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
+    }
+
     @Override
     void podEventReceived(Watcher.Action action, Pod pod){
+        if ( pod.getMetadata().getName().equals( this.getExecution().replace('_', '-') ) ){
+            this.workflowEngineNode = pod.getSpec().getNodeName();
+            log.info( "WorkflowEngineNode was set to {}", workflowEngineNode );
+        }
         while ( daemonByNode == null ){
             //The Watcher can be started before the class is initialized
             try {

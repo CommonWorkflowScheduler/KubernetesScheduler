@@ -203,7 +203,39 @@ public class SchedulerRestController {
 
         return new ResponseEntity( nodeDaemonPair, HttpStatus.OK );
 
-    }    @GetMapping ("/health")
+    }
+
+    @PostMapping("/file/location/{method}/{namespace}/{execution}")
+    ResponseEntity changeLocationForFile(@PathVariable String method, @PathVariable String namespace, @PathVariable String execution, @RequestBody PathAttributes pa ) {
+        return changeLocationForFile(method,namespace,execution,null,pa);
+    }
+
+    @PostMapping("/file/location/{method}/{namespace}/{execution}/{node}")
+    ResponseEntity changeLocationForFile(@PathVariable String method, @PathVariable String namespace, @PathVariable String execution, @PathVariable String node, @RequestBody PathAttributes pa ) {
+
+        log.info( "Change file location request: {} {} {} {}", method, namespace, execution, pa );
+
+        final Pair<String, String> key = getKey( namespace, execution );
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null || !(scheduler instanceof SchedulerWithDaemonSet) ){
+            log.info("No scheduler for: " + execution);
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+
+        if ( !method.equals("add") && !method.equals("overwrite") ) {
+            log.info("Method not found: " + method);
+            return new ResponseEntity( "Method not found: " + method , HttpStatus.NOT_FOUND );
+        }
+
+        boolean overwrite = method.equals("overwrite");
+
+        ((SchedulerWithDaemonSet) scheduler).addFile( pa.getPath(), pa.getSize(), pa.getTimestamp(), overwrite, node );
+
+        return new ResponseEntity( HttpStatus.OK );
+
+    }
+
+    @GetMapping ("/health")
     ResponseEntity checkHealth() {
         return new ResponseEntity( HttpStatus.OK );
     }
