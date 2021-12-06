@@ -3,10 +3,7 @@ package fonda.scheduler.client;
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.PodWithAge;
 import fonda.scheduler.scheduler.Scheduler;
-import io.fabric8.kubernetes.api.model.ListOptions;
-import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.NodeList;
-import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
@@ -173,13 +170,22 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 switch ( action ){
                     case ADDED:
                         node.addPod( new PodWithAge(pod) ); break;
+                    case MODIFIED:
+                        final List<ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
+                        if ( containerStatuses.size() == 0
+                                ||
+                                containerStatuses.get(0).getState().getTerminated() == null ) {
+                            break;
+                        }
                     case DELETED:
                     case ERROR:
+                        log.info("Pod has released its resources: {}", pod.getMetadata().getName());
+                        //Delete Pod in any case
                         node.removePod( pod );
                         kubernetesClient.informAllScheduler();
                         break;
-                    case MODIFIED: break;
                 }
+
             }
         }
 
