@@ -2,6 +2,9 @@ package fonda.scheduler.model;
 
 import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
+import fonda.scheduler.model.outfiles.OutputFile;
+import fonda.scheduler.model.outfiles.PathLocationWrapperPair;
+import fonda.scheduler.model.outfiles.SymlinkOutput;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -43,7 +46,12 @@ public class TaskResultParser {
      * @param process
      * @return A list of all new or updated files
      */
-    public Set<PathLocationWrapperPair> getNewAndUpdatedFiles(final Path workdir, Location location, Process process ){
+    public Set<OutputFile> getNewAndUpdatedFiles(
+            final Path workdir,
+            final Location location,
+            final Process process,
+            final boolean onlyUpdated
+    ){
 
         final Path infile = workdir.resolve(".command.infiles");
         final Path outfile = workdir.resolve(".command.outfiles");
@@ -53,7 +61,7 @@ public class TaskResultParser {
 
         final Map<String, String> inputdata = new HashMap<>();
 
-        Set<PathLocationWrapperPair> newOrUpdated = new HashSet<>();
+        Set<OutputFile> newOrUpdated = new HashSet<>();
 
         try (
                 Stream<String> in = Files.lines(infile);
@@ -69,7 +77,7 @@ public class TaskResultParser {
                     inputdata.put( path , modificationDate );
                 });
 
-            log.info( "{}", inputdata );
+            log.trace( "{}", inputdata );
 
             out.skip( 1 )
                 .forEach( line -> {
@@ -80,7 +88,7 @@ public class TaskResultParser {
                     String modificationDate = data[ MODIFICATION_DATE ];
                     if ( "directory".equals(data[ FILE_TYPE ]) ) return;
                     String lockupPath = realFile ? path.substring( outputRootDir.length() + 1 ) : path;
-                    if ( !inputdata.containsKey(lockupPath)
+                    if ( ( !inputdata.containsKey(lockupPath) && !onlyUpdated )
                             ||
                             !modificationDate.equals( inputdata.get( lockupPath ) ))
                     {
@@ -91,6 +99,9 @@ public class TaskResultParser {
                                                                             process
                                                                     );
                             newOrUpdated.add( new PathLocationWrapperPair( Paths.get(path), locationWrapper ) );
+                    }
+                    if( !realFile ){
+                        newOrUpdated.add( new SymlinkOutput( data[ VIRTUAL_PATH ], data[ REAL_PATH ]));
                     }
                 });
 

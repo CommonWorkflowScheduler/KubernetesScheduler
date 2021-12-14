@@ -22,6 +22,11 @@ public class Folder extends File {
         return true;
     }
 
+    @Override
+    public boolean isSymlink() {
+        return false;
+    }
+
     public File get( String name ){
         return children.get( name );
     }
@@ -39,30 +44,39 @@ public class Folder extends File {
         return (Folder) file;
     }
 
-    public Map<Path,RealFile> getAllChildren( Path currentPath ){
-        Map<Path,RealFile> result = new TreeMap<>();
+    public Map<Path,AbstractFile> getAllChildren( Path currentPath ){
+        Map<Path,AbstractFile> result = new TreeMap<>();
         getAllChildren( result, currentPath );
         return result;
     }
 
-    private void getAllChildren( final Map<Path,RealFile> result, Path currentPath ){
+    private void getAllChildren( final Map<Path,AbstractFile> result, Path currentPath ){
         for (Map.Entry<String, File> entry : children.entrySet()) {
             Path resolve = currentPath.resolve(entry.getKey());
-            if ( entry.getValue().isDirectory() ){
+            if ( !entry.getValue().isSymlink() && entry.getValue().isDirectory() ){
                 final Folder value = (Folder) entry.getValue();
                 value.getAllChildren( result, resolve );
             } else {
-                result.put( resolve, (RealFile) entry.getValue());
+                result.put( resolve, (AbstractFile) entry.getValue());
             }
         }
     }
 
     public boolean addOrUpdateFile( final String name, boolean overwrite, final LocationWrapper... locations ) {
         children.compute( name, (k,v) -> {
-            if (v == null || v.isDirectory())
+            if (v == null || v.isDirectory() || v.isSymlink() )
                 return new RealFile( locations );
             final RealFile file = (RealFile) v;
             file.addOrUpdateLocation( overwrite, locations );
+            return v;
+        } );
+        return true;
+    }
+
+    public boolean addSymlink( final String name, final Path dst ){
+        children.compute( name, (k,v) -> {
+            if ( v == null || !v.isSymlink() || !((LinkFile) v).getDst().equals(dst) )
+                return new LinkFile( dst );
             return v;
         } );
         return true;

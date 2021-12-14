@@ -7,20 +7,20 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 @Getter
-public class PathLocationWrapperPair {
+public class PathLocationWrapperPair extends OutputFile {
 
-    private final Path path;
+
     private final LocationWrapper locationWrapper;
 
     public PathLocationWrapperPair(Path path, LocationWrapper locationWrapper) {
-        this.path = path;
+        super( path );
         this.locationWrapper = locationWrapper;
     }
 
     @Override
     public String toString() {
         return "PathLocationWrapperPair{" +
-                "path=" + path +
+                "path=" + getPath() +
                 ", locationWrapper=" + locationWrapper +
                 '}';
     }
@@ -29,12 +29,14 @@ public class PathLocationWrapperPair {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PathLocationWrapperPair)) return false;
+        if (!super.equals(o)) return false;
         PathLocationWrapperPair that = (PathLocationWrapperPair) o;
-        return getPath().equals(that.getPath()) && getLocationWrapper().equals(that.getLocationWrapper());
+        return Objects.equals(getLocationWrapper(), that.getLocationWrapper());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPath(), getLocationWrapper());
+        return Objects.hash(super.hashCode(), getLocationWrapper());
     }
+
 }

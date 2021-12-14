@@ -44,7 +44,7 @@ public class HierarchyWrapper {
      * @param path get all files recursively in this folder (absolute path)
      * @return Null if folder is empty, or not found
      */
-    public Map<Path, RealFile> getAllFilesInDir( final Path path ){
+    public Map<Path, AbstractFile> getAllFilesInDir( final Path path ){
         final Path relativePath = relativize( path );
         Iterator<Path> iterator = relativePath.iterator();
         File current = getWorkdir( iterator, false );
@@ -74,13 +74,31 @@ public class HierarchyWrapper {
     }
 
     public boolean addFile( final Path path, boolean overwrite, final LocationWrapper... locations ){
+
+        final Folder folderToInsert = findFolderToInsert(path);
+
+        if( folderToInsert == null ) return false;
+        else return folderToInsert.addOrUpdateFile( path.getFileName().toString(), overwrite, locations );
+
+    }
+
+    public boolean addSymlink( final Path src, final Path dst ){
+
+        final Folder folderToInsert = findFolderToInsert( src );
+
+        if( folderToInsert == null ) return false;
+        else return folderToInsert.addSymlink( src.getFileName().toString(), dst );
+
+    }
+
+    private Folder findFolderToInsert( final Path path ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
-            return false;
+            return null;
         }
         Iterator<Path> iterator = relativePath.iterator();
         Folder current = getWorkdir( iterator, true );
-        if( current == null ) return false;
+        if( current == null ) return null;
         while(iterator.hasNext()) {
             Path p = iterator.next();
             if( iterator.hasNext() ){
@@ -88,11 +106,11 @@ public class HierarchyWrapper {
                 current = current.getOrCreateFolder( p.toString() );
             } else {
                 //file
-                return current.addOrUpdateFile( p.toString(), overwrite, locations );
+                return current;
             }
         }
         //This would add a file in working hierarchy
-        return false;
+        return null;
     }
 
     /**

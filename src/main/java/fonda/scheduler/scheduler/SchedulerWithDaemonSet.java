@@ -3,21 +3,23 @@ package fonda.scheduler.scheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
-import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.LocationType;
-import fonda.scheduler.model.location.NodeDaemonPair;
+import fonda.scheduler.rest.exceptions.NotARealFileException;
+import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.model.location.NodeLocation;
-import fonda.scheduler.model.location.hierachy.Folder;
-import fonda.scheduler.model.location.hierachy.HierarchyWrapper;
-import fonda.scheduler.model.location.hierachy.LocationWrapper;
-import fonda.scheduler.model.location.hierachy.RealFile;
+import fonda.scheduler.model.location.hierachy.*;
+import fonda.scheduler.model.outfiles.OutputFile;
+import fonda.scheduler.model.outfiles.PathLocationWrapperPair;
+import fonda.scheduler.model.outfiles.SymlinkOutput;
 import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
 import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
-import fonda.scheduler.scheduler.util.NodeTaskAlignment;
-import fonda.scheduler.scheduler.util.NodeTaskFilesAlignment;
-import fonda.scheduler.scheduler.util.PathFileLocationTriple;
+import fonda.scheduler.util.NodeTaskAlignment;
+import fonda.scheduler.util.NodeTaskFilesAlignment;
+import fonda.scheduler.util.inputs.Input;
+import fonda.scheduler.util.inputs.PathFileLocationTriple;
+import fonda.scheduler.util.inputs.SymlinkInput;
 import fonda.scheduler.util.FilePath;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -78,15 +80,28 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     int terminateTasks(List<Task> finishedTasks) {
         final TaskResultParser taskResultParser = new TaskResultParser();
         finishedTasks.parallelStream().forEach( finishedTask -> {
-            if( finishedTask.wasSuccessfullyExecuted() ) {
-                final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
+            try{
+                final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                         Paths.get(finishedTask.getWorkingDir()),
                         finishedTask.getNode(),
-                        finishedTask.getProcess()
+                        finishedTask.getProcess(),
+                        !finishedTask.wasSuccessfullyExecuted()
                 );
-                for (PathLocationWrapperPair newAndUpdatedFile : newAndUpdatedFiles) {
-                    hierarchyWrapper.addFile(newAndUpdatedFile.getPath(), newAndUpdatedFile.getLocationWrapper());
+                for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
+                    if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
+                        hierarchyWrapper.addFile(
+                                newAndUpdatedFile.getPath(),
+                                ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
+                        );
+                    } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
+                        hierarchyWrapper.addSymlink(
+                                newAndUpdatedFile.getPath(),
+                                ((SymlinkOutput) newAndUpdatedFile).getDst()
+                        );
+                    }
                 }
+            } catch ( Exception e ){
+                log.info( "Problem while finishing task: " + finishedTask.getConfig().getName(), e );
             }
             super.taskWasFinished( finishedTask );
         });
@@ -100,7 +115,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             final Inputs inputs = new Inputs(
                     this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/"
             );
-            for (Map.Entry<String, List<FilePath>> entry : alignment.nodeFileAlignment.entrySet()) {
+            for (Map.Entry<String, List<FilePath>> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
                 if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) continue;
                 final List<String> collect = entry  .getValue()
                                                     .stream()
@@ -108,6 +123,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                                     .collect(Collectors.toList());
                 inputs.data.add( new InputEntry( getDaemonOnNode( entry.getKey() ), entry.getKey(), collect ) );
             }
+            for (SymlinkInput symlink : alignment.fileAlignment.symlinks) {
+                inputs.symlinks.add( symlink );
+            }
+
             new ObjectMapper().writeValue( config, inputs );
             return true;
         } catch (IOException e) {
@@ -116,7 +135,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return false;
     }
 
-    private Stream<PathFileLocationTriple> streamFile(
+    private Stream<Input> streamFile(
                 final fonda.scheduler.model.location.hierachy.File file,
                 final Task task,
                 final Path sourcePath )
@@ -125,15 +144,27 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             log.info( "File to stream was null: {}", sourcePath );
             return Stream.empty();
         }
+        if ( file.isSymlink() ){
+            final Path linkTo = ((LinkFile) file).getDst();
+            final fonda.scheduler.model.location.hierachy.File destFile = hierarchyWrapper.getFile(linkTo);
+            final Stream<Input> inputStream = streamFile(destFile, task, linkTo);
+            return Stream.concat(Stream.of( new SymlinkInput( sourcePath, linkTo ) ), inputStream);
+        }
         if( file.isDirectory() ){
             return ((Folder) file).getAllChildren( sourcePath )
                     .entrySet()
                     .stream()
-                    .map( y -> new PathFileLocationTriple(
-                                    y.getKey(),
-                                    y.getValue(),
-                                    y.getValue().getFilesForProcess( task.getProcess() )
-                            )
+                    .flatMap( y -> {
+                                if ( !y.getValue().isSymlink() )
+                                    return Stream.of(new PathFileLocationTriple(
+                                            y.getKey(),
+                                            ((RealFile) y.getValue()),
+                                            ((RealFile) y.getValue()).getFilesForProcess(task.getProcess())
+                                    ));
+                                else {
+                                    return streamFile( y.getValue(), task, y.getKey() );
+                                }
+                            }
                     );
         }
         final RealFile realFile = (RealFile) file;
@@ -145,24 +176,41 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         );
     }
 
-    List<PathFileLocationTriple> getInputsOfTask( Task task ){
+    List<Input> getInputsOfTask( Task task ){
         return task.getConfig()
                 .getInputs()
                 .fileInputs
                 .parallelStream()
-                .map( x -> Path.of(x.value.storePath) )
+                .map( x -> Path.of(x.value.sourceObj) )
                 .filter( x -> this.hierarchyWrapper.isInScope(x) )
                 .flatMap( sourcePath -> streamFile( hierarchyWrapper.getFile(sourcePath), task, sourcePath ))
                 .collect(Collectors.toList());
     }
 
-    public NodeDaemonPair nodeOfLastFileVersion(String path ){
-        final RealFile file = (RealFile) hierarchyWrapper.getFile(Paths.get(path));
-        if( file == null ) return null;
+    public FileResponse nodeOfLastFileVersion(String path ) throws NotARealFileException {
+        LinkedList<SymlinkInput> symlinks = new LinkedList<>();
+        Path currentPath = Paths.get(path);
+        fonda.scheduler.model.location.hierachy.File currentFile = hierarchyWrapper.getFile( currentPath );
+        while ( currentFile instanceof LinkFile ){
+            final LinkFile linkFile = (LinkFile) currentFile;
+            symlinks.add( new SymlinkInput( currentPath, linkFile.getDst() ) );
+            currentPath = linkFile.getDst();
+            currentFile = hierarchyWrapper.getFile( currentPath );
+        }
+        Collections.reverse( symlinks );
+        //File is maybe out of scope
+        if ( currentFile == null ) {
+            return new FileResponse( currentPath.toString(), symlinks );
+        }
+        if ( ! (currentFile instanceof RealFile) ){
+            log.info( "File was: {}", currentFile );
+            throw new NotARealFileException();
+        }
+        final RealFile file = (RealFile) currentFile;
         final LocationWrapper lastUpdate = file.getLastUpdate(LocationType.NODE);
         if( lastUpdate == null ) return null;
         String node = lastUpdate.getLocation().getIdentifier();
-        return new NodeDaemonPair( node, getDaemonOnNode( node ), node.equals( workflowEngineNode ) );
+        return new FileResponse( currentPath.toString(), node, getDaemonOnNode(node), node.equals(workflowEngineNode), symlinks );
     }
 
     public void addFile( String path, long size, long timestamp, boolean overwrite, String node ){

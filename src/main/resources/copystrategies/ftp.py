@@ -6,10 +6,20 @@ import json
 import urllib.request
 import sys
 from pathlib import Path
+import shutil
 
 def getIP( node ):
     ip = urllib.request.urlopen(dns + node).read()
     return str(ip.decode("utf-8") )
+
+def clearLocatation( path ):
+    if os.path.exists( path ):
+        if os.path.islink( path ):
+            os.unlink( path )
+        elif os.path.isdir( path ):
+            shutil.rmtree( path )
+        else:
+            os.remove( path )
 
 
 def download( node, files ):
@@ -52,8 +62,7 @@ def download( node, files ):
         print("Download", "[" + str( index ).rjust( len( str( size ) ) ) + "/" + str( size ) + "]" , filename)
 
         try:
-            if os.path.exists( filename ):
-                os.remove(filename)
+            clearLocatation( filename )
             Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
             ftp.retrbinary( 'RETR %s' % filename, open( filename, 'wb').write, 102400)
         except ftplib.error_perm as err:
@@ -101,7 +110,15 @@ print( config )
 dns = config["dns"]
 
 data = config[ "data" ]
+symlinks = config[ "symlinks" ]
 
 for d in data:
     files = d["files"]
     download( d["node"], files )
+
+for s in symlinks:
+    src = s["src"]
+    dst = s["dst"]
+    clearLocatation( src )
+    Path(src[:src.rindex("/")]).mkdir(parents=True, exist_ok=True)
+    os.symlink( dst, src )

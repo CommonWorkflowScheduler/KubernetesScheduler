@@ -2,12 +2,14 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
-import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
-import fonda.scheduler.scheduler.util.NodeTaskAlignment;
-import fonda.scheduler.scheduler.util.NodeTaskFilesAlignment;
-import fonda.scheduler.scheduler.util.PathFileLocationTriple;
+import fonda.scheduler.util.FileAlignment;
+import fonda.scheduler.util.NodeTaskAlignment;
+import fonda.scheduler.util.NodeTaskFilesAlignment;
+import fonda.scheduler.util.inputs.Input;
 import fonda.scheduler.util.FilePath;
+import fonda.scheduler.util.inputs.PathFileLocationTriple;
+import fonda.scheduler.util.inputs.SymlinkInput;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -53,9 +55,9 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
                     : Optional.of(matchingNodes.get(new Random().nextInt(matchingNodes.size())));
             if( node.isPresent() ){
                 //log.info("Task needs: " + task.getConfig().getInputs().toString());
-                final List<PathFileLocationTriple> inputsOfTask = getInputsOfTask(task);
-                final Map<String, List<FilePath>> stringListMap = scheduleFiles(task, inputsOfTask, node.get());
-                alignment.add( new NodeTaskFilesAlignment(node.get(),task,stringListMap) );
+                final List<Input> inputsOfTask = getInputsOfTask(task);
+                final FileAlignment fileAlignment = scheduleFiles(task, inputsOfTask, node.get());
+                alignment.add( new NodeTaskFilesAlignment(node.get(),task, fileAlignment ) );
                 availableByNode.get(node.get().getName()).subFromThis(pod.getRequest());
                 System.out.println("--> " + node.get().getName());
             } else {
@@ -66,18 +68,26 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
         return alignment;
     }
 
-    Map<String, List<FilePath>> scheduleFiles(Task task, List<PathFileLocationTriple> inputsOfTask, NodeWithAlloc node) {
+    FileAlignment scheduleFiles(Task task, List<Input> inputsOfTask, NodeWithAlloc node) {
         final HashMap<String, List<FilePath>> map = new HashMap<>();
-        for ( PathFileLocationTriple entry : inputsOfTask ) {
-            final LocationWrapper locationWrapper = entry.locations.get(new Random().nextInt(entry.locations.size()));
-            final String nodeIdentifier = locationWrapper.getLocation().getIdentifier();
-            if ( !map.containsKey( nodeIdentifier )){
-                map.put( nodeIdentifier, new LinkedList<>() );
+        final List<SymlinkInput> symlinkInputs = new LinkedList<>();
+        for ( Input entry : inputsOfTask ) {
+            if( entry instanceof PathFileLocationTriple ){
+                final PathFileLocationTriple pathFileLocationTriple = (PathFileLocationTriple) entry;
+                final LocationWrapper locationWrapper = pathFileLocationTriple.locations.get(
+                        new Random().nextInt( pathFileLocationTriple.locations.size() )
+                );
+                final String nodeIdentifier = locationWrapper.getLocation().getIdentifier();
+                if ( !map.containsKey( nodeIdentifier )){
+                    map.put( nodeIdentifier, new LinkedList<>() );
+                }
+                final List<FilePath> pathsOfNode = map.get( nodeIdentifier );
+                pathsOfNode.add( new FilePath( pathFileLocationTriple.path.toString(), pathFileLocationTriple.file ) );
+            } else if ( entry instanceof SymlinkInput ){
+                symlinkInputs.add( (SymlinkInput) entry );
             }
-            final List<FilePath> pathsOfNode = map.get( nodeIdentifier );
-            pathsOfNode.add( new FilePath( entry.path.toString(), entry.file ) );
         }
-        return map;
+        return new FileAlignment( map, symlinkInputs );
     }
 
 }

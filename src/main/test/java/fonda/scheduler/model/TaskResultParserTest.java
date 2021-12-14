@@ -2,6 +2,8 @@ package fonda.scheduler.model;
 
 import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
+import fonda.scheduler.model.outfiles.OutputFile;
+import fonda.scheduler.model.outfiles.PathLocationWrapperPair;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -9,7 +11,6 @@ import static org.junit.Assert.*;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -59,7 +60,7 @@ public class TaskResultParserTest {
         final Path path = storeData(infiles, outfiles);
 
         final TaskResultParser taskResultParser = new TaskResultParser();
-        final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), Process.getProcess("P1"));
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), Process.getProcess("P1"), false);
 
         log.info("{}", newAndUpdatedFiles);
 
@@ -95,7 +96,7 @@ public class TaskResultParserTest {
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
         final Process p1 = Process.getProcess("P1");
-        final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1, false);
 
         log.info("{}", newAndUpdatedFiles);
 
@@ -139,7 +140,7 @@ public class TaskResultParserTest {
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
         final Process p1 = Process.getProcess("P1");
-        final Set<PathLocationWrapperPair> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1, false);
 
         log.info("{}", newAndUpdatedFiles);
 

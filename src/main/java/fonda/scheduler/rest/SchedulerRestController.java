@@ -1,7 +1,8 @@
 package fonda.scheduler.rest;
 
 import fonda.scheduler.client.KubernetesClient;
-import fonda.scheduler.model.location.NodeDaemonPair;
+import fonda.scheduler.rest.exceptions.NotARealFileException;
+import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.RandomScheduler;
 import fonda.scheduler.scheduler.Scheduler;
 import fonda.scheduler.model.SchedulerConfig;
@@ -195,13 +196,19 @@ public class SchedulerRestController {
             return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
         }
 
-        NodeDaemonPair nodeDaemonPair = ((SchedulerWithDaemonSet) scheduler).nodeOfLastFileVersion( path );
+        FileResponse fileResponse = null;
+        try {
+            fileResponse = ((SchedulerWithDaemonSet) scheduler).nodeOfLastFileVersion( path );
+            log.info(fileResponse.toString());
+        } catch (NotARealFileException e) {
+            return new ResponseEntity( "Requested path is not a real file: " + path , HttpStatus.BAD_REQUEST );
+        }
 
-        if ( nodeDaemonPair == null ){
+        if ( fileResponse == null ){
             return new ResponseEntity( "No node for file found: " + path , HttpStatus.NOT_FOUND );
         }
 
-        return new ResponseEntity( nodeDaemonPair, HttpStatus.OK );
+        return new ResponseEntity( fileResponse, HttpStatus.OK );
 
     }
 

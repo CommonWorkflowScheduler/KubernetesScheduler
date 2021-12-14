@@ -6,7 +6,7 @@ import fonda.scheduler.model.location.hierachy.RealFile;
 import java.nio.file.Path;
 import java.util.List;
 
-public class PathFileLocationTriple {
+public class PathFileLocationTriple implements Input {
 
     public final Path path;
     public final RealFile file;
