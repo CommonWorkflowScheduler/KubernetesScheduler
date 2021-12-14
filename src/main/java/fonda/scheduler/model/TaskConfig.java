@@ -15,7 +15,7 @@ public class TaskConfig {
     private final Map< String, List<Object>> schedulerParams;
     private final TaskInput inputs;
     private final String hash;
-    private final int cpus;
+    private final float cpus;
     private final long memoryInBytes;
 
     private TaskConfig() {
