@@ -1,4 +1,4 @@
-package fonda.scheduler.model;
+package fonda.scheduler.model.outfiles;
 
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import lombok.Getter;

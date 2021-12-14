@@ -1,4 +1,4 @@
-package fonda.scheduler.scheduler.util;
+package fonda.scheduler.util;
 
 import fonda.scheduler.model.Task;
 import lombok.Getter;
