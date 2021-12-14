@@ -1,11 +1,9 @@
 package fonda.scheduler.model;
 
 import fonda.scheduler.model.location.NodeLocation;
-import fonda.scheduler.scheduler.util.Batch;
-import io.fabric8.kubernetes.api.model.Pod;
+import fonda.scheduler.util.Batch;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.tomcat.jni.Proc;
 
 public class Task {
 
