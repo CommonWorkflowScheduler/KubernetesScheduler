@@ -2,8 +2,8 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
-import fonda.scheduler.scheduler.util.Batch;
-import fonda.scheduler.scheduler.util.NodeTaskAlignment;
+import fonda.scheduler.util.Batch;
+import fonda.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Binding;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectReference;
@@ -15,6 +15,9 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
 
 @Slf4j
@@ -224,6 +227,14 @@ public abstract class Scheduler {
     }
 
     void assignTaskToNode( NodeTaskAlignment alignment ){
+
+        final File nodeFile = new File(alignment.task.getWorkingDir() + '/' + ".command.node");
+
+        try(PrintWriter printWriter = new PrintWriter(nodeFile)){
+            printWriter.println( alignment.node.getName() );
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
         alignment.task.setNode( alignment.node.getNodeLocation() );
 
