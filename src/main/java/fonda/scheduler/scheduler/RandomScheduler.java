@@ -23,7 +23,7 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
     }
 
     @Override
-    public List<NodeTaskAlignment> getTaskNodeAlignment( final List<Task> unscheduledTasks ){
+    public ScheduleObject getTaskNodeAlignment( final List<Task> unscheduledTasks ){
         List<NodeWithAlloc> items = getNodeList();
         List<NodeTaskAlignment> alignment = new LinkedList<>();
 
@@ -47,7 +47,8 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
                     .filter(
                             x -> availableByNode.get(x.getName()).higherOrEquals(pod.getRequest())
                                     && this.getDaemonOnNode(x) != null
-                                    && !x.getName().equals(this.getWorkflowEngineNode()))
+                                    //&& !x.getName().equals(this.getWorkflowEngineNode())
+                    )
                     .collect(Collectors.toList());
             System.out.println("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
             Optional<NodeWithAlloc> node = matchingNodes.isEmpty()
@@ -65,7 +66,9 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
             }
         }
         System.out.flush();
-        return alignment;
+        final ScheduleObject scheduleObject = new ScheduleObject(alignment);
+        scheduleObject.setCheckStillPossible( true );
+        return scheduleObject;
     }
 
     FileAlignment scheduleFiles(Task task, List<Input> inputsOfTask, NodeWithAlloc node) {

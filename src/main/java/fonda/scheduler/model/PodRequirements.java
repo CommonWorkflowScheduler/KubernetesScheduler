@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 
 public class PodRequirements {
 
+    public static final PodRequirements ZERO = new PodRequirements();
+
     @Getter
     private BigDecimal cpu;
     @Getter

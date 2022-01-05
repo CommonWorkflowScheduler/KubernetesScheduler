@@ -77,21 +77,40 @@ public abstract class Scheduler {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
-        final List<NodeTaskAlignment> taskNodeAlignment = getTaskNodeAlignment(unscheduledTasks);
+        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks);
+        final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
+
         //check if still possible...
-        boolean possible = true;
-        if (!possible) return taskNodeAlignment.size();
+        if ( scheduleObject.isCheckStillPossible() ) {
+            boolean possible = validSchedulePlan ( taskNodeAlignment );
+            if (!possible) return taskNodeAlignment.size();
+        }
 
         for (NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment) {
             if (isClose()) return -1;
             assignTaskToNode( nodeTaskAlignment );
             taskWasScheduled(nodeTaskAlignment.task);
-
         }
         return unscheduledTasks.size() - taskNodeAlignment.size();
     }
 
-    abstract List<NodeTaskAlignment> getTaskNodeAlignment( final List<Task> unscheduledTasks );
+    public boolean validSchedulePlan( List<NodeTaskAlignment> taskNodeAlignment ){
+        List<NodeWithAlloc> items = getNodeList();
+        Map< NodeWithAlloc,PodRequirements> availableByNode = new HashMap<>();
+        for ( NodeWithAlloc item : items ) {
+            final PodRequirements availableResources = item.getAvailableResources();
+            availableByNode.put(item, availableResources);
+        }
+        for ( NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment ) {
+            availableByNode.get(nodeTaskAlignment.node).subFromThis(nodeTaskAlignment.task.getPod().getRequest());
+        }
+        for ( Map.Entry<NodeWithAlloc, PodRequirements> e : availableByNode.entrySet() ) {
+            if ( ! e.getValue().higherOrEquals( PodRequirements.ZERO ) ) return false;
+        }
+        return true;
+    }
+
+    abstract ScheduleObject getTaskNodeAlignment( final List<Task> unscheduledTasks );
 
     abstract int terminateTasks( final List<Task> finishedTasks );
 
