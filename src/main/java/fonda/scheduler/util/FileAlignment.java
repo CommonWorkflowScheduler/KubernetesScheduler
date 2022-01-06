@@ -7,6 +7,10 @@ import java.util.Map;
 
 public class FileAlignment {
 
+    /*
+    Key: node
+    Value: Files from the node
+     */
     public final Map<String, List<FilePath>> nodeFileAlignment;
     public final List<SymlinkInput> symlinks;
 

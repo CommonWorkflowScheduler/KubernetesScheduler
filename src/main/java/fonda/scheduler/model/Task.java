@@ -1,9 +1,13 @@
 package fonda.scheduler.model;
 
 import fonda.scheduler.model.location.NodeLocation;
+import fonda.scheduler.model.location.hierachy.LocationWrapper;
+import fonda.scheduler.model.location.hierachy.RealFile;
 import fonda.scheduler.util.Batch;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 public class Task {
 
@@ -14,6 +18,10 @@ public class Task {
 
     @Getter
     private final Process process;
+
+    @Getter
+    @Setter
+    private List< TaskInputFileLocationWrapper > inputFiles;
 
     @Getter
     @Setter

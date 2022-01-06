@@ -1,6 +1,7 @@
 package fonda.scheduler.model.location.hierachy;
 
 import fonda.scheduler.model.Process;
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.LocationType;
 import lombok.Getter;
 
@@ -85,6 +86,13 @@ public class RealFile extends AbstractFile {
             }
         }
         return lastLocation;
+    }
+
+    public LocationWrapper getLocationWrapper( Location location ){
+        for (LocationWrapper locationWrapper : locations) {
+            if ( locationWrapper.getLocation() == location ) return locationWrapper;
+        }
+        throw new RuntimeException( "Not found: " + location.getIdentifier() );
     }
 
 }

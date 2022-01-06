@@ -3,6 +3,7 @@ package fonda.scheduler.scheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.LocationType;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
@@ -21,6 +22,7 @@ import fonda.scheduler.util.inputs.Input;
 import fonda.scheduler.util.inputs.PathFileLocationTriple;
 import fonda.scheduler.util.inputs.SymlinkInput;
 import fonda.scheduler.util.FilePath;
+import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
@@ -71,7 +73,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     
     @Override
     void assignTaskToNode( NodeTaskAlignment alignment ) {
-        writeInitConfig( (NodeTaskFilesAlignment) alignment );
+        final List< TaskInputFileLocationWrapper > locationWrappers = writeInitConfig((NodeTaskFilesAlignment) alignment);
+        alignment.task.setInputFiles( locationWrappers );
         getCopyStrategy().generateCopyScript( alignment.task );
         super.assignTaskToNode( alignment );
     }
@@ -108,9 +111,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return 0;
     }
 
-    boolean writeInitConfig( NodeTaskFilesAlignment alignment ) {
+    List<TaskInputFileLocationWrapper> writeInitConfig( NodeTaskFilesAlignment alignment ) {
 
         final File config = new File(alignment.task.getWorkingDir() + '/' + ".command.inputs.json");
+        LinkedList< TaskInputFileLocationWrapper > inputFiles = new LinkedList();
         try {
             final Inputs inputs = new Inputs(
                     this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/"
@@ -122,17 +126,34 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                                     .map(x -> x.path)
                                                     .collect(Collectors.toList());
                 inputs.data.add( new InputEntry( getDaemonOnNode( entry.getKey() ), entry.getKey(), collect ) );
+
+                final NodeLocation location = NodeLocation.getLocation( entry.getKey() );
+                for (FilePath filePath : entry.getValue()) {
+                    final LocationWrapper locationWrapper = filePath.file.getLocationWrapper(location);
+                    inputFiles.add(
+                            new TaskInputFileLocationWrapper(
+                                filePath.file,
+                                new LocationWrapper(
+                                        location,
+                                        locationWrapper.getTimestamp(),
+                                        locationWrapper.getSizeInBytes(),
+                                        locationWrapper.getProcess()
+                                )
+                            )
+                    );
+                }
+
             }
             for (SymlinkInput symlink : alignment.fileAlignment.symlinks) {
                 inputs.symlinks.add( symlink );
             }
 
             new ObjectMapper().writeValue( config, inputs );
-            return true;
+            return inputFiles;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return false;
+        return null;
     }
 
     private Stream<Input> streamFile(
@@ -219,6 +240,19 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
     }
 
+    private void podWasInitialized( Pod pod ){
+        final Task task = changeStateOfTask(pod, State.PREPARED);
+        task.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::apply );
+    }
+
+    /**
+     * Since task was not yet initialized: set scheduled
+     * @param task
+     */
+    void taskWasScheduledSetState( Task task ){
+        task.getState().setState( State.SCHEDULED );
+    }
+
     @Override
     void podEventReceived(Watcher.Action action, Pod pod){
         if ( pod.getMetadata().getName().equals( this.getExecution().replace('_', '-') ) ){
@@ -242,13 +276,23 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                             daemonByNode.remove(nodeName);
                         }
                     } else if ( pod.getStatus().getPhase().equals("Running") ) {
-                        daemonByNode.put( nodeName, pod.getStatus().getPodIP());
+                        daemonByNode.put( nodeName, pod.getStatus().getPodIP() );
                         informResourceChange();
                     } else if ( podIsCurrentDaemon ) {
                         daemonByNode.remove(nodeName);
                         if( !pod.getStatus().getPhase().equals("Failed") ){
                             log.info( "Unexpected phase {} for daemon: {}", pod.getStatus().getPhase(), podName );
                         }
+                    }
+                }
+            }
+        } else if ( this.getName().equals(pod.getSpec().getSchedulerName())) {
+            if ( action == Watcher.Action.MODIFIED ){
+                Task t = getTaskByPod( pod );
+                if ( t.getState().getState() == State.SCHEDULED ) {
+                    final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
+                    if ( ! initContainerStatuses.isEmpty() && initContainerStatuses.get(0).getState().getTerminated() != null ) {
+                        podWasInitialized( pod );
                     }
                 }
             }

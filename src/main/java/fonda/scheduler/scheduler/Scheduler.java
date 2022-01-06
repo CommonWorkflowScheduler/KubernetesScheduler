@@ -175,7 +175,11 @@ public abstract class Scheduler {
         synchronized (unscheduledTasks){
             unscheduledTasks.remove( task );
         }
-        task.getState().setState( State.SCHEDULED );
+        taskWasScheduledSetState( task );
+    }
+
+    void taskWasScheduledSetState( Task task ){
+        task.getState().setState( State.PREPARED );
     }
 
     public void markPodAsDeleted( PodWithAge pod ) {
@@ -306,7 +310,7 @@ public abstract class Scheduler {
      * @param state
      * @return returns the task, if the state was changed
      */
-    private Task changeStateOfTask( Pod pod, State state ){
+    Task changeStateOfTask(Pod pod, State state){
         Task t = getTaskByPod( pod );
         if( t != null ){
             synchronized ( t.getState() ){
@@ -332,7 +336,7 @@ public abstract class Scheduler {
         }
     }
 
-    private Task getTaskByPod( Pod pod ) {
+    Task getTaskByPod( Pod pod ) {
         Task t = null;
         synchronized (tasksByHash) {
             if( tasksByHash.containsKey( pod.getMetadata().getName() ) ){
