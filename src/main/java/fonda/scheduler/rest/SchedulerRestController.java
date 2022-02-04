@@ -1,6 +1,10 @@
 package fonda.scheduler.rest;
 
 import fonda.scheduler.client.KubernetesClient;
+import fonda.scheduler.dag.DAG;
+import fonda.scheduler.dag.Edge;
+import fonda.scheduler.dag.InputEdge;
+import fonda.scheduler.dag.Vertex;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.RandomScheduler;
@@ -16,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -249,6 +254,41 @@ public class SchedulerRestController {
 
     private Pair getKey(String namespace, String execution ){
         return new Pair(namespace.toLowerCase(), execution.toLowerCase());
+    }
+
+    @PutMapping("/scheduler/DAG/addVertices/{namespace}/{execution}")
+    ResponseEntity addVertices(@PathVariable String namespace, @PathVariable String execution, @RequestBody List<Vertex> vertices ) {
+
+        log.trace( "submit vertices: {}", vertices );
+
+        final Pair<String, String> key = getKey( namespace, execution );
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null ){
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+
+        scheduler.getDag().registerVertices( vertices );
+
+        return new ResponseEntity( HttpStatus.OK );
+
+    }
+
+    @PutMapping("/scheduler/DAG/addEdges/{namespace}/{execution}")
+    ResponseEntity addEdges(@PathVariable String namespace, @PathVariable String execution, @RequestBody List<InputEdge> edges ) {
+
+        log.trace( "submit edges: {}", edges );
+
+        final Pair<String, String> key = getKey( namespace, execution );
+        final Scheduler scheduler = schedulerHolder.get( key );
+        if( scheduler == null ){
+            return new ResponseEntity( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+        }
+
+        final DAG dag = scheduler.getDag();
+        dag.registerEdges( edges );
+
+        return new ResponseEntity( HttpStatus.OK );
+
     }
 
 }

@@ -1,6 +1,7 @@
 package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
+import fonda.scheduler.dag.DAG;
 import fonda.scheduler.model.*;
 import fonda.scheduler.util.Batch;
 import fonda.scheduler.util.NodeTaskAlignment;
@@ -34,6 +35,8 @@ public abstract class Scheduler {
     private final String dns;
     @Getter
     private boolean close;
+    @Getter
+    private DAG dag;
 
     private final Object batchHelper = new Object();
     private int currentBatch = 0;
@@ -55,6 +58,7 @@ public abstract class Scheduler {
         log.trace( "Register scheduler for " + this.name );
         this.client = client;
         this.dns = config.dns;
+        this.dag = new DAG();
 
         PodWatcher podWatcher = new PodWatcher(this);
 
