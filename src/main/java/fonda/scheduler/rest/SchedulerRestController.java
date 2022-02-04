@@ -47,7 +47,7 @@ public class SchedulerRestController {
      * @param config Additional parameters for the scheduler
      * @return
      */
-    @PostMapping("/scheduler/registerScheduler/{namespace}/{execution}/{strategy}")
+    @PutMapping("/scheduler/registerScheduler/{namespace}/{execution}/{strategy}")
     ResponseEntity registerScheduler(@PathVariable String namespace, @PathVariable String execution, @PathVariable String strategy, @RequestBody(required = false) SchedulerConfig config ) {
 
         log.trace("Register execution: {} strategy: {} config: {}", execution, strategy, config);
@@ -79,7 +79,7 @@ public class SchedulerRestController {
      * @param config The config contains the task name, input files, and optional task parameter the scheduler has to determine
      * @return Parameters the scheduler suggests for the task
      */
-    @PostMapping("/scheduler/registerTask/{namespace}/{execution}")
+    @PutMapping("/scheduler/registerTask/{namespace}/{execution}")
     ResponseEntity registerTask(@PathVariable String namespace, @PathVariable String execution, @RequestBody(required = true) TaskConfig config ) {
 
         log.trace( execution + " " + config.getTask() + " got: " + config );
@@ -185,8 +185,8 @@ public class SchedulerRestController {
 
     }
 
-    @PostMapping("/file/{namespace}/{execution}")
-    ResponseEntity getNodeForFile(@PathVariable String namespace, @PathVariable String execution, @RequestBody String path ) {
+    @GetMapping("/file/{namespace}/{execution}")
+    ResponseEntity getNodeForFile(@PathVariable String namespace, @PathVariable String execution, @RequestParam String path ) {
 
         log.info( "Get file location request: {} {} {}", namespace, execution, path );
 
