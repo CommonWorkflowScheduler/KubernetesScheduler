@@ -17,4 +17,14 @@ public class InputEdge {
         this.to = -1;
     }
 
+    /**
+     * Just for testing
+     * @param from
+     * @param to
+     */
+    InputEdge(int from, int to) {
+        label = null;
+        this.from = from;
+        this.to = to;
+    }
 }

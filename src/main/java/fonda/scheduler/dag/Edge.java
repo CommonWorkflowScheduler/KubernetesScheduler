@@ -11,7 +11,7 @@ public class Edge {
     private final Vertex from;
     private final Vertex to;
 
-    public Edge(String label, Vertex from, Vertex to) {
+    Edge(String label, Vertex from, Vertex to) {
         this.label = label;
         this.from = from;
         this.to = to;
