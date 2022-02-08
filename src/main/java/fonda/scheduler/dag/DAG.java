@@ -6,18 +6,17 @@ import java.util.Map;
 
 public class DAG {
 
-    private Map<Integer, Vertex> vertices = new HashMap<>();
-    private Map<String, Vertex> processes = new HashMap<>();
+    private final Map<Integer, Vertex> vertices = new HashMap<>();
+    private final Map<String, Process> processes = new HashMap<>();
 
-    Vertex getByUid( int uid ){
+    private Vertex getByUid( int uid ){
         final Vertex vertex = vertices.get(uid);
         if ( vertex == null ) throw new IllegalStateException( "Cannot find vertex with id " + uid );
         return vertex;
     }
 
-    public Vertex getByProcess( String process ){
-        final Vertex vertex = processes.get( process );
-        return vertex;
+    public Process getByProcess( String s ){
+        return processes.get( s );
     }
 
     public void registerVertices( List<Vertex> vertices ){
@@ -25,8 +24,10 @@ public class DAG {
             synchronized ( this.vertices ) {
                 this.vertices.put( vertex.getUid(), vertex );
             }
-            synchronized ( this.processes ) {
-                this.processes.put( vertex.getLabel(), vertex );
+            if ( vertex.getType() == Type.PROCESS ) {
+                synchronized ( this.processes ) {
+                    this.processes.put( vertex.getLabel(), (Process) vertex );
+                }
             }
         }
     }

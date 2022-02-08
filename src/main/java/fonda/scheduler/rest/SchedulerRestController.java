@@ -2,7 +2,6 @@ package fonda.scheduler.rest;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.dag.DAG;
-import fonda.scheduler.dag.Edge;
 import fonda.scheduler.dag.InputEdge;
 import fonda.scheduler.dag.Vertex;
 import fonda.scheduler.rest.exceptions.NotARealFileException;

@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -45,14 +44,17 @@ public class DAGTest {
 
     public List<Vertex> genVertexList(){
         List<Vertex> vertexList = new LinkedList<>();
-        for (int i = 1; i <= 12; i++) {
-            vertexList.add( new Vertex("" + (char) ('a' + i), Type.PROCESS, i) );
+        int i = 1;
+        for (; i <= 12; i++) {
+            vertexList.add( new Process("" + (char) ('a' + i), i) );
         }
+        vertexList.add( new Origin("Origin", 13 ) );
         return vertexList;
     }
 
     public List<InputEdge> genEdgeList(){
         List<InputEdge> inputEdges = new LinkedList<>();
+        inputEdges.add( new InputEdge(13,1) );
         inputEdges.add( new InputEdge(1,2) );
         inputEdges.add( new InputEdge(1,3) );
         inputEdges.add( new InputEdge(1,4) );
@@ -74,9 +76,9 @@ public class DAGTest {
         return inputEdges;
     }
 
-    public void debug( DAG dag, int length ){
-        for (int i = 1; i <= length; i++) {
-            final Vertex process = dag.getByUid( i );
+    public void debug( List<Vertex> vertices, int start, int end ){
+        for (int i = start; i <= end; i++) {
+            final Vertex process = vertices.get( i ) ;
             log.info( process.toString() );
         }
     }
@@ -89,7 +91,7 @@ public class DAGTest {
             dag.registerVertices( vertexList );
             List<InputEdge> inputEdges = genEdgeList();
             dag.registerEdges( inputEdges );
-            debug( dag, 12 );
+            debug( vertexList, 0, 11 );
             expectedResult ( vertexList );
         }
     }
@@ -103,14 +105,14 @@ public class DAGTest {
             for (int i = 0; i < 500; i++) {
                 int index = new Random().nextInt( inputEdges.size() );
                 final InputEdge remove = inputEdges.remove(index);
-                final Vertex operator = new Vertex("Operator", Type.OPERATOR, vertexList.size() + 1 );
+                final Vertex operator = new Operator("Operator", vertexList.size() + 1 );
                 vertexList.add( operator );
                 inputEdges.add( new InputEdge( remove.getFrom(), operator.getUid() ) );
                 inputEdges.add( new InputEdge( operator.getUid(), remove.getTo() ) );
             }
             dag.registerVertices( vertexList );
             dag.registerEdges( inputEdges );
-            debug( dag, 12 );
+            debug( vertexList, 0, 11 );
             expectedResult ( vertexList );
         }
     }
@@ -120,11 +122,14 @@ public class DAGTest {
 
         final DAG dag = new DAG();
 
-        final Vertex a = new Vertex("a", Type.PROCESS, 1);
-        final Vertex filter = new Vertex("filter", Type.OPERATOR, 2);
-        final Vertex b = new Vertex("b", Type.PROCESS, 3);
+
+        final Origin o = new Origin("o", 1);
+        final Process a = new Process("a", 2);
+        final Operator filter = new Operator("filter", 3);
+        final Process b = new Process("b", 4);
 
         List<Vertex> vertexList = new LinkedList<>();
+        vertexList.add(o);
         vertexList.add(a);
         vertexList.add(filter);
         vertexList.add(b);
@@ -132,11 +137,12 @@ public class DAGTest {
         List<InputEdge> inputEdges = new LinkedList<>();
         inputEdges.add( new InputEdge(1,2) );
         inputEdges.add( new InputEdge(2,3) );
+        inputEdges.add( new InputEdge(3,4) );
 
         dag.registerVertices( vertexList );
         dag.registerEdges( inputEdges );
 
-        debug( dag, vertexList.size() );
+        debug( vertexList, 0, 3 );
 
         assertEquals( new HashSet<>(), a.getAncestors() );
         final HashSet descA = new HashSet<>();
@@ -151,6 +157,13 @@ public class DAGTest {
 
         assertEquals( ancB, filter.getAncestors() );
         assertEquals( descA, filter.getDescendants() );
+
+        assertEquals( new HashSet<>(),o.getAncestors() );
+        final HashSet descO = new HashSet<>();
+
+        descO.add( a );
+        descO.add( b );
+        assertEquals( descO, o.getDescendants() );
 
     }
 
