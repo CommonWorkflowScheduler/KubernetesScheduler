@@ -23,6 +23,7 @@ public class NodeLocation extends Location {
     }
 
     public static NodeLocation getLocation( String node ){
+        if ( node == null ) throw new IllegalArgumentException("Node cannot be null");
         final NodeLocation nodeLocation = locationHolder.get(node);
         if ( nodeLocation == null ){
             locationHolder.putIfAbsent( node, new NodeLocation( node ) );
