@@ -71,6 +71,7 @@ public class SchedulerRestController {
 
         final Pair<String, String> key = getKey( namespace, execution );
         schedulerHolder.put( key, scheduler );
+        client.addScheduler( scheduler );
 
         return new ResponseEntity( HttpStatus.OK );
 
@@ -164,6 +165,7 @@ public class SchedulerRestController {
             return new ResponseEntity( "No scheduler for: " + execution, HttpStatus.NOT_FOUND );
         }
         schedulerHolder.remove( key );
+        client.removeScheduler( scheduler );
         scheduler.close();
         return new ResponseEntity( HttpStatus.OK );
     }
