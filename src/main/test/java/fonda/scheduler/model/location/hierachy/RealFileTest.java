@@ -1,7 +1,10 @@
 package fonda.scheduler.model.location.hierachy;
 
-import fonda.scheduler.model.Process;
+import fonda.scheduler.dag.DAG;
+import fonda.scheduler.dag.Process;
+import fonda.scheduler.dag.Vertex;
 import fonda.scheduler.model.location.NodeLocation;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
@@ -12,8 +15,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RealFileTest {
 
+    private DAG dag;
+
+    @Before
+    public void before(){
+        dag = new DAG();
+        List<Vertex> vertexList = new LinkedList<>();
+        vertexList.add(new Process("processA", 1));
+        vertexList.add(new Process("processB", 2));
+        dag.registerVertices(vertexList);
+    }
+
     private LocationWrapper getLocationWrapper( String location ){
-        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, Process.getProcess("processA") );
+        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, dag.getByProcess("processA") );
     }
 
 
@@ -88,7 +102,7 @@ public class RealFileTest {
         final LocationWrapper node3 = getLocationWrapper("Node3");
         realFile.addOrUpdateLocation( false, node3);
 
-        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("NodeNew"), 5, 120, Process.getProcess("processB") );
+        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("NodeNew"), 5, 120, dag.getByProcess("processB") );
         realFile.addOrUpdateLocation( false,  nodeNew );
         LocationWrapper[] expected = { node0, node1, node2, node3, nodeNew };
         assertArrayEquals( expected, realFile.getLocations() );
@@ -100,12 +114,12 @@ public class RealFileTest {
 
         final RealFile realFile = new RealFile( getLocationWrapper("Node0") );
 
-        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("Node0"), 5, 120, Process.getProcess("processA") );
+        final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("Node0"), 5, 120, dag.getByProcess("processA") );
         realFile.addOrUpdateLocation( false,  nodeNew );
         LocationWrapper[] expected = { nodeNew };
         assertArrayEquals( expected, realFile.getLocations() );
 
-        final LocationWrapper nodeNew2 = new LocationWrapper(NodeLocation.getLocation("Node0"), 6, 170, Process.getProcess("processB") );
+        final LocationWrapper nodeNew2 = new LocationWrapper(NodeLocation.getLocation("Node0"), 6, 170, dag.getByProcess("processB") );
         realFile.addOrUpdateLocation( false,  nodeNew2 );
         LocationWrapper[] expected2 = { nodeNew2 };
         assertArrayEquals( expected2, realFile.getLocations() );

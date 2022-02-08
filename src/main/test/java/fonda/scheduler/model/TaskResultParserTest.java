@@ -1,5 +1,8 @@
 package fonda.scheduler.model;
 
+import fonda.scheduler.dag.DAG;
+import fonda.scheduler.dag.Process;
+import fonda.scheduler.dag.Vertex;
 import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.outfiles.OutputFile;
@@ -40,6 +43,17 @@ public class TaskResultParserTest {
         return tmpDir;
     }
 
+    private DAG dag;
+
+    @Before
+    public void before(){
+        dag = new DAG();
+        List<Vertex> vertexList = new LinkedList<>();
+        final Process a = new Process("P1", 2);
+        vertexList.add(a);
+        dag.registerVertices(vertexList);
+    }
+
 
     @Test
     public void test1(){
@@ -60,7 +74,7 @@ public class TaskResultParserTest {
         final Path path = storeData(infiles, outfiles);
 
         final TaskResultParser taskResultParser = new TaskResultParser();
-        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), Process.getProcess("P1"), false);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), dag.getByProcess("P1"), false);
 
         log.info("{}", newAndUpdatedFiles);
 
@@ -95,7 +109,7 @@ public class TaskResultParserTest {
 
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
-        final Process p1 = Process.getProcess("P1");
+        final Process p1 = dag.getByProcess("P1");
         final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1, false);
 
         log.info("{}", newAndUpdatedFiles);
@@ -139,7 +153,7 @@ public class TaskResultParserTest {
 
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
-        final Process p1 = Process.getProcess("P1");
+        final Process p1 = dag.getByProcess("P1");
         final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1, false);
 
         log.info("{}", newAndUpdatedFiles);

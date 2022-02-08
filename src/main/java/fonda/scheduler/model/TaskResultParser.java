@@ -6,6 +6,7 @@ import fonda.scheduler.model.outfiles.OutputFile;
 import fonda.scheduler.model.outfiles.PathLocationWrapperPair;
 import fonda.scheduler.model.outfiles.SymlinkOutput;
 import lombok.extern.slf4j.Slf4j;
+import fonda.scheduler.dag.Process;
 
 import java.io.File;
 import java.io.FileNotFoundException;

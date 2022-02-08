@@ -1,10 +1,12 @@
 package fonda.scheduler.model.location.hierachy;
 
-import fonda.scheduler.model.Process;
+import fonda.scheduler.dag.DAG;
+import fonda.scheduler.dag.Vertex;
 import fonda.scheduler.model.location.NodeLocation;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,14 +23,23 @@ public class HierarchyWrapperTest {
     List<Path> files;
     Collection<Path> result;
     String temporaryDir = workdir + "/ab/abcdasdasd/test/./abcd/";
-    LocationWrapper node1 = getLocationWrapper("Node1");
+    LocationWrapper node1;
+    DAG dag;
 
     private LocationWrapper getLocationWrapper( String location ){
-        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, Process.getProcess("processA") );
+        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, dag.getByProcess("processA") );
     }
 
     @Before
     public void init() {
+        dag = new DAG();
+        List<Vertex> vertexList = new LinkedList<>();
+        vertexList.add(new fonda.scheduler.dag.Process("processA", 1));
+        vertexList.add(new fonda.scheduler.dag.Process("processB", 2));
+        dag.registerVertices(vertexList);
+
+        node1 = getLocationWrapper("Node1");
+
         hw = new HierarchyWrapper(workdir);
         files = new LinkedList();
 

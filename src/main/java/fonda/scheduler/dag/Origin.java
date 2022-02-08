@@ -5,7 +5,12 @@ import java.util.Set;
 
 public class Origin extends NotProcess {
 
-    Origin(String label, int uid) {
+    /**
+     * Only public for tests
+     * @param label
+     * @param uid
+     */
+    public Origin(String label, int uid) {
         super(label, uid);
     }
 

@@ -1,6 +1,6 @@
 package fonda.scheduler.model.location.hierachy;
 
-import fonda.scheduler.model.Process;
+import fonda.scheduler.dag.Process;
 import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.LocationType;
 import lombok.Getter;

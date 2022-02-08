@@ -1,8 +1,8 @@
 package fonda.scheduler.model;
 
+import fonda.scheduler.dag.DAG;
+import fonda.scheduler.dag.Process;
 import fonda.scheduler.model.location.NodeLocation;
-import fonda.scheduler.model.location.hierachy.LocationWrapper;
-import fonda.scheduler.model.location.hierachy.RealFile;
 import fonda.scheduler.util.Batch;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,9 +35,9 @@ public class Task {
     @Setter
     private Batch batch;
 
-    public Task(TaskConfig config) {
+    public Task( TaskConfig config, DAG dag ) {
         this.config = config;
-        this.process = Process.getProcess( config.getTask() );
+        this.process = dag.getByProcess( config.getTask() );
     }
 
     public String getWorkingDir(){

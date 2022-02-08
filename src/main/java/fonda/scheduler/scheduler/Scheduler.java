@@ -194,7 +194,7 @@ public abstract class Scheduler {
     /* External access to Tasks */
 
     public void addTask( TaskConfig conf ) {
-        final Task task = new Task(conf);
+        final Task task = new Task( conf, dag );
         synchronized (tasksByHash) {
             if( ! tasksByHash.containsKey( conf.getHash() ) ){
                 tasksByHash.put( conf.getHash(), task );

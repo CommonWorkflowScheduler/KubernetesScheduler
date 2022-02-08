@@ -9,7 +9,12 @@ public class Process extends Vertex {
     final Set<Process> descendants;
     final Set<Process> ancestors;
 
-    Process( String label, int uid ) {
+    /**
+     * Only public for tests
+     * @param label
+     * @param uid
+     */
+    public Process(String label, int uid) {
         super(label, uid);
         descendants = new HashSet<>();
         ancestors = new HashSet<>();
