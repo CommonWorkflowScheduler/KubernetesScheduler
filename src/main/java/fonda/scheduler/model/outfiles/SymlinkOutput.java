@@ -29,4 +29,9 @@ public class SymlinkOutput extends OutputFile {
     public int hashCode() {
         return Objects.hash(super.hashCode(), dst);
     }
+
+    @Override
+    public String toString() {
+        return "SymlinkOutput{" + super.getPath() + " -> " + getDst() + "}";
+    }
 }
