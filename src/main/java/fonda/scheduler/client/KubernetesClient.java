@@ -3,19 +3,16 @@ package fonda.scheduler.client;
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.PodWithAge;
 import fonda.scheduler.scheduler.Scheduler;
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ContainerStatus;
+import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.base.OperationContext;
-import io.fabric8.kubernetes.client.informers.ListerWatcher;
-import io.fabric8.kubernetes.client.informers.SharedInformerEventListener;
-import io.fabric8.kubernetes.client.informers.impl.DefaultSharedIndexInformer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Slf4j
 public class KubernetesClient extends DefaultKubernetesClient  {
@@ -23,27 +20,26 @@ public class KubernetesClient extends DefaultKubernetesClient  {
     private final Map<String, NodeWithAlloc> nodeHolder= new HashMap<>();
     private final List<Scheduler> schedulerList = new LinkedList<>();
     private OperationContext operationContext;
-    private DefaultSharedIndexInformer<Node, NodeList> defaultSharedIndexInformerNode;
-    private ConcurrentLinkedQueue<SharedInformerEventListener> workerQueueNode;
 
 
     public KubernetesClient(){
         this.operationContext = new OperationContext();
-        this.workerQueueNode = new ConcurrentLinkedQueue<>();
-        setUpIndexInformerNode();
         for( Node node : this.nodes().list().getItems() ){
             nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node) );
         }
         this.pods().inAnyNamespace().watch( new PodWatcher( this ) );
+        this.nodes().watch( new NodeWatcher( this ) );
     }
 
     public void addScheduler( Scheduler scheduler ){
+        log.info("Added scheduler {}", scheduler.getName());
         synchronized ( schedulerList ){
             schedulerList.add( scheduler );
         }
     }
 
     public void removeScheduler( Scheduler scheduler ){
+        log.info("Removed scheduler {}", scheduler.getName());
         synchronized ( schedulerList ){
             schedulerList.remove( scheduler );
         }
@@ -75,32 +71,6 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     public List<NodeWithAlloc> getAllNodes(){
         return new ArrayList<>(this.nodeHolder.values());
-    }
-
-    /**
-     *
-     */
-    private void setUpIndexInformerNode() {
-        ListerWatcher listerWatcher = new ListerWatcher() {
-            @Override
-            public Watch watch(ListOptions params, String namespace, OperationContext context, Watcher watcher) {
-                return KubernetesClient.this.nodes().watch(new NodeWatcher( KubernetesClient.this ));
-            }
-
-            @Override
-            public Object list(ListOptions params, String namespace, OperationContext context) {
-                return KubernetesClient.this.nodes().list();
-            }
-        };
-
-        defaultSharedIndexInformerNode = new DefaultSharedIndexInformer(Node.class, listerWatcher, 6000, this.operationContext, this.workerQueueNode);
-
-        try {
-            defaultSharedIndexInformerNode.run();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
     class NodeWatcher implements Watcher<Node>{
