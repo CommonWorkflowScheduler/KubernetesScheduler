@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,6 +46,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     @Getter
     private final CopyStrategy copyStrategy;
     final HierarchyWrapper hierarchyWrapper;
+    private final ConcurrentHashMap<Long,LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
 
     SchedulerWithDaemonSet(String execution, KubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
@@ -201,7 +203,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 .collect(Collectors.toList());
     }
 
-    public FileResponse nodeOfLastFileVersion(String path ) throws NotARealFileException {
+    public FileResponse nodeOfLastFileVersion( String path ) throws NotARealFileException {
         LinkedList<SymlinkInput> symlinks = new LinkedList<>();
         Path currentPath = Paths.get(path);
         fonda.scheduler.model.location.hierachy.File currentFile = hierarchyWrapper.getFile( currentPath );
@@ -223,13 +225,21 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final RealFile file = (RealFile) currentFile;
         final LocationWrapper lastUpdate = file.getLastUpdate(LocationType.NODE);
         if( lastUpdate == null ) return null;
+        requestedLocations.put( lastUpdate.getId(), lastUpdate );
         String node = lastUpdate.getLocation().getIdentifier();
-        return new FileResponse( currentPath.toString(), node, getDaemonOnNode(node), node.equals(workflowEngineNode), symlinks );
+        return new FileResponse( currentPath.toString(), node, getDaemonOnNode(node), node.equals(workflowEngineNode), symlinks, lastUpdate.getId() );
     }
 
-    public void addFile( String path, long size, long timestamp, boolean overwrite, String node ){
+    public void addFile( String path, long size, long timestamp, long locationWrapperID, boolean overwrite, String node ){
         final NodeLocation location = NodeLocation.getLocation( node == null ? workflowEngineNode : node );
-        final LocationWrapper locationWrapper = new LocationWrapper( location, timestamp, size, null);
+
+        LocationWrapper locationWrapper;
+        if( !overwrite && locationWrapperID != -1 ){
+            locationWrapper = requestedLocations.get( locationWrapperID ).getCopyOf( location );
+        } else {
+            locationWrapper = new LocationWrapper( location, timestamp, size, null);
+        }
+
         hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
     }
 

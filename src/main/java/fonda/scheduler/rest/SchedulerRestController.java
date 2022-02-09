@@ -243,7 +243,7 @@ public class SchedulerRestController {
 
         boolean overwrite = method.equals("overwrite");
 
-        ((SchedulerWithDaemonSet) scheduler).addFile( pa.getPath(), pa.getSize(), pa.getTimestamp(), overwrite, node );
+        ((SchedulerWithDaemonSet) scheduler).addFile( pa.getPath(), pa.getSize(), pa.getTimestamp(), pa.getLocationWrapperID(), overwrite, node );
 
         return new ResponseEntity<>( HttpStatus.OK );
 

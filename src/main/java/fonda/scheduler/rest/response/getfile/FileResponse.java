@@ -12,14 +12,16 @@ public class FileResponse {
     public final String daemon;
     public final List<SymlinkInput> symlinks;
     public final boolean notInContext;
+    public final long locationWrapperID;
 
-    public FileResponse( String path, String node, String daemon, boolean sameAsEngine, List<SymlinkInput> symlinks) {
+    public FileResponse( String path, String node, String daemon, boolean sameAsEngine, List<SymlinkInput> symlinks, long locationWrapperID) {
         this.path = path;
         this.sameAsEngine = sameAsEngine;
         this.node = node;
         this.daemon = daemon;
         this.symlinks = symlinks;
         notInContext = false;
+        this.locationWrapperID = locationWrapperID;
     }
 
     public FileResponse( String path, List<SymlinkInput> symlinks) {
@@ -29,6 +31,7 @@ public class FileResponse {
         this.daemon = null;
         this.symlinks = symlinks;
         notInContext = true;
+        locationWrapperID = -1;
     }
 
     @Override

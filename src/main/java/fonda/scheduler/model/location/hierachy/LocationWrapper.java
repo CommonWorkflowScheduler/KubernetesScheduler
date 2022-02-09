@@ -5,10 +5,14 @@ import fonda.scheduler.model.location.Location;
 import lombok.Getter;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Getter
 public class LocationWrapper {
 
+    static private final AtomicLong nextID = new AtomicLong(0);
+
+    private final long id = nextID.getAndIncrement();
     private final Location location;
     private final long timestamp;
     private final long sizeInBytes;
