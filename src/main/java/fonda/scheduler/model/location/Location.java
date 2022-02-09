@@ -1,7 +1,5 @@
 package fonda.scheduler.model.location;
 
-import lombok.Getter;
-
 import java.util.Objects;
 
 public abstract class Location {
@@ -13,7 +11,7 @@ public abstract class Location {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof Location) ) return false;
+        if (!(o instanceof Location)) return false;
         Location that = (Location) o;
         return ( getType() == that.getType() ) && ( getIdentifier().equals( that.getIdentifier() ));
     }

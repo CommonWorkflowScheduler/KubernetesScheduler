@@ -11,6 +11,7 @@ import static org.junit.Assert.*;
 public class DAGTest {
 
     private void compare(int uid, List<Vertex> vertices, int[] ancestorIds, int[] descedantsIds ){
+        //noinspection OptionalGetWithoutIsPresent
         final Vertex vertex = vertices.stream().filter(v -> v.getUid() == uid).findFirst().get();
 
         if( vertex.getAncestors() == null ){
@@ -145,12 +146,12 @@ public class DAGTest {
         debug( vertexList, 0, 3 );
 
         assertEquals( new HashSet<>(), a.getAncestors() );
-        final HashSet descA = new HashSet<>();
+        final HashSet<Process> descA = new HashSet<>();
         descA.add( b );
         assertEquals( descA, a.getDescendants() );
 
 
-        final HashSet ancB = new HashSet<>();
+        final HashSet<Process> ancB = new HashSet<>();
         ancB.add( a );
         assertEquals( new HashSet<>(), b.getDescendants() );
         assertEquals( ancB, b.getAncestors() );
@@ -159,7 +160,7 @@ public class DAGTest {
         assertEquals( descA, filter.getDescendants() );
 
         assertEquals( new HashSet<>(),o.getAncestors() );
-        final HashSet descO = new HashSet<>();
+        final HashSet<Process> descO = new HashSet<>();
 
         descO.add( a );
         descO.add( b );

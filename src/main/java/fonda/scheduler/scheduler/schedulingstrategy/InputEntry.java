@@ -1,6 +1,5 @@
 package fonda.scheduler.scheduler.schedulingstrategy;
 
-import java.util.LinkedList;
 import java.util.List;
 
 public class InputEntry {

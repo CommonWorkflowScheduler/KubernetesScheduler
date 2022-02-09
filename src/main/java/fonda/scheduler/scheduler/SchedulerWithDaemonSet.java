@@ -3,7 +3,6 @@ package fonda.scheduler.scheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
-import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.LocationType;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
@@ -115,7 +114,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     List<TaskInputFileLocationWrapper> writeInitConfig( NodeTaskFilesAlignment alignment ) {
 
         final File config = new File(alignment.task.getWorkingDir() + '/' + ".command.inputs.json");
-        LinkedList< TaskInputFileLocationWrapper > inputFiles = new LinkedList();
+        LinkedList< TaskInputFileLocationWrapper > inputFiles = new LinkedList<>();
         try {
             final Inputs inputs = new Inputs(
                     this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/"
@@ -140,9 +139,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 }
 
             }
-            for (SymlinkInput symlink : alignment.fileAlignment.symlinks) {
-                inputs.symlinks.add( symlink );
-            }
+            inputs.symlinks.addAll(alignment.fileAlignment.symlinks);
 
             new ObjectMapper().writeValue( config, inputs );
             return inputFiles;
@@ -199,7 +196,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 .fileInputs
                 .parallelStream()
                 .map( x -> Path.of(x.value.sourceObj) )
-                .filter( x -> this.hierarchyWrapper.isInScope(x) )
+                .filter(this.hierarchyWrapper::isInScope)
                 .flatMap( sourcePath -> streamFile( hierarchyWrapper.getFile(sourcePath), task, sourcePath ))
                 .collect(Collectors.toList());
     }
@@ -255,11 +252,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             this.workflowEngineNode = pod.getSpec().getNodeName();
             log.info( "WorkflowEngineNode was set to {}", workflowEngineNode );
         }
+        //noinspection LoopConditionNotUpdatedInsideLoop
         while ( daemonByNode == null ){
             //The Watcher can be started before the class is initialized
             try {
                 Thread.sleep(20);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException ignored) {}
         }
         if( ( "mount-" + this.getExecution().replace('_', '-') + "-" ).equals(pod.getMetadata().getGenerateName()) ){
             final String nodeName = pod.getSpec().getNodeName();

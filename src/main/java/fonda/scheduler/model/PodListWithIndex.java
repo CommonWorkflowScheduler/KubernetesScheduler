@@ -10,12 +10,12 @@ import java.util.Map;
 
 public class PodListWithIndex extends PodList {
 
-    private Map<String, Pod> nameIndexMap = new HashMap<>();
+    private final Map<String, Pod> nameIndexMap = new HashMap<>();
 
     public PodListWithIndex() {}
 
     public PodListWithIndex(List<Pod> pods) {
-        pods.forEach( pod -> addPodToList(pod) );
+        pods.forEach(this::addPodToList);
     }
 
     /**

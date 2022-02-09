@@ -11,6 +11,7 @@ public class InputEdge {
     private final int from;
     private final int to;
 
+    @SuppressWarnings("unused")
     private InputEdge() {
         this.label = null;
         this.from = -1;

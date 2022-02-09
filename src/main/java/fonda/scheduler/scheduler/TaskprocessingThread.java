@@ -21,7 +21,7 @@ public class TaskprocessingThread extends Thread {
         int unscheduled = 0;
         while(!Thread.interrupted()){
             try{
-                LinkedList tasks;
+                LinkedList<Task> tasks;
                 synchronized (unprocessedTasks) {
                     do {
                         if (unscheduled == unprocessedTasks.size()) {

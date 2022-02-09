@@ -1,10 +1,8 @@
 package fonda.scheduler.model.location.hierachy;
 
-import fonda.scheduler.dag.Process;
 import fonda.scheduler.model.Task;
 import fonda.scheduler.model.location.Location;
 import lombok.Getter;
-import lombok.ToString;
 
 import java.util.Objects;
 

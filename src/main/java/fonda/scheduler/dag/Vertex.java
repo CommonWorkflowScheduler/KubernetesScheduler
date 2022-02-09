@@ -36,7 +36,7 @@ public abstract class Vertex {
     @Override
     public String toString() {
         return getType() + "{" +
-                label != null ? ("label='" + label + "', '") : "" +
+                (label != null ? ("label='" + label + "', '") : "") +
                 "uid=" + uid +
                 ", descendants=" + collectionToString( getDescendants() ) +
                 ", ancestors=" + collectionToString( getAncestors() ) +

@@ -29,7 +29,7 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
 
         Map<String,PodRequirements> availableByNode = new HashMap<>();
 
-        List<String> logInfo = new LinkedList();
+        List<String> logInfo = new LinkedList<>();
         logInfo.add("------------------------------------");
         for (NodeWithAlloc item : items) {
             final PodRequirements availableResources = item.getAvailableResources();

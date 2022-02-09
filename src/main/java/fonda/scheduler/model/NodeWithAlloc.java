@@ -17,7 +17,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     private final PodRequirements max_resources;
 
-    Map<String, PodRequirements> assignedPods;
+    final Map<String, PodRequirements> assignedPods;
 
     @Getter
     private final NodeLocation nodeLocation;
@@ -48,7 +48,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     public void addPod( PodWithAge pod ){
         PodRequirements request = pod.getRequest();
         synchronized (assignedPods) {
-            assignedPods.put( pod.getMetadata().getUid(), request );;
+            assignedPods.put( pod.getMetadata().getUid(), request );
         }
     }
 

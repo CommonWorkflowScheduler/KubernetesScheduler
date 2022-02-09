@@ -60,7 +60,9 @@ public class TaskResultParser {
         final Path outfile = workdir.resolve(".command.outfiles");
 
         String taskRootDir = getRootDir( infile.toFile() );
+        if( taskRootDir == null ) throw new IllegalStateException("taskRootDir is null");
         String outputRootDir = getRootDir( outfile.toFile() );
+        if( outputRootDir == null ) throw new IllegalStateException("outputRootDir is null");
 
         final Map<String, String> inputdata = new HashMap<>();
 

@@ -42,7 +42,7 @@ public class TaskResultParserTest {
                 pw.println( s );
             }
             pw.close();
-        } catch ( Exception e ){}
+        } catch ( Exception ignored ){}
         return tmpDir;
     }
 
@@ -61,7 +61,7 @@ public class TaskResultParserTest {
     @Test
     public void test1(){
 
-        String infiles[] = {
+        String[] infiles = {
                 "/tmp/nxf.3iuGDWr6Id;0;;4096;directory;-;2021-11-10 12:58:11.210414589 +0000;2021-11-10 12:58:11.222414603 +0000",
                 "/tmp/nxf.3iuGDWr6Id/file.txt;1;/pvcdata/testfile.txt;6;regular file;-;2021-11-10 12:58:07.485035700 +0000;2021-11-10 12:58:07.219065500 +0000",
                 "/tmp/nxf.3iuGDWr6Id/.command.err;1;;0;regular empty file;-;2021-11-10 12:58:11.222414603 +0000;2021-11-10 12:58:11.222414603 +0000",
@@ -82,7 +82,7 @@ public class TaskResultParserTest {
         log.info("{}", newAndUpdatedFiles);
 
         final HashSet<Object> expected = new HashSet<>();
-        expected.add( new PathLocationWrapperPair(Path.of("/pvcdata/testfile.txt"), new LocationWrapper(NodeLocation.getLocation("Node1"), 1636549091230l, 13, new Task(  new TaskConfig("P1"), dag) )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/pvcdata/testfile.txt"), new LocationWrapper(NodeLocation.getLocation("Node1"), 1636549091230L, 13, new Task(  new TaskConfig("P1"), dag) )) );
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file.txt", "/pvcdata/testfile.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file1.txt", "/pvcdata/testfile.txt") );
 
@@ -93,7 +93,7 @@ public class TaskResultParserTest {
     @Test
     public void test2(){
 
-        String infiles[] = {
+        String[] infiles = {
                 "/tmp/nxf.IANFIlM3Kv;0;;4096;directory;-;2021-11-12 12:42:42.155614026 +0000;2021-11-12 12:42:42.171614019 +0000",
                 "/tmp/nxf.IANFIlM3Kv/file.txt;1;/pvcdata/testfile.txt;0;regular empty file;-;2021-11-12 12:42:29.000000000 +0000;2021-11-12 12:42:29.000000000 +0000",
                 "/tmp/nxf.IANFIlM3Kv/.command.err;1;;0;regular empty file;-;2021-11-12 12:42:42.171614019 +0000;2021-11-12 12:42:42.171614019 +0000",
@@ -119,10 +119,10 @@ public class TaskResultParserTest {
         log.info("{}", newAndUpdatedFiles.toArray());
 
         final HashSet<Object> expected = new HashSet<>();
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/filenew.txt"), new LocationWrapper(node1, 1636720962223l, 0, task )) );
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/b.txt"), new LocationWrapper(node1, 1636720962223l, 2, task )) );
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/c.txt"), new LocationWrapper(node1, 1636720962223l, 2, task )) );
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/a.txt"), new LocationWrapper(node1, 1636720962223l, 2, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/filenew.txt"), new LocationWrapper(node1, 1636720962223L, 0, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/b.txt"), new LocationWrapper(node1, 1636720962223L, 2, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/c.txt"), new LocationWrapper(node1, 1636720962223L, 2, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/a.txt"), new LocationWrapper(node1, 1636720962223L, 2, task )) );
 
         assertEquals( expected, newAndUpdatedFiles );
 
@@ -131,7 +131,7 @@ public class TaskResultParserTest {
     @Test
     public void test3(){
 
-        String infiles[] = {
+        String[] infiles = {
             "/tmp/nxf.9J6Y5mcXRD;0;;4096;directory;-;2021-11-12 14:42:20.941053482 +0000;2021-11-12 14:42:20.937053480 +0000",
             "/tmp/nxf.9J6Y5mcXRD/t;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t;4096;directory;-;2021-11-12 14:42:17.009050211 +0000;2021-11-12 14:42:16.973050180 +0000",
             "/tmp/nxf.9J6Y5mcXRD/t/filenew.txt;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/filenew.txt;0;regular empty file;-;2021-11-12 14:42:16.969050176 +0000;2021-11-12 14:42:16.969050176 +0000",
@@ -161,7 +161,7 @@ public class TaskResultParserTest {
         log.info("{}", newAndUpdatedFiles);
 
         final HashSet<Object> expected = new HashSet<>();
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt"), new LocationWrapper( node1, 1636728140993l, 4, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt"), new LocationWrapper( node1, 1636728140993L, 4, task )) );
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/b.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/b.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/c.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/c.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/a.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt") );

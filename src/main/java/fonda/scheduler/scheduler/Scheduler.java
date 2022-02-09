@@ -36,7 +36,7 @@ public abstract class Scheduler {
     @Getter
     private boolean close;
     @Getter
-    private DAG dag;
+    private final DAG dag;
 
     private final Object batchHelper = new Object();
     private int currentBatch = 0;
@@ -169,7 +169,7 @@ public abstract class Scheduler {
                 unscheduledTasks.addAll(tasksToScheduleAndDestroy);
                 unscheduledTasks.notifyAll();
                 synchronized ( upcomingTasks ){
-                    upcomingTasks.removeAll( tasksToScheduleAndDestroy );
+                    tasksToScheduleAndDestroy.forEach(upcomingTasks::remove);
                 }
             }
         }
@@ -217,9 +217,14 @@ public abstract class Scheduler {
         return null;
     }
 
+    /**
+     * Chooses best param for a task
+     * @param taskname
+     * @param name
+     * @return
+     */
     public Map<String, Object> getSchedulerParams( String taskname, String name ){
-        Map<String, Object> result = new HashMap();
-        return result;
+        return new HashMap<>();
     }
 
     public TaskState getTaskState(String taskid) {

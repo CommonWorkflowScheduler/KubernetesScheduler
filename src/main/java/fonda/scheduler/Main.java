@@ -34,7 +34,7 @@ public class Main {
         try{
             log.info( "Started with namespace: {}", client.getNamespace() );
             final RandomScheduler randomScheduler = new RandomScheduler("testscheduler", client, "default", new SchedulerConfig(null, null, "/localwork/", null, "ftp"));
-            final Pair<String, String> key = new Pair( "default", "test-run" );
+            final Pair<String, String> key = new Pair<>("default", "test-run");
             SchedulerRestController.addScheduler( key, randomScheduler );
         } catch (Exception e){
             e.printStackTrace();

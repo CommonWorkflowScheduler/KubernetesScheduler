@@ -23,7 +23,7 @@ public class HierarchyWrapperTest {
     HierarchyWrapper hw;
     List<Path> files;
     Collection<Path> result;
-    String temporaryDir = workdir + "/ab/abcdasdasd/test/./abcd/";
+    final String temporaryDir = workdir + "/ab/abcdasdasd/test/./abcd/";
     LocationWrapper node1;
     DAG dag;
 
@@ -42,7 +42,7 @@ public class HierarchyWrapperTest {
         node1 = getLocationWrapper("Node1");
 
         hw = new HierarchyWrapper(workdir);
-        files = new LinkedList();
+        files = new LinkedList<>();
 
         files.add( Paths.get(temporaryDir + "test" ));
         files.add( Paths.get(temporaryDir + "file.abc" ));
@@ -60,7 +60,7 @@ public class HierarchyWrapperTest {
 
     private void compare( List<Path> a, Collection<Path> b){
         assertEquals(
-                new HashSet<>(a.stream().map(x -> x.normalize()).collect(Collectors.toList())),
+                new HashSet<>(a.stream().map(Path::normalize).collect(Collectors.toList())),
                 new HashSet<>(b)
         );
         assertEquals(a.size(),b.size());
@@ -155,9 +155,9 @@ public class HierarchyWrapperTest {
         System.gc();
         long intialMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 
-        List<Path> files = new LinkedList();
+        List<Path> files = new LinkedList<>();
         String wd = workdir + "ab/abcdefg/";
-        Map<String,List<Path>> m = new HashMap();
+        Map<String,List<Path>> m = new HashMap<>();
 
         int iters = 1_000_000;
 
@@ -165,7 +165,7 @@ public class HierarchyWrapperTest {
             String p = wd + (i % 3) + "/" + (i % 4);
             Path file = Paths.get(p + "/" + "file-" + i);
             files.add( file );
-            final List currentData = m.getOrDefault(p, new LinkedList());
+            final List<Path> currentData = m.getOrDefault(p, new LinkedList<>());
             currentData.add(file);
             m.put(p, currentData);
         }
@@ -200,7 +200,7 @@ public class HierarchyWrapperTest {
     public void testGetFile() {
 
         hw = new HierarchyWrapper(workdir);
-        files = new LinkedList();
+        files = new LinkedList<>();
 
         files.add( Paths.get( temporaryDir + "test" ) );
         files.add( Paths.get( temporaryDir + "file.abc" ) );

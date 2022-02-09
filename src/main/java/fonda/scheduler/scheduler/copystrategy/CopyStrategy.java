@@ -19,17 +19,19 @@ public abstract class CopyStrategy {
 
             ClassLoader classLoader = getClass().getClassLoader();
 
-            try (InputStream inputStream = classLoader.getResourceAsStream( getResource() );
-                 InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-                 BufferedReader reader = new BufferedReader(streamReader)) {
+            try (InputStream inputStream = classLoader.getResourceAsStream( getResource() )) {
+                assert inputStream != null;
+                try (InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+                     BufferedReader reader = new BufferedReader(streamReader)) {
 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    pw.println(line);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        pw.println(line);
+                    }
+
+                    Set<PosixFilePermission> executable = PosixFilePermissions.fromString("rwxrwxrwx");
+                    Files.setPosixFilePermissions( file.toPath(), executable );
                 }
-
-                Set<PosixFilePermission> executable = PosixFilePermissions.fromString("rwxrwxrwx");
-                Files.setPosixFilePermissions( file.toPath(), executable );
             } catch (IOException e) {
                 e.printStackTrace();
             }

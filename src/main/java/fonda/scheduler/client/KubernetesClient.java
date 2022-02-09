@@ -19,11 +19,10 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     private final Map<String, NodeWithAlloc> nodeHolder= new HashMap<>();
     private final List<Scheduler> schedulerList = new LinkedList<>();
-    private OperationContext operationContext;
 
 
     public KubernetesClient(){
-        this.operationContext = new OperationContext();
+        OperationContext operationContext = new OperationContext();
         for( Node node : this.nodes().list().getItems() ){
             nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node) );
         }
@@ -73,7 +72,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         return new ArrayList<>(this.nodeHolder.values());
     }
 
-    class NodeWatcher implements Watcher<Node>{
+    static class NodeWatcher implements Watcher<Node>{
 
         private final KubernetesClient kubernetesClient;
 
@@ -124,7 +123,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         }
     }
 
-    class PodWatcher implements Watcher<Pod> {
+    static class PodWatcher implements Watcher<Pod> {
 
         private final KubernetesClient kubernetesClient;
 

@@ -3,13 +3,12 @@ package fonda.scheduler.model.location;
 import io.fabric8.kubernetes.api.model.Node;
 import lombok.Getter;
 
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class NodeLocation extends Location {
 
-    static final private ConcurrentMap< String, NodeLocation > locationHolder = new ConcurrentHashMap<String, NodeLocation>();
+    static final private ConcurrentMap< String, NodeLocation > locationHolder = new ConcurrentHashMap<>();
 
     @Getter
     private final String identifier;

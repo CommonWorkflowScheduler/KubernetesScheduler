@@ -17,19 +17,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RealFileTest {
 
-    private DAG dag;
     private Task processA;
     private Task processB;
 
     @Before
     public void before(){
-        dag = new DAG();
+        DAG dag = new DAG();
         List<Vertex> vertexList = new LinkedList<>();
         vertexList.add(new Process("processA", 1));
         vertexList.add(new Process("processB", 2));
         dag.registerVertices(vertexList);
-        processA = new Task( new TaskConfig("procesA"), dag );
-        processB = new Task( new TaskConfig("procesB"), dag );
+        processA = new Task( new TaskConfig("procesA"), dag);
+        processB = new Task( new TaskConfig("procesB"), dag);
     }
 
     private LocationWrapper getLocationWrapper( String location ){
@@ -67,8 +66,10 @@ public class RealFileTest {
     @Test
     public void addEmptyLocation() {
         final RealFile realFile = new RealFile( getLocationWrapper("node1") );
+        //noinspection ConfusingArgumentToVarargsMethod
         assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  null ));
         assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false ));
+        //noinspection RedundantArrayCreation
         assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  new LocationWrapper[0] ));
         assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  new LocationWrapper[1] ));
     }

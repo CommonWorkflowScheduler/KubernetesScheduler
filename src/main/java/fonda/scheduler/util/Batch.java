@@ -28,6 +28,9 @@ public class Batch {
     }
 
     public void registerTask( Task task ){
+        assert ready != null;
+        assert unready != null;
+
         synchronized ( unready ){
             if ( closed && ready.size() + unready.size() >= tasksInBatch ) {
                 throw new IllegalStateException("Batch was closed!");

@@ -6,6 +6,7 @@ import fonda.scheduler.model.location.LocationType;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class RealFile extends AbstractFile {
@@ -75,7 +76,7 @@ public class RealFile extends AbstractFile {
                 lastUpdated = location;
             }
         }
-        return List.of( lastUpdated );
+        return lastUpdated == null ? new LinkedList<>() : List.of( lastUpdated );
     }
 
     public LocationWrapper getLastUpdate( LocationType type ){
