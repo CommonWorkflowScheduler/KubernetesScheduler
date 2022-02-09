@@ -19,11 +19,19 @@ public class TaskConfig {
     private final long memoryInBytes;
 
     private TaskConfig() {
+        this( null );
+    }
+
+    /**
+     * Only for testing
+     * @param task
+     */
+    public TaskConfig(String task) {
+        this.task = task;
         this.name = null;
         this.schedulerParams = null;
         this.inputs = null;
         this.hash = null;
-        this.task = null;
         this.cpus = 0;
         this.memoryInBytes = 0;
     }

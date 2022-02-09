@@ -1,8 +1,10 @@
 package fonda.scheduler.model.location.hierachy;
 
 import fonda.scheduler.dag.Process;
+import fonda.scheduler.model.Task;
 import fonda.scheduler.model.location.Location;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.Objects;
 
@@ -12,24 +14,24 @@ public class LocationWrapper {
     private final Location location;
     private final long timestamp;
     private final long sizeInBytes;
-    private final Process process;
     private final long createTime = System.currentTimeMillis();
+    private final Task createdByTask;
+    private final LocationWrapper copyOf;
 
-    public LocationWrapper(Location location, long timestamp, long sizeInBytes, Process process) {
+    public LocationWrapper(Location location, long timestamp, long sizeInBytes, Task task) {
+        this( location, timestamp, sizeInBytes ,task, null );
+    }
+
+    private LocationWrapper(Location location, long timestamp, long sizeInBytes, Task createdByTask, LocationWrapper copyOf) {
         this.location = location;
         this.timestamp = timestamp;
         this.sizeInBytes = sizeInBytes;
-        this.process = process;
+        this.createdByTask = createdByTask;
+        this.copyOf = copyOf;
     }
 
-    @Override
-    public String toString() {
-        return "LocationWrapper{" +
-                "location=" + location +
-                ", timestamp=" + timestamp +
-                ", sizeInBytes=" + sizeInBytes +
-                ", process='" + process + '\'' +
-                '}';
+    public LocationWrapper getCopyOf( Location location ) {
+        return new LocationWrapper( location, timestamp, sizeInBytes, createdByTask, copyOf == null ? this : copyOf );
     }
 
     @Override
@@ -40,11 +42,12 @@ public class LocationWrapper {
         return getTimestamp() == that.getTimestamp()
                 && getSizeInBytes() == that.getSizeInBytes()
                 && Objects.equals(getLocation(), that.getLocation())
-                && Objects.equals(getProcess(), that.getProcess());
+                && Objects.equals(getCopyOf(), that.getCopyOf())
+                && Objects.equals(getCreatedByTask(), that.getCreatedByTask());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getLocation(), getTimestamp(), getSizeInBytes(), getProcess());
+        return Objects.hash(getLocation(), getTimestamp(), getSizeInBytes(), getCreatedByTask());
     }
 }

@@ -52,7 +52,7 @@ public class Task {
     public String toString() {
         return "Task{" +
                 "state=" + state +
-                ", pod=" + pod.getMetadata().getName() +
+                ", pod=" + pod == null ? "--" : pod.getMetadata().getName() +
                 ", node='" + (node != null ? node.getIdentifier() : "--") + '\'' +
                 ", workDir='" + getWorkingDir() + '\'' +
                 '}';

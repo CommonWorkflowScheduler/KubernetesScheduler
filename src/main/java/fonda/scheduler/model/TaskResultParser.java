@@ -45,13 +45,15 @@ public class TaskResultParser {
      * @param workdir
      * @param location
      * @param process
+     * @param finishedTask
      * @return A list of all new or updated files
      */
     public Set<OutputFile> getNewAndUpdatedFiles(
             final Path workdir,
             final Location location,
             final Process process,
-            final boolean onlyUpdated
+            final boolean onlyUpdated,
+            Task finishedTask
     ){
 
         final Path infile = workdir.resolve(".command.infiles");
@@ -97,7 +99,7 @@ public class TaskResultParser {
                                                                             location,
                                                                             fileTimeFromString(modificationDate),
                                                                             Long.parseLong(data[ SIZE ]),
-                                                                            process
+                                                                            finishedTask
                                                                     );
                             newOrUpdated.add( new PathLocationWrapperPair( Paths.get(path), locationWrapper ) );
                     }

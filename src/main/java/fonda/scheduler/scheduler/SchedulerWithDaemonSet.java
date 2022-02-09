@@ -88,7 +88,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                         Paths.get(finishedTask.getWorkingDir()),
                         finishedTask.getNode(),
                         finishedTask.getProcess(),
-                        !finishedTask.wasSuccessfullyExecuted()
+                        !finishedTask.wasSuccessfullyExecuted(),
+                        finishedTask
                 );
                 for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
                     if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
@@ -133,12 +134,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     inputFiles.add(
                             new TaskInputFileLocationWrapper(
                                 filePath.file,
-                                new LocationWrapper(
-                                        location,
-                                        locationWrapper.getTimestamp(),
-                                        locationWrapper.getSizeInBytes(),
-                                        locationWrapper.getProcess()
-                                )
+                                locationWrapper.getCopyOf( location )
                             )
                     );
                 }

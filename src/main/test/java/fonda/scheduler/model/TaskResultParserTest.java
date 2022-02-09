@@ -77,12 +77,12 @@ public class TaskResultParserTest {
         final Path path = storeData(infiles, outfiles);
 
         final TaskResultParser taskResultParser = new TaskResultParser();
-        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), dag.getByProcess("P1"), false);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), dag.getByProcess("P1"), false, null);
 
         log.info("{}", newAndUpdatedFiles);
 
         final HashSet<Object> expected = new HashSet<>();
-        expected.add( new PathLocationWrapperPair(Path.of("/pvcdata/testfile.txt"), new LocationWrapper(NodeLocation.getLocation("Node1"), 1636549091230l, 13, dag.getByProcess("P1"))) );
+        expected.add( new PathLocationWrapperPair(Path.of("/pvcdata/testfile.txt"), new LocationWrapper(NodeLocation.getLocation("Node1"), 1636549091230l, 13, new Task(  new TaskConfig("P1"), dag) )) );
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file.txt", "/pvcdata/testfile.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file1.txt", "/pvcdata/testfile.txt") );
 
@@ -113,16 +113,16 @@ public class TaskResultParserTest {
 
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
-        final Process p1 = dag.getByProcess("P1");
-        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1, false);
+        final Task task = new Task(  new TaskConfig("P1"), dag);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, null, false, task);
 
         log.info("{}", newAndUpdatedFiles.toArray());
 
         final HashSet<Object> expected = new HashSet<>();
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/filenew.txt"), new LocationWrapper(node1, 1636720962223l, 0, p1)) );
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/b.txt"), new LocationWrapper(node1, 1636720962223l, 2, p1)) );
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/c.txt"), new LocationWrapper(node1, 1636720962223l, 2, p1)) );
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/a.txt"), new LocationWrapper(node1, 1636720962223l, 2, p1)) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/filenew.txt"), new LocationWrapper(node1, 1636720962223l, 0, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/b.txt"), new LocationWrapper(node1, 1636720962223l, 2, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/c.txt"), new LocationWrapper(node1, 1636720962223l, 2, task )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/a.txt"), new LocationWrapper(node1, 1636720962223l, 2, task )) );
 
         assertEquals( expected, newAndUpdatedFiles );
 
@@ -155,13 +155,13 @@ public class TaskResultParserTest {
 
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
-        final Process p1 = dag.getByProcess("P1");
-        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, p1, false);
+        final Task task = new Task( new TaskConfig("P1"), dag );
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, null, false, task);
 
         log.info("{}", newAndUpdatedFiles);
 
         final HashSet<Object> expected = new HashSet<>();
-        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt"), new LocationWrapper(node1, 1636728140993l, 4, p1)) );
+        expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt"), new LocationWrapper( node1, 1636728140993l, 4, task )) );
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/b.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/b.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/c.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/c.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/a.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt") );

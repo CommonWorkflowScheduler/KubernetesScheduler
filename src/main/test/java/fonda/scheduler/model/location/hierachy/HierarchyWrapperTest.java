@@ -2,11 +2,12 @@ package fonda.scheduler.model.location.hierachy;
 
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.dag.Vertex;
+import fonda.scheduler.model.Task;
+import fonda.scheduler.model.TaskConfig;
 import fonda.scheduler.model.location.NodeLocation;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeEach;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,7 +28,7 @@ public class HierarchyWrapperTest {
     DAG dag;
 
     private LocationWrapper getLocationWrapper( String location ){
-        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, dag.getByProcess("processA") );
+        return new LocationWrapper( NodeLocation.getLocation(location), 0, 100, new Task( new TaskConfig("processA"), dag) );
     }
 
     @Before
