@@ -174,7 +174,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                     return Stream.of(new PathFileLocationTriple(
                                             y.getKey(),
                                             ((RealFile) y.getValue()),
-                                            ((RealFile) y.getValue()).getFilesForProcess(task.getProcess())
+                                            ((RealFile) y.getValue()).getFilesForTask( task )
                                     ));
                                 else {
                                     return streamFile( y.getValue(), task, y.getKey() );
@@ -186,7 +186,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return Stream.of( new PathFileLocationTriple(
                         sourcePath,
                         realFile,
-                        realFile.getFilesForProcess( task.getProcess() )
+                        realFile.getFilesForTask( task )
                 )
         );
     }
