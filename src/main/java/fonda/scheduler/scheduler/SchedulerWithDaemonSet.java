@@ -88,7 +88,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                         Paths.get(finishedTask.getWorkingDir()),
                         finishedTask.getNode(),
-                        finishedTask.getProcess(),
                         !finishedTask.wasSuccessfullyExecuted(),
                         finishedTask
                 );
@@ -106,7 +105,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     }
                 }
             } catch ( Exception e ){
-                log.info( "Problem while finishing task: " + finishedTask.getConfig().getName(), e );
+                log.info( "Problem while finishing task: " + finishedTask.getConfig().getHash() + " (" + finishedTask.getConfig().getName() + ")", e );
             }
             super.taskWasFinished( finishedTask );
         });

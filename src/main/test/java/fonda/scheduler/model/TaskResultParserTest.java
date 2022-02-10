@@ -76,13 +76,15 @@ public class TaskResultParserTest {
 
         final Path path = storeData(infiles, outfiles);
 
+        final Task task = new Task(new TaskConfig("P1"), dag);
+
         final TaskResultParser taskResultParser = new TaskResultParser();
-        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), dag.getByProcess("P1"), false, null);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, NodeLocation.getLocation("Node1"), false, task);
 
         log.info("{}", newAndUpdatedFiles);
 
         final HashSet<Object> expected = new HashSet<>();
-        expected.add( new PathLocationWrapperPair(Path.of("/pvcdata/testfile.txt"), new LocationWrapper(NodeLocation.getLocation("Node1"), 1636549091230L, 13, new Task(  new TaskConfig("P1"), dag) )) );
+        expected.add( new PathLocationWrapperPair(Path.of("/pvcdata/testfile.txt"), new LocationWrapper(NodeLocation.getLocation("Node1"), 1636549091230L, 13, task)) );
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file.txt", "/pvcdata/testfile.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file1.txt", "/pvcdata/testfile.txt") );
 
@@ -114,7 +116,7 @@ public class TaskResultParserTest {
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
         final Task task = new Task(  new TaskConfig("P1"), dag);
-        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, null, false, task);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, false, task);
 
         log.info("{}", newAndUpdatedFiles.toArray());
 
@@ -156,7 +158,7 @@ public class TaskResultParserTest {
         final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
         final Task task = new Task( new TaskConfig("P1"), dag );
-        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, null, false, task);
+        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, false, task);
 
         log.info("{}", newAndUpdatedFiles);
 

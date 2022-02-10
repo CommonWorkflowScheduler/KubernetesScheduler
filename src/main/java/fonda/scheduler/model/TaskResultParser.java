@@ -6,7 +6,6 @@ import fonda.scheduler.model.outfiles.OutputFile;
 import fonda.scheduler.model.outfiles.PathLocationWrapperPair;
 import fonda.scheduler.model.outfiles.SymlinkOutput;
 import lombok.extern.slf4j.Slf4j;
-import fonda.scheduler.dag.Process;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Stream;
@@ -44,14 +42,12 @@ public class TaskResultParser {
      *
      * @param workdir
      * @param location
-     * @param process
      * @param finishedTask
      * @return A list of all new or updated files
      */
     public Set<OutputFile> getNewAndUpdatedFiles(
             final Path workdir,
             final Location location,
-            final Process process,
             final boolean onlyUpdated,
             Task finishedTask
     ){
