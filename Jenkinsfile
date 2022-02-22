@@ -52,16 +52,18 @@ pipeline {
 
         stage('Static Code Analysis') {
             steps {
-                script {
-                    def scannerHome = tool 'SonarScanner';
-                    withSonarQubeEnv() {
-                        sh '''
-                            ${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=workflow_k8s_scheduler \
-                                -Dsonar.branch.name=$BRANCH_NAME -Dsonar.sources=src/main/java -Dsonar.tests=src/test/java \
-                                -Dsonar.inclusions="**/*.java" -Dsonar.test.inclusions="src/test/java/**/*.java" \
-                                -Dsonar.junit.reportPaths=target/surefire-reports \
-                                -Dsonar.jacoco.reportPaths=$(find target/coverage-reports -name '*.exec' | paste -s -d , -)
-                        '''
+                container('jnlp') {
+                    script {
+                        def scannerHome = tool 'SonarScanner';
+                        withSonarQubeEnv() {
+                            sh '''
+                                ${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=workflow_k8s_scheduler \
+                                    -Dsonar.branch.name=$BRANCH_NAME -Dsonar.sources=src/main/java -Dsonar.tests=src/test/java \
+                                    -Dsonar.inclusions="**/*.java" -Dsonar.test.inclusions="src/test/java/**/*.java" \
+                                    -Dsonar.junit.reportPaths=target/surefire-reports \
+                                    -Dsonar.jacoco.reportPaths=$(find target/coverage-reports -name '*.exec' | paste -s -d , -)
+                            '''
+                        }
                     }
                 }
             }
