@@ -67,6 +67,10 @@ pipeline {
         }
 
         stage('Build and push Docker') {
+            // only push images from the master branch
+            when {
+                branch "master"
+            }
             // agents are specified per stage to enable real parallel execution
             parallel {
                 stage('workflow-k8s-scheduler') {
@@ -93,8 +97,7 @@ pipeline {
                             archiveArtifacts "hadolint_scheduler.json"
                             recordIssues(
                                 aggregatingResults: true,
-                                id: "scheduler-hadolint",
-                                tools: [hadoLint(pattern: "hadolint_scheduler.json")]
+                                tools: [hadoLint(pattern: "hadolint_scheduler.json", id: "scheduler")]
                             )
                         }
                     }
@@ -123,8 +126,7 @@ pipeline {
                             archiveArtifacts "hadolint_vsftpd.json"
                             recordIssues(
                                 aggregatingResults: true,
-                                id: "vsfptd-hadolint",
-                                tools: [hadoLint(pattern: "hadolint_vsftpd.json")]
+                                tools: [hadoLint(pattern: "hadolint_vsftpd.json", id: "vsfptd")]
                             )
                         }
                     }
