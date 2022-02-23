@@ -93,6 +93,7 @@ pipeline {
                             archiveArtifacts "hadolint_scheduler.json"
                             recordIssues(
                                 aggregatingResults: true,
+                                id: "scheduler-hadolint",
                                 tools: [hadoLint(pattern: "hadolint_scheduler.json")]
                             )
                         }
@@ -122,6 +123,7 @@ pipeline {
                             archiveArtifacts "hadolint_vsftpd.json"
                             recordIssues(
                                 aggregatingResults: true,
+                                id: "vsfptd-hadolint",
                                 tools: [hadoLint(pattern: "hadolint_vsftpd.json")]
                             )
                         }
