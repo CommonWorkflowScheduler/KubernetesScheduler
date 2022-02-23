@@ -54,10 +54,6 @@ pipeline {
             steps {
                 container('maven') {
                     withSonarQubeEnv('fonda-sonarqube') {
-                        sh """
-                            println ${env.SONAR_HOST_URL}
-                            println ${SONAR_AUTH_TOKEN}
-                        """
                         sh '''
                             mvn sonar:sonar -B -V -Dsonar.projectKey=workflow_k8s_scheduler \
                                 -Dsonar.branch.name=$BRANCH_NAME -Dsonar.sources=src/main/java -Dsonar.tests=src/test/java \
