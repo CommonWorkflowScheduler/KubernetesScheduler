@@ -20,6 +20,10 @@ public class LocationWrapper {
     private final Task createdByTask;
     private final LocationWrapper copyOf;
 
+    public LocationWrapper(Location location, long timestamp, long sizeInBytes) {
+        this( location, timestamp, sizeInBytes ,null);
+    }
+
     public LocationWrapper(Location location, long timestamp, long sizeInBytes, Task task) {
         this( location, timestamp, sizeInBytes ,task, null );
     }
@@ -41,15 +45,24 @@ public class LocationWrapper {
         if (this == o) return true;
         if (!(o instanceof LocationWrapper)) return false;
         LocationWrapper that = (LocationWrapper) o;
-        return getTimestamp() == that.getTimestamp()
-                && getSizeInBytes() == that.getSizeInBytes()
-                && Objects.equals(getLocation(), that.getLocation())
-                && Objects.equals(getCopyOf(), that.getCopyOf())
-                && Objects.equals(getCreatedByTask(), that.getCreatedByTask());
+        return getId() == that.getId();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(getLocation(), getTimestamp(), getSizeInBytes(), getCreatedByTask());
+    }
+
+    @Override
+    public String toString() {
+        return "LocationWrapper{" +
+                "id=" + id +
+                ", location=" + location.getIdentifier() +
+                ", timestamp=" + timestamp +
+                ", sizeInBytes=" + sizeInBytes +
+                ", createTime=" + createTime +
+                ", createdByTask=" + createdByTask +
+                ", copyOf=" + copyOf +
+                '}';
     }
 }

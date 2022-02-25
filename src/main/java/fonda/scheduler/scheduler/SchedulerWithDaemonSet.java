@@ -236,7 +236,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         if( !overwrite && locationWrapperID != -1 ){
             locationWrapper = requestedLocations.get( locationWrapperID ).getCopyOf( location );
         } else {
-            locationWrapper = new LocationWrapper( location, timestamp, size, null);
+            locationWrapper = new LocationWrapper( location, timestamp, size );
         }
 
         hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
