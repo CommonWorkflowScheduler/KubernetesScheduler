@@ -42,5 +42,21 @@ public class PodWithAge extends Pod {
         return this.getMetadata().getName();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PodWithAge)) return false;
+        if (!super.equals(o)) return false;
 
+        PodWithAge that = (PodWithAge) o;
+
+        return getName() != null ? getName().equals(that.getName()) : that.getName() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (getAge() != null ? getAge().hashCode() : 0);
+        return result;
+    }
 }

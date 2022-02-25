@@ -38,7 +38,7 @@ public class TaskConfig {
 
     @Getter
     @ToString
-    static public class Input {
+    public static class Input {
 
         private final String name;
         private final Object value;

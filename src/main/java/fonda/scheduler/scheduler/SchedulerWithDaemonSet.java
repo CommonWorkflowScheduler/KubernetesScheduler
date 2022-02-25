@@ -251,6 +251,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
      * Since task was not yet initialized: set scheduled
      * @param task
      */
+    @Override
     void taskWasScheduledSetState( Task task ){
         task.getState().setState( State.SCHEDULED );
     }
@@ -266,7 +267,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             //The Watcher can be started before the class is initialized
             try {
                 Thread.sleep(20);
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
         }
         if( ( "mount-" + this.getExecution().replace('_', '-') + "-" ).equals(pod.getMetadata().getGenerateName()) ){
             final String nodeName = pod.getSpec().getNodeName();
@@ -290,13 +293,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 }
             }
         } else if ( this.getName().equals(pod.getSpec().getSchedulerName())) {
-            if ( action == Watcher.Action.MODIFIED ){
-                Task t = getTaskByPod( pod );
-                if ( t.getState().getState() == State.SCHEDULED ) {
-                    final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
-                    if ( ! initContainerStatuses.isEmpty() && initContainerStatuses.get(0).getState().getTerminated() != null ) {
-                        podWasInitialized( pod );
-                    }
+            if ( action == Watcher.Action.MODIFIED && getTaskByPod( pod ).getState().getState() == State.SCHEDULED ) {
+                final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
+                if ( ! initContainerStatuses.isEmpty() && initContainerStatuses.get(0).getState().getTerminated() != null ) {
+                    podWasInitialized( pod );
                 }
             }
         }

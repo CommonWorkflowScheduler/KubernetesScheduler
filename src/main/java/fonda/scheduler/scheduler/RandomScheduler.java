@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RandomScheduler extends SchedulerWithDaemonSet {
 
+    private final Random random = new Random();
+
     public RandomScheduler(String name, KubernetesClient client, String namespace, SchedulerConfig config) {
         super(name, client, namespace, config);
     }
@@ -37,8 +39,7 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
             logInfo.add("Node: " + item.getName() + " " + availableResources);
         }
         logInfo.add("------------------------------------");
-        System.out.println(String.join("\n", logInfo));
-        
+        log.info(String.join("\n", logInfo));
         
         for ( final Task task : unscheduledTasks) {
             final PodWithAge pod = task.getPod();
@@ -50,22 +51,20 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
                                     //&& !x.getName().equals(this.getWorkflowEngineNode())
                     )
                     .collect(Collectors.toList());
-            System.out.println("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
+            log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
             Optional<NodeWithAlloc> node = matchingNodes.isEmpty()
                     ? Optional.empty()
-                    : Optional.of(matchingNodes.get(new Random().nextInt(matchingNodes.size())));
+                    : Optional.of(matchingNodes.get(random.nextInt(matchingNodes.size())));
             if( node.isPresent() ){
-                //log.info("Task needs: " + task.getConfig().getInputs().toString());
                 final List<Input> inputsOfTask = getInputsOfTask(task);
                 final FileAlignment fileAlignment = scheduleFiles(task, inputsOfTask, node.get());
                 alignment.add( new NodeTaskFilesAlignment(node.get(),task, fileAlignment ) );
                 availableByNode.get(node.get().getName()).subFromThis(pod.getRequest());
-                System.out.println("--> " + node.get().getName());
+                log.info("--> " + node.get().getName());
             } else {
                 log.info( "No node with enough resources for {}", pod.getName() );
             }
         }
-        System.out.flush();
         final ScheduleObject scheduleObject = new ScheduleObject(alignment);
         scheduleObject.setCheckStillPossible( true );
         return scheduleObject;
@@ -78,12 +77,10 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
             if( entry instanceof PathFileLocationTriple ){
                 final PathFileLocationTriple pathFileLocationTriple = (PathFileLocationTriple) entry;
                 final LocationWrapper locationWrapper = pathFileLocationTriple.locations.get(
-                        new Random().nextInt( pathFileLocationTriple.locations.size() )
+                        random.nextInt( pathFileLocationTriple.locations.size() )
                 );
                 final String nodeIdentifier = locationWrapper.getLocation().getIdentifier();
-                if ( !map.containsKey( nodeIdentifier )){
-                    map.put( nodeIdentifier, new LinkedList<>() );
-                }
+                map.computeIfAbsent(nodeIdentifier, k -> new LinkedList<>() );
                 final List<FilePath> pathsOfNode = map.get( nodeIdentifier );
                 pathsOfNode.add( new FilePath( pathFileLocationTriple.path.toString(), pathFileLocationTriple.file ) );
             } else if ( entry instanceof SymlinkInput ){

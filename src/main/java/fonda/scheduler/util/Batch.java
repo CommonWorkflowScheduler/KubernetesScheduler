@@ -53,10 +53,10 @@ public class Batch {
 
     public List<Task> getTasksToScheduleAndDestroy(){
         if ( !closed ) throw new IllegalStateException("Batch was not yet closed!");
-        final List<Task> ready = this.ready;
+        final List<Task> readyList = this.ready;
         this.ready = null;
         this.unready = null;
-        return ready;
+        return readyList;
     }
 
 }

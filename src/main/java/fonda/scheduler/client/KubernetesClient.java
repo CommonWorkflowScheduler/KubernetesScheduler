@@ -22,7 +22,6 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
 
     public KubernetesClient(){
-        OperationContext operationContext = new OperationContext();
         for( Node node : this.nodes().list().getItems() ){
             nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node) );
         }
@@ -112,8 +111,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                     break;
                 case MODIFIED:
                     log.info("Node {} was an modified", node.getMetadata().getName());
-                    //todo deal with changed stae
+                    //todo deal with changed state
                     break;
+                default: log.warn("No implementation for {}", action);
             }
         }
 
@@ -141,11 +141,12 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                         node.addPod( new PodWithAge(pod) ); break;
                     case MODIFIED:
                         final List<ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
-                        if ( containerStatuses.size() == 0
+                        if ( containerStatuses.isEmpty()
                                 ||
                                 containerStatuses.get(0).getState().getTerminated() == null ) {
                             break;
                         }
+                        //Pod is finished
                     case DELETED:
                     case ERROR:
                         log.info("Pod has released its resources: {}", pod.getMetadata().getName());
@@ -153,6 +154,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                         node.removePod( pod );
                         kubernetesClient.informAllScheduler();
                         break;
+                    default: log.warn("No implementation for {}", action);
                 }
 
             }

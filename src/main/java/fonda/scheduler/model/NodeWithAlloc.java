@@ -15,7 +15,7 @@ import java.util.Map;
 @Slf4j
 public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
-    private final PodRequirements max_resources;
+    private final PodRequirements maxResources;
 
     final Map<String, PodRequirements> assignedPods;
 
@@ -33,16 +33,16 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
             this.setAdditionalProperty( e.getKey(), e.getValue() );
         }
 
-        BigDecimal max_cpu = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("cpu"));
-        BigDecimal max_ram = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("memory"));
+        BigDecimal maxCpu = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("cpu"));
+        BigDecimal maxRam = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("memory"));
 
-        max_resources = new PodRequirements( max_cpu, max_ram);
+        maxResources = new PodRequirements( maxCpu, maxRam);
 
         assignedPods = new HashMap<>();
 
         this.nodeLocation = NodeLocation.getLocation( node );
 
-        log.info("Node {} has RAM: {} and CPU: {}", node.getMetadata().getName(), max_ram, max_cpu);
+        log.info("Node {} has RAM: {} and CPU: {}", node.getMetadata().getName(), maxRam, maxCpu);
     }
 
     public void addPod( PodWithAge pod ){
@@ -66,7 +66,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     }
 
     public PodRequirements getAvailableResources(){
-        return max_resources.sub(getRequestedResources());
+        return maxResources.sub(getRequestedResources());
     }
 
     public boolean canSchedule( PodWithAge pod ){
@@ -89,4 +89,21 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NodeWithAlloc)) return false;
+        if (!super.equals(o)) return false;
+        NodeWithAlloc that = (NodeWithAlloc) o;
+        return getMetadata().getName() != null ? getMetadata().getName().equals(that.getMetadata().getName()) : that.getMetadata().getName() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (getMaxResources() != null ? getMaxResources().hashCode() : 0);
+        result = 31 * result + (getAssignedPods() != null ? getAssignedPods().hashCode() : 0);
+        result = 31 * result + (getNodeLocation() != null ? getNodeLocation().hashCode() : 0);
+        return result;
+    }
 }

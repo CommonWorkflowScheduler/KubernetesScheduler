@@ -7,8 +7,8 @@ import lombok.Getter;
 @Getter
 public class TaskInputFileLocationWrapper {
 
-    final private RealFile file;
-    final private LocationWrapper wrapper;
+    private final RealFile file;
+    private final LocationWrapper wrapper;
 
     public TaskInputFileLocationWrapper(RealFile file, LocationWrapper wrapper) {
         this.file = file;

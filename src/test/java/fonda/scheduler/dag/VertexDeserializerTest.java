@@ -7,6 +7,8 @@ import org.springframework.boot.test.autoconfigure.json.JsonTest;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
+
 @JsonTest
 public class VertexDeserializerTest {
 
@@ -19,6 +21,9 @@ public class VertexDeserializerTest {
         module.addDeserializer(Vertex.class, new VertexDeserializer());
         objectMapper.registerModule(module);
         final Vertex process = objectMapper.readValue(json, Vertex.class);
+        assertEquals( "a", process.getLabel() );
+        assertEquals( Type.PROCESS, process.getType() );
+        assertEquals( 0, process.getUid() );
         System.out.println( process );
     }
 

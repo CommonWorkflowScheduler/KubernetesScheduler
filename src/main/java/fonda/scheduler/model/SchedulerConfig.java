@@ -4,11 +4,11 @@ import java.util.List;
 
 public class SchedulerConfig {
 
-    final public List<LocalClaim> localClaims;
-    final public List<VolumeClaim> volumeClaims;
-    final public String workDir;
-    final public String dns;
-    final public String copyStrategy;
+    public final List<LocalClaim> localClaims;
+    public final List<VolumeClaim> volumeClaims;
+    public final String workDir;
+    public final String dns;
+    public final String copyStrategy;
 
     public SchedulerConfig(List<LocalClaim> localClaims,
                            List<VolumeClaim> volumeClaims,
@@ -30,9 +30,9 @@ public class SchedulerConfig {
         this.copyStrategy = null;
     }
 
-    static public class LocalClaim {
-        final public String mountPath;
-        final public String hostPath;
+    public static class LocalClaim {
+        public final String mountPath;
+        public final String hostPath;
 
         private LocalClaim(){
             this.mountPath = null;
@@ -48,10 +48,10 @@ public class SchedulerConfig {
         }
     }
 
-    static public class VolumeClaim {
-        final public String mountPath;
-        final public String claimName;
-        final public String subPath;
+    public static class VolumeClaim {
+        public final String mountPath;
+        public final String claimName;
+        public final String subPath;
 
         private VolumeClaim(){
             this.mountPath = null;

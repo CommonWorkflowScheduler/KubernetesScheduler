@@ -68,78 +68,136 @@ public class RealFile extends AbstractFile {
         }
     }
 
-    public List<LocationWrapper> getFilesForTask( Task task ){
-        LocationWrapper[] locations = this.locations;
+    private List<LocationWrapper> combineResultsWithInitial (
+                            LinkedList<LocationWrapper> current,
+                            LinkedList<LocationWrapper> ancestors,
+                            LinkedList<LocationWrapper> descendants,
+                            LinkedList<LocationWrapper> unrelated,
+                            LinkedList<LocationWrapper> initial
+    ) {
+        LinkedList<LocationWrapper> result;
+        long time = 0;
+        //Only keep last update
+        if ( initial.size() > 1 ) {
+            result = new LinkedList<>();
+            for (LocationWrapper locationWrapper : initial) {
+                if ( locationWrapper.getCreateTime() > time ) {
+                    result.clear();
+                    result.add( locationWrapper );
+                } else if  ( locationWrapper.getCreateTime() == time ) {
+                    result.add( locationWrapper );
+                }
+            }
+        } else {
+            time = initial.get(0).getCreateTime();
+            result = initial;
+        }
+        addAllLaterLocationsToResult( current, result, time );
+        if( current == null ) addAllLaterLocationsToResult( ancestors, result, time );
+        addAllLaterLocationsToResult( unrelated, result, time );
+        addAllLaterLocationsToResult( descendants, result, time );
+        return result;
+    }
 
-        LinkedList<LocationWrapper> results = new LinkedList<>();
+    private List<LocationWrapper> combineResultsEmptyInitial (
+            LinkedList<LocationWrapper> current,
+            LinkedList<LocationWrapper> ancestors,
+            LinkedList<LocationWrapper> descendants,
+            LinkedList<LocationWrapper> unrelated
+    ) {
+        LinkedList<LocationWrapper> result = null;
+        if ( current != null ) result = current;
+        if ( current == null && ancestors != null ) result = ancestors;
+        if ( unrelated != null ) {
+            if ( result == null ) result = unrelated;
+            else result.addAll( unrelated );
+        }
+        if ( descendants != null ) {
+            if ( result == null ) result = descendants;
+            else result.addAll( descendants );
+        }
+        return result;
+    }
+
+    private void addToAncestors(LinkedList<LocationWrapper> ancestors, LocationWrapper location, Process locationProcess) {
+        //Add location to list if it could be the last version
+        final Iterator<LocationWrapper > iterator = ancestors.iterator();
+        Set<Process> locationAncestors = null;
+        while (iterator.hasNext()) {
+            final LocationWrapper next = iterator.next();
+            final Process currentProcess = next.getCreatedByTask().getProcess();
+            if (locationProcess == currentProcess) {
+                break;
+            } else {
+                if( locationAncestors == null ) locationAncestors = locationProcess.getAncestors();
+                if ( locationAncestors.contains(currentProcess) ) {
+                    iterator.remove();
+                } else if (locationProcess.getDescendants().contains(currentProcess)) {
+                    return;
+                }
+            }
+        }
+        ancestors.add(location);
+    }
+
+    private LinkedList<LocationWrapper> addAndCreateList(LinkedList<LocationWrapper> list, LocationWrapper toAdd ){
+        if ( list == null ) list = new LinkedList<>();
+        list.add( toAdd );
+        return list;
+    }
+
+    public List<LocationWrapper> getFilesForTask( Task task ){
+        LocationWrapper[] locationsRef = this.locations;
+
+        LinkedList<LocationWrapper> current = null;
         LinkedList<LocationWrapper> ancestors = null;
         LinkedList<LocationWrapper> descendants = null;
         LinkedList<LocationWrapper> unrelated = null;
         LinkedList<LocationWrapper> initial = null;
 
-        for (LocationWrapper location : locations) {
+        final Process taskProcess = task.getProcess();
+        final Set<Process> taskAncestors = taskProcess.getAncestors();
+        final Set<Process> taskDescendants = taskProcess.getDescendants();
 
-            LinkedList<LocationWrapper> listToFilter;
-            Set<Process> locationsAncestors;
-            Process locationProcess;
-
+        for ( LocationWrapper location : locationsRef ) {
+            //File was modified by an operator (no relation known)
             if ( location.getCreatedByTask() == null ) {
-                //File was modified by an operator (no relation known)
-                if ( initial == null ) initial = new LinkedList<>();
-                initial.add( location );
+                initial = addAndCreateList( initial, location );
                 continue;
-            } else if ( (locationProcess = location.getCreatedByTask().getProcess() ) == task.getProcess() ) {
+            }
+
+            final Process locationProcess = location.getCreatedByTask().getProcess();
+            if ( locationProcess == taskProcess)
                 //Location was created by the same process == does definitely fit.
-                results.add( location );
-                continue;
-            } else if ( (locationsAncestors = locationProcess.getAncestors()).contains( task.getProcess() ) ) {
+                current = addAndCreateList( current, location );
+            else if ( taskAncestors.contains(locationProcess) ) {
                 // location is a direct ancestor
-                if ( ancestors == null ) ancestors = new LinkedList<>();
-                listToFilter = ancestors;
-            } else if ( locationProcess.getDescendants().contains( task.getProcess() ) ) {
-                // location is a direct descendant
-                if ( descendants == null ) descendants = new LinkedList<>();
-                descendants.add( location );
-                continue;
-            } else {
-                // location was possibly generated in parallel
-                if ( unrelated == null ) unrelated = new LinkedList<>();
-                listToFilter = unrelated;
-            }
-
-            //Add location to list if it could be the last version
-            if ( listToFilter.isEmpty() ) listToFilter.add( location );
-            else {
-                final Iterator<LocationWrapper > iterator = listToFilter.iterator();
-                final Set<Process> locationsDescendants = locationProcess.getDescendants();
-                boolean isAncestor = false;
-                while (iterator.hasNext()) {
-
-                    final LocationWrapper next = iterator.next();
-                    final Process currentProcess = next.getCreatedByTask().getProcess();
-                    if (locationProcess == currentProcess) {
-                        break;
-                    } else if (locationsAncestors.contains(currentProcess)) {
-                        iterator.remove();
-                    } else if (locationsDescendants.contains(currentProcess)) {
-                        isAncestor = true;
-                        break;
-                    }
-
+                if ( ancestors == null ) {
+                    ancestors = new LinkedList<>();
+                    ancestors.add( location );
+                } else {
+                    addToAncestors( ancestors, location, locationProcess );
                 }
-                if (!isAncestor) listToFilter.add(location);
             }
-
+            else if ( taskDescendants.contains(locationProcess) )
+                // location is a direct descendant
+                descendants = addAndCreateList( descendants, location );
+            else
+                // location was possibly generated in parallel
+                unrelated = addAndCreateList( unrelated, location );
         }
 
-        if ( ancestors == null && unrelated == null && descendants == null ){
-            results.addAll( initial );
-        } else {
-            if ( ancestors != null ) results.addAll( ancestors );
-            if ( unrelated != null ) results.addAll( unrelated );
-            if ( descendants != null ) results.addAll( descendants );
+        return ( initial == null )
+             ? combineResultsEmptyInitial( current, ancestors, descendants, unrelated )
+            : combineResultsWithInitial( current, ancestors, descendants, unrelated, initial );
+    }
+
+    private void addAllLaterLocationsToResult( List<LocationWrapper> list, List<LocationWrapper> result, long time ){
+        if( list != null ) {
+            for ( LocationWrapper l : list ) {
+                if( l.getCreateTime() >= time ) result.add( l );
+            }
         }
-        return results;
     }
 
     public LocationWrapper getLastUpdate( LocationType type ){

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class NodeLocation extends Location {
 
-    static final private ConcurrentMap< String, NodeLocation > locationHolder = new ConcurrentHashMap<>();
+    private static final ConcurrentMap< String, NodeLocation > locationHolder = new ConcurrentHashMap<>();
 
     @Getter
     private final String identifier;
@@ -41,4 +41,21 @@ public class NodeLocation extends Location {
         return "Node(" + identifier + ")";
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NodeLocation)) return false;
+        if (!super.equals(o)) return false;
+
+        NodeLocation that = (NodeLocation) o;
+
+        return getIdentifier() != null ? getIdentifier().equals(that.getIdentifier()) : that.getIdentifier() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (getIdentifier() != null ? getIdentifier().hashCode() : 0);
+        return result;
+    }
 }

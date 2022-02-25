@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Getter
 public class LocationWrapper {
 
-    static private final AtomicLong nextID = new AtomicLong(0);
+    private static final AtomicLong nextID = new AtomicLong(0);
 
     private final long id = nextID.getAndIncrement();
     private final Location location;

@@ -43,9 +43,9 @@ public abstract class Scheduler {
     private Batch currentBatchInstance = null;
 
     final KubernetesClient client;
-    final private Set<Task> upcomingTasks = new HashSet<>();
-    final private List<Task> unscheduledTasks = new ArrayList<>(100);
-    final private List<Task> unfinishedTasks = new ArrayList<>(100);
+    private final Set<Task> upcomingTasks = new HashSet<>();
+    private final List<Task> unscheduledTasks = new ArrayList<>(100);
+    private final List<Task> unfinishedTasks = new ArrayList<>(100);
     final Map<String, Task> tasksByHash = new HashMap<>();
     private final Watch watcher;
     private final TaskprocessingThread schedulingThread;
@@ -334,11 +334,6 @@ public abstract class Scheduler {
         return null;
     }
 
-    @Deprecated
-    PodResource<Pod> findPodByName(String name ){
-        return client.pods().withName( name );
-    }
-    
     public void informResourceChange() {
         synchronized (unscheduledTasks){
             unscheduledTasks.notifyAll();
@@ -410,7 +405,7 @@ public abstract class Scheduler {
                     }
                     break;
                 case MODIFIED:
-                    if (pod.getStatus().getContainerStatuses().size() > 0 && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null) {
+                    if (!pod.getStatus().getContainerStatuses().isEmpty() && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null) {
                         scheduler.onPodTermination(pwa);
                     } else {
                         final Task task = scheduler.getTaskByPod(pwa);
@@ -419,6 +414,7 @@ public abstract class Scheduler {
                     break;
                 case DELETED:
                     scheduler.markPodAsDeleted(pwa);
+                default: log.info( "No implementation for {}", action );
             }
 
         }

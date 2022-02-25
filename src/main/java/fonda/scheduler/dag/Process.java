@@ -36,16 +36,16 @@ public class Process extends Vertex {
     public void addInbound( Edge e ) {
         in.add( e );
         final Vertex from = e.getFrom();
-        final Set<Process> ancestors = from.getAncestors();
+        final Set<Process> fromAncestors = from.getAncestors();
 
-        if ( from.getType() == Type.PROCESS ) ancestors.add((Process) from);
+        if ( from.getType() == Type.PROCESS ) fromAncestors.add((Process) from);
 
-        this.ancestors.addAll(ancestors);
+        this.ancestors.addAll(fromAncestors);
         if ( from.getType() == Type.PROCESS ) ((Process) from).descendants.add( this );
 
-        final Set<Process> descendants = this.getDescendants();
-        ancestors.forEach( v -> {
-            v.descendants.addAll( descendants );
+        final Set<Process> descendantsCopy = this.getDescendants();
+        fromAncestors.forEach( v -> {
+            v.descendants.addAll( descendantsCopy );
             v.descendants.add( this );
         });
     }
@@ -53,16 +53,16 @@ public class Process extends Vertex {
     public void addOutbound( Edge e ) {
         out.add( e );
         final Vertex to = e.getTo();
-        final Set<Process> descendants = to.getDescendants();
+        final Set<Process> toDescendants = to.getDescendants();
 
-        if ( to.getType() == Type.PROCESS ) descendants.add((Process) to);
+        if ( to.getType() == Type.PROCESS ) toDescendants.add((Process) to);
 
-        this.descendants.addAll(descendants);
+        this.descendants.addAll(toDescendants);
         if ( to.getType() == Type.PROCESS ) ((Process)to).ancestors.add( this );
 
-        final Set<Process> ancestors = this.getAncestors();
-        descendants.forEach( v -> {
-            v.ancestors.addAll( ancestors );
+        final Set<Process> ancestorsCopy = this.getAncestors();
+        toDescendants.forEach( v -> {
+            v.ancestors.addAll( ancestorsCopy );
             v.ancestors.add( this );
         });
     }
