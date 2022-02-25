@@ -41,6 +41,7 @@ public class Task {
     }
 
     public String getWorkingDir(){
+        if ( this.pod == null ) return null;
         return pod.getSpec().getContainers().get(0).getWorkingDir();
     }
 
