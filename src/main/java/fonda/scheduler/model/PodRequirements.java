@@ -2,9 +2,12 @@ package fonda.scheduler.model;
 
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class PodRequirements {
+public class PodRequirements implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public static final PodRequirements ZERO = new PodRequirements();
 

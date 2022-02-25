@@ -15,9 +15,11 @@ import java.util.Map;
 @Slf4j
 public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
+    private static final long serialVersionUID = 1L;
+
     private final PodRequirements maxResources;
 
-    final Map<String, PodRequirements> assignedPods;
+    private final Map<String, PodRequirements> assignedPods;
 
     @Getter
     private final NodeLocation nodeLocation;

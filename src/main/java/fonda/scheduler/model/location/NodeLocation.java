@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentMap;
 
 public class NodeLocation extends Location {
 
+    private static final long serialVersionUID = 1L;
+
     private static final ConcurrentMap< String, NodeLocation > locationHolder = new ConcurrentHashMap<>();
 
     @Getter

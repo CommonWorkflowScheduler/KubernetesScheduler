@@ -1,8 +1,9 @@
 package fonda.scheduler.model.location;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public abstract class Location {
+public abstract class Location implements Serializable {
 
     public abstract String getIdentifier();
 
