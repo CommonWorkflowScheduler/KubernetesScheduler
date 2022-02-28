@@ -342,15 +342,15 @@ public class RealFileTest {
 
         final CountDownLatch waiter = new CountDownLatch(1);
 
-        LocationWrapper loc1 = new LocationWrapper( NodeLocation.getLocation("Node1"), System.currentTimeMillis() - 2, 2, null );
+        LocationWrapper loc1 = new LocationWrapper( NodeLocation.getLocation("Node1"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc2 = new LocationWrapper( NodeLocation.getLocation("Node2"), System.currentTimeMillis() - 1, 2, null );
+        LocationWrapper loc2 = new LocationWrapper( NodeLocation.getLocation("Node2"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc3 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis() - 5, 2, null );
+        LocationWrapper loc3 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc4 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis() - 2, 2, null );
+        LocationWrapper loc4 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc5 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis() - 5, 2, null );
+        LocationWrapper loc5 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
 
         RealFile realFile = new RealFile( loc1 );
         assertEquals( loc1, realFile.getLastUpdate( LocationType.NODE ));
@@ -373,15 +373,15 @@ public class RealFileTest {
 
         final CountDownLatch waiter = new CountDownLatch(1);
 
-        LocationWrapper loc1 = new LocationWrapper( NodeLocation.getLocation("Node1"), System.currentTimeMillis() - 2, 2, null );
+        LocationWrapper loc1 = new LocationWrapper( NodeLocation.getLocation("Node1"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc2 = new LocationWrapper( NodeLocation.getLocation("Node2"), System.currentTimeMillis() - 1, 2, null );
+        LocationWrapper loc2 = new LocationWrapper( NodeLocation.getLocation("Node2"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc3 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis() - 5, 2, null );
+        LocationWrapper loc3 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc4 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis() - 2, 2, null );
+        LocationWrapper loc4 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc5 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis() - 5, 2, null );
+        LocationWrapper loc5 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
 
         RealFile realFile = new RealFile(loc1);
         assertEquals( loc1, realFile.getLocationWrapper( NodeLocation.getLocation("Node1") ) );
