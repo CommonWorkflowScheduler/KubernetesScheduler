@@ -44,8 +44,15 @@ public class LocationWrapper {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof LocationWrapper)) return false;
+
         LocationWrapper that = (LocationWrapper) o;
-        return getId() == that.getId();
+
+        if (getTimestamp() != that.getTimestamp()) return false;
+        if (getSizeInBytes() != that.getSizeInBytes()) return false;
+        if (!getLocation().equals(that.getLocation())) return false;
+        if (getCreatedByTask() != null ? !getCreatedByTask().equals(that.getCreatedByTask()) : that.getCreatedByTask() != null)
+            return false;
+        return getCopyOf() != null ? getCopyOf().equals(that.getCopyOf()) : that.getCopyOf() == null;
     }
 
     @Override
