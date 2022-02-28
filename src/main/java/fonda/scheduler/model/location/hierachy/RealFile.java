@@ -76,6 +76,7 @@ public class RealFile extends AbstractFile {
                 if ( locationWrapper.getCreateTime() > time ) {
                     result.clear();
                     result.add( locationWrapper );
+                    time = locationWrapper.getCreateTime();
                 } else if  ( locationWrapper.getCreateTime() == time ) {
                     result.add( locationWrapper );
                 }
