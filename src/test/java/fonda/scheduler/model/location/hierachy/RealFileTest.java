@@ -68,10 +68,7 @@ public class RealFileTest {
         final RealFile realFile = new RealFile( getLocationWrapper("node1") );
         //noinspection ConfusingArgumentToVarargsMethod
         assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  null ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false ));
-        //noinspection RedundantArrayCreation
-        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  new LocationWrapper[0] ));
-        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  new LocationWrapper[1] ));
+        assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( true,  null ));
     }
 
     @Test

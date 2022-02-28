@@ -39,31 +39,23 @@ public class RealFile extends AbstractFile {
         }
     }
 
-    public void addOrUpdateLocation( boolean overwrite, LocationWrapper... location ){
-        checkIfValidInput( location );
+    public void addOrUpdateLocation( boolean overwrite, LocationWrapper location ){
+        if ( location == null ) throw new IllegalArgumentException( "location contains null value" );
         if ( overwrite ){
-            this.locations = location;
+            this.locations = new LocationWrapper[]{ location };
             return;
         }
         synchronized ( this ){
-            int index = 0;
-            LocationWrapper[] newLocationsTmp = new LocationWrapper[location.length];
-            for (LocationWrapper newLoc : location) {
-                boolean foundEqual = false;
-                for (int i = 0; i < locations.length; i++) {
-                    if ( newLoc.getLocation().equals( locations[i].getLocation() ) ) {
-                        foundEqual = true;
-                        if ( newLoc.getTimestamp() > locations[i].getTimestamp() )
-                            locations[i] = newLoc;
-                        break;
+            for (int i = 0; i < locations.length; i++) {
+                if ( location.getLocation().equals( locations[i].getLocation() ) ) {
+                    if ( location.getTimestamp() > locations[i].getTimestamp() ) {
+                        locations[i] = location;
                     }
-                }
-                if ( !foundEqual ){
-                    newLocationsTmp[index++] = newLoc;
+                    return;
                 }
             }
-            final LocationWrapper[] newLocation = Arrays.copyOf(locations, locations.length + index );
-            System.arraycopy( newLocationsTmp, 0, newLocation, locations.length, index );
+            final LocationWrapper[] newLocation = Arrays.copyOf(locations, locations.length + 1);
+            newLocation[ locations.length ] = location;
             locations = newLocation;
         }
     }

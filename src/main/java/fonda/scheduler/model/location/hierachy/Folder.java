@@ -60,12 +60,12 @@ public class Folder extends File {
         }
     }
 
-    public boolean addOrUpdateFile( final String name, boolean overwrite, final LocationWrapper... locations ) {
+    public boolean addOrUpdateFile( final String name, boolean overwrite, final LocationWrapper location ) {
         children.compute( name, (k,v) -> {
             if (v == null || v.isDirectory() || v.isSymlink() )
-                return new RealFile( locations );
+                return new RealFile( location );
             final RealFile file = (RealFile) v;
-            file.addOrUpdateLocation( overwrite, locations );
+            file.addOrUpdateLocation( overwrite, location );
             return v;
         } );
         return true;
