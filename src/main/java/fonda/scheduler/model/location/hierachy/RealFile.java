@@ -16,9 +16,9 @@ public class RealFile extends AbstractFile {
     @Getter
     private LocationWrapper[] locations;
 
-    public RealFile( LocationWrapper... locations ) {
-        checkIfValidInput( locations );
-        this.locations = locations;
+    public RealFile( LocationWrapper location ) {
+        if ( location == null ) throw new IllegalArgumentException( "location is null" );
+        this.locations = new LocationWrapper[]{ location };
     }
 
     @Override
@@ -40,7 +40,7 @@ public class RealFile extends AbstractFile {
     }
 
     public void addOrUpdateLocation( boolean overwrite, LocationWrapper location ){
-        if ( location == null ) throw new IllegalArgumentException( "location contains null value" );
+        if ( location == null ) throw new IllegalArgumentException( "location is null" );
         if ( overwrite ){
             this.locations = new LocationWrapper[]{ location };
             return;
