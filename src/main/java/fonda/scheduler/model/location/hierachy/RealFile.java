@@ -31,14 +31,6 @@ public class RealFile extends AbstractFile {
         return false;
     }
 
-    private void checkIfValidInput( LocationWrapper[] location ){
-        if ( location == null || location.length == 0 )
-            throw new IllegalArgumentException( "location was null or empty" );
-        for (LocationWrapper loc : location) {
-            if ( loc == null ) throw new IllegalArgumentException( "location contains null value" );
-        }
-    }
-
     public void addOrUpdateLocation( boolean overwrite, LocationWrapper location ){
         if ( location == null ) throw new IllegalArgumentException( "location is null" );
         if ( overwrite ){
