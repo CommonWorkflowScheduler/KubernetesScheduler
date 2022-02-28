@@ -23,7 +23,7 @@ public class InputEdge {
      * @param from
      * @param to
      */
-    InputEdge(int from, int to) {
+    public InputEdge(int from, int to) {
         label = null;
         this.from = from;
         this.to = to;
