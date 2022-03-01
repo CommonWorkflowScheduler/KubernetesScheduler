@@ -56,13 +56,19 @@ public class TaskResultParser {
         final Path outfile = workdir.resolve(".command.outfiles");
 
         String taskRootDir = getRootDir( infile.toFile() );
-        if( taskRootDir == null ) throw new IllegalStateException("taskRootDir is null");
+        if( taskRootDir == null
+                && (finishedTask.getInputFiles() == null || finishedTask.getInputFiles().isEmpty()) )
+            throw new IllegalStateException("taskRootDir is null");
+
+
+        final Set<OutputFile> newOrUpdated = new HashSet<>();
+
         String outputRootDir = getRootDir( outfile.toFile() );
-        if( outputRootDir == null ) throw new IllegalStateException("outputRootDir is null");
+        //No outputs defined / found
+        if( outputRootDir == null ) return newOrUpdated;
 
         final Map<String, String> inputdata = new HashMap<>();
 
-        Set<OutputFile> newOrUpdated = new HashSet<>();
 
         try (
                 Stream<String> in = Files.lines(infile);
