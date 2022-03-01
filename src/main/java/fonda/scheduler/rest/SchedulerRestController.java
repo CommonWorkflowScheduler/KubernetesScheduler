@@ -43,6 +43,10 @@ public class SchedulerRestController {
         schedulerHolder.put( key, scheduler );
     }
 
+    private ResponseEntity<String> noSchedulerFor( String execution ){
+        return new ResponseEntity<>( "There is already a scheduler for " + execution, HttpStatus.BAD_REQUEST );
+    }
+
     /**
      * Register a sheduler for a workflow execution
      * @param namespace namespace where the workflow runs
@@ -61,7 +65,7 @@ public class SchedulerRestController {
         final Pair<String, String> key = getKey( namespace, execution );
 
         if( schedulerHolder.containsKey( key ) ) {
-            return new ResponseEntity<>( "There is already a scheduler for " + execution, HttpStatus.BAD_REQUEST );
+            return noSchedulerFor( execution );
         }
 
         switch ( strategy.toLowerCase() ){
@@ -86,14 +90,14 @@ public class SchedulerRestController {
      * @return Parameters the scheduler suggests for the task
      */
     @PutMapping("/scheduler/registerTask/{namespace}/{execution}")
-    ResponseEntity<Object> registerTask(@PathVariable String namespace, @PathVariable String execution, @RequestBody TaskConfig config ) {
+    ResponseEntity<? extends Object> registerTask(@PathVariable String namespace, @PathVariable String execution, @RequestBody TaskConfig config ) {
 
         log.trace( execution + " " + config.getTask() + " got: " + config );
 
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if( scheduler == null ){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
 
         scheduler.addTask( config );
@@ -109,7 +113,7 @@ public class SchedulerRestController {
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if( scheduler == null ){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
         scheduler.startBatch();
         return new ResponseEntity<>( HttpStatus.OK );
@@ -122,7 +126,7 @@ public class SchedulerRestController {
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if( scheduler == null ){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
         scheduler.endBatch( tasksInBatch );
         return new ResponseEntity<>( HttpStatus.OK );
@@ -137,12 +141,12 @@ public class SchedulerRestController {
      * @return boolean
      */
     @GetMapping("/scheduler/taskstate/{namespace}/{execution}/{taskid}")
-    ResponseEntity<Object> getTaskState(@PathVariable String namespace, @PathVariable String execution, @PathVariable String taskid ) {
+    ResponseEntity<? extends Object> getTaskState(@PathVariable String namespace, @PathVariable String execution, @PathVariable String taskid ) {
 
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if( scheduler == null ){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
 
         return new ResponseEntity<>( scheduler.getTaskState( taskid ), HttpStatus.OK );
@@ -163,7 +167,7 @@ public class SchedulerRestController {
 
         final Scheduler scheduler = schedulerHolder.get( key );
         if( scheduler == null ){
-            return new ResponseEntity<>( "No scheduler for: " + execution, HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
         schedulerHolder.remove( key );
         client.removeScheduler( scheduler );
@@ -179,7 +183,7 @@ public class SchedulerRestController {
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if(!(scheduler instanceof SchedulerWithDaemonSet)){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
 
         String daemon = ((SchedulerWithDaemonSet) scheduler).getDaemonOnNode( node );
@@ -193,14 +197,14 @@ public class SchedulerRestController {
     }
 
     @GetMapping("/file/{namespace}/{execution}")
-    ResponseEntity<Object> getNodeForFile(@PathVariable String namespace, @PathVariable String execution, @RequestParam String path ) {
+    ResponseEntity<? extends Object> getNodeForFile(@PathVariable String namespace, @PathVariable String execution, @RequestParam String path ) {
 
         log.info( "Get file location request: {} {} {}", namespace, execution, path );
 
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if(!(scheduler instanceof SchedulerWithDaemonSet)){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
 
         FileResponse fileResponse;
@@ -233,7 +237,7 @@ public class SchedulerRestController {
         final Scheduler scheduler = schedulerHolder.get( key );
         if(!(scheduler instanceof SchedulerWithDaemonSet)){
             log.info("No scheduler for: " + execution);
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
 
         if ( !method.equals("add") && !method.equals("overwrite") ) {
@@ -266,7 +270,7 @@ public class SchedulerRestController {
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if( scheduler == null ){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
 
         scheduler.getDag().registerVertices( vertices );
@@ -283,7 +287,7 @@ public class SchedulerRestController {
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
         if( scheduler == null ){
-            return new ResponseEntity<>( "No scheduler for: " + execution , HttpStatus.NOT_FOUND );
+            return noSchedulerFor( execution );
         }
 
         final DAG dag = scheduler.getDag();
