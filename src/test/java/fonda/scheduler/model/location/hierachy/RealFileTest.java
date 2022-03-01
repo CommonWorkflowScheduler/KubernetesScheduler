@@ -395,7 +395,8 @@ public class RealFileTest {
         assertEquals( loc5, realFile.getLocationWrapper( NodeLocation.getLocation("Node3") ) );
         assertEquals( loc1, realFile.getLocationWrapper( NodeLocation.getLocation("Node1") ) );
 
-        assertThrows( RuntimeException.class, () -> realFile.getLocationWrapper( NodeLocation.getLocation("Node99") ) );
+        final NodeLocation node99 = NodeLocation.getLocation("Node99");
+        assertThrows( RuntimeException.class, () -> realFile.getLocationWrapper( node99 ) );
 
     }
 
