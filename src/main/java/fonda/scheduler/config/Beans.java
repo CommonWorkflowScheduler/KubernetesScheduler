@@ -9,10 +9,10 @@ public class Beans {
 
     private static KubernetesClient kubernetesClient;
 
-    private Beans() {}
+    Beans() {}
 
     @Bean
-    static KubernetesClient getClient(){
+    KubernetesClient getClient(){
         if(kubernetesClient == null) {
             kubernetesClient = new KubernetesClient();
             kubernetesClient.getConfiguration().setNamespace(null);
