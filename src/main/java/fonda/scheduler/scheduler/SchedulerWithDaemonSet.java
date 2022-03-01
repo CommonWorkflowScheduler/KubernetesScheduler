@@ -292,12 +292,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     }
                 }
             }
-        } else if ( this.getName().equals(pod.getSpec().getSchedulerName())) {
-            if ( action == Watcher.Action.MODIFIED && getTaskByPod( pod ).getState().getState() == State.SCHEDULED ) {
-                final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
-                if ( ! initContainerStatuses.isEmpty() && initContainerStatuses.get(0).getState().getTerminated() != null ) {
-                    podWasInitialized( pod );
-                }
+        } else if ( this.getName().equals(pod.getSpec().getSchedulerName())
+                && action == Watcher.Action.MODIFIED
+                && getTaskByPod( pod ).getState().getState() == State.SCHEDULED )
+        {
+            final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
+            if ( ! initContainerStatuses.isEmpty() && initContainerStatuses.get(0).getState().getTerminated() != null ) {
+                podWasInitialized( pod );
             }
         }
     }
