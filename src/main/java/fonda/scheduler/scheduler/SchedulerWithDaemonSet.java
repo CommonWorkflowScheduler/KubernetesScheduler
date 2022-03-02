@@ -71,12 +71,24 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     String getDaemonOnNode( Node node ){
         return getDaemonOnNode( node.getMetadata().getName() );
     }
+
+    private void useLocations( List<LocationWrapper> locationWrappers ){
+        locationWrappers.parallelStream().forEach( LocationWrapper::use );
+    }
+
+    private void freeLocations( List<LocationWrapper> locationWrappers ){
+        locationWrappers.parallelStream().forEach( LocationWrapper::free );
+    }
     
     @Override
     void assignTaskToNode( NodeTaskAlignment alignment ) {
-        final List< TaskInputFileLocationWrapper > locationWrappers = writeInitConfig((NodeTaskFilesAlignment) alignment);
-        alignment.task.setInputFiles( locationWrappers );
+        final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
+        final List< TaskInputFileLocationWrapper > locationWrappers = writeInitConfig( nodeTaskFilesAlignment );
+        alignment.task.setCopiedFiles( locationWrappers );
         getCopyStrategy().generateCopyScript( alignment.task );
+        final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
+        alignment.task.setInputFiles( allLocationWrappers );
+        useLocations( allLocationWrappers );
         super.assignTaskToNode( alignment );
     }
 
@@ -85,6 +97,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final TaskResultParser taskResultParser = new TaskResultParser();
         finishedTasks.parallelStream().forEach( finishedTask -> {
             try{
+                freeLocations( finishedTask.getInputFiles() );
                 final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                         Paths.get(finishedTask.getWorkingDir()),
                         finishedTask.getNode(),
@@ -244,7 +257,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     private void podWasInitialized( Pod pod ){
         final Task task = changeStateOfTask(pod, State.PREPARED);
-        task.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::apply );
+        task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::apply );
     }
 
     /**

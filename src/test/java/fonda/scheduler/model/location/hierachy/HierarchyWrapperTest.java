@@ -53,7 +53,7 @@ public class HierarchyWrapperTest {
         files.add( Paths.get(temporaryDir + "b/c/test.abc" ));
         files.add( Paths.get(temporaryDir + "bc/file.abc" ));
 
-        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x, node1)));
+        files.parallelStream().forEach( x -> assertNotNull(hw.addFile(x, node1)));
         result = hw.getAllFilesInDir(Paths.get(temporaryDir)).keySet();
         compare( files, result);
     }
@@ -104,7 +104,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileinFile() {
-        assertTrue(hw.addFile( Paths.get(temporaryDir + "test/b.txt"), node1));
+        assertNotNull(hw.addFile( Paths.get(temporaryDir + "test/b.txt"), node1));
 
         files.remove( Paths.get(temporaryDir + "test" ));
         files.add( Paths.get(temporaryDir + "test/b.txt") );
@@ -115,7 +115,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileinWorkdir() {
-        assertFalse(hw.addFile(Paths.get(workdir + "ab/b.txt"), node1));
+        assertNull(hw.addFile(Paths.get(workdir + "ab/b.txt"), node1));
 
         result = hw.getAllFilesInDir(Paths.get(temporaryDir)).keySet();
         compare( files, result);
@@ -123,8 +123,8 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileOutOfScope() {
-        assertFalse(hw.addFile(Paths.get("/somewhere/test.txt"), node1));
-        assertFalse(hw.addFile(Paths.get("/somewhere/on/the/machine/very/deep/hierarchy/test.txt"), node1));
+        assertNull(hw.addFile(Paths.get("/somewhere/test.txt"), node1));
+        assertNull(hw.addFile(Paths.get("/somewhere/on/the/machine/very/deep/hierarchy/test.txt"), node1));
 
         result = hw.getAllFilesInDir(Paths.get(temporaryDir)).keySet();
         compare( files, result);
@@ -132,7 +132,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileTwice() {
-        assertTrue(hw.addFile(Paths.get(temporaryDir + "bc/file.abc"), node1));
+        assertNotNull(hw.addFile(Paths.get(temporaryDir + "bc/file.abc"), node1));
 
         result = hw.getAllFilesInDir(Paths.get(temporaryDir)).keySet();
         compare( files, result);
@@ -140,7 +140,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void createFileButWasFolder() {
-        assertTrue(hw.addFile(Paths.get(temporaryDir + "bc"),node1));
+        assertNotNull(hw.addFile(Paths.get(temporaryDir + "bc"),node1));
 
         files.remove( Paths.get(temporaryDir + "bc/file.abc") );
         files.add( Paths.get(temporaryDir + "bc") );
@@ -178,7 +178,7 @@ public class HierarchyWrapperTest {
 
         intialMem = finalMem;
 
-        files.parallelStream().forEach( x -> assertTrue(hw.addFile(x, getLocationWrapper("Node1"))));
+        files.parallelStream().forEach( x -> assertNotNull(hw.addFile(x, getLocationWrapper("Node1"))));
 
         finalMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         log.info( "Memory hierachy: {}mb", (finalMem - intialMem) / 1024 / 1024 );
@@ -214,7 +214,7 @@ public class HierarchyWrapperTest {
         LocationWrapper[] lw = new LocationWrapper[ files.size() ];
         for ( Path file : files) {
             lw[index] = getLocationWrapper( "Node" + index );
-            assertTrue(hw.addFile(file,lw[index++]));
+            assertNotNull(hw.addFile(file,lw[index++]));
         }
 
         result = hw.getAllFilesInDir( Paths.get(temporaryDir) ).keySet();
@@ -250,7 +250,7 @@ public class HierarchyWrapperTest {
 
     @Test
     public void testFileIsNowDir(){
-        assertTrue(hw.addFile( Paths.get(temporaryDir + "d"), getLocationWrapper("nodeXY") ));
+        assertNotNull(hw.addFile( Paths.get(temporaryDir + "d"), getLocationWrapper("nodeXY") ));
         result = hw.getAllFilesInDir(  Paths.get(temporaryDir ) ).keySet();
         assertNotNull( hw.getFile( Paths.get(temporaryDir + "d" )) );
         assertNull( hw.getFile( Paths.get(temporaryDir + "d/e/file.txt" )) );

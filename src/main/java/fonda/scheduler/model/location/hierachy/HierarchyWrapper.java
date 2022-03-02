@@ -69,15 +69,15 @@ public class HierarchyWrapper {
      * @param location location where the file is located
      * @return false if file can not be created
      */
-    public boolean addFile( final Path path, final LocationWrapper location ){
+    public LocationWrapper addFile(final Path path, final LocationWrapper location ){
         return addFile( path, false, location );
     }
 
-    public boolean addFile( final Path path, boolean overwrite, final LocationWrapper location ){
+    public LocationWrapper addFile(final Path path, boolean overwrite, final LocationWrapper location ){
 
         final Folder folderToInsert = findFolderToInsert(path);
 
-        if( folderToInsert == null ) return false;
+        if( folderToInsert == null ) return null;
         else return folderToInsert.addOrUpdateFile( path.getFileName().toString(), overwrite, location );
 
     }

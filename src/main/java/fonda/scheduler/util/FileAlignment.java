@@ -1,9 +1,11 @@
 package fonda.scheduler.util;
 
+import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.util.inputs.SymlinkInput;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FileAlignment {
 
@@ -17,5 +19,17 @@ public class FileAlignment {
     public FileAlignment(Map<String, List<FilePath>> nodeFileAlignment, List<SymlinkInput> symlinks) {
         this.nodeFileAlignment = nodeFileAlignment;
         this.symlinks = symlinks;
+    }
+
+    public List<LocationWrapper> getAllLocationWrappers(){
+        return nodeFileAlignment
+                .entrySet()
+                .parallelStream()
+                .flatMap( l -> l
+                        .getValue()
+                        .parallelStream()
+                        .map( p -> p.locationWrapper )
+                )
+                .collect(Collectors.toList());
     }
 }

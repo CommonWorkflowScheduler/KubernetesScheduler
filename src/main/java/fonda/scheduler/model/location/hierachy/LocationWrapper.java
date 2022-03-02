@@ -14,11 +14,13 @@ public class LocationWrapper {
 
     private final long id = nextID.getAndIncrement();
     private final Location location;
-    private final long timestamp;
-    private final long sizeInBytes;
-    private final long createTime = System.currentTimeMillis();
-    private final Task createdByTask;
-    private final LocationWrapper copyOf;
+    private long timestamp;
+    private long sizeInBytes;
+    private long createTime = System.currentTimeMillis();
+    private Task createdByTask;
+    private LocationWrapper copyOf;
+    private boolean active = true;
+    private int inUse = 0;
 
     public LocationWrapper(Location location, long timestamp, long sizeInBytes) {
         this( location, timestamp, sizeInBytes ,null);
@@ -36,8 +38,42 @@ public class LocationWrapper {
         this.copyOf = copyOf;
     }
 
+    public void update( LocationWrapper update ){
+        assert  location == update.location;
+        synchronized ( this ) {
+            this.timestamp = update.timestamp;
+            this.sizeInBytes = update.sizeInBytes;
+            this.createTime = update.createTime;
+            this.createdByTask = update.createdByTask;
+            this.copyOf = update.copyOf;
+            this.active = update.active;
+        }
+    }
+
+    public void deactivate(){
+        this.active = false;
+    }
+
+    public void use(){
+        synchronized ( this ) {
+            inUse++;
+        }
+    }
+
+    public void free(){
+        synchronized ( this ) {
+            inUse--;
+        }
+    }
+
+    public boolean isInUse(){
+        return inUse == 0;
+    }
+
     public LocationWrapper getCopyOf( Location location ) {
-        return new LocationWrapper( location, timestamp, sizeInBytes, createdByTask, copyOf == null ? this : copyOf );
+        synchronized ( this ) {
+            return new LocationWrapper(location, timestamp, sizeInBytes, createdByTask, copyOf == null ? this : copyOf);
+        }
     }
 
     @Override
@@ -47,29 +83,35 @@ public class LocationWrapper {
 
         LocationWrapper that = (LocationWrapper) o;
 
-        if (getTimestamp() != that.getTimestamp()) return false;
-        if (getSizeInBytes() != that.getSizeInBytes()) return false;
-        if (!getLocation().equals(that.getLocation())) return false;
-        if (getCreatedByTask() != null ? !getCreatedByTask().equals(that.getCreatedByTask()) : that.getCreatedByTask() != null)
-            return false;
-        return getCopyOf() != null ? getCopyOf().equals(that.getCopyOf()) : that.getCopyOf() == null;
+        synchronized ( this ) {
+            if (getTimestamp() != that.getTimestamp()) return false;
+            if (getSizeInBytes() != that.getSizeInBytes()) return false;
+            if (!getLocation().equals(that.getLocation())) return false;
+            if (getCreatedByTask() != null ? !getCreatedByTask().equals(that.getCreatedByTask()) : that.getCreatedByTask() != null)
+                return false;
+            return getCopyOf() != null ? getCopyOf().equals(that.getCopyOf()) : that.getCopyOf() == null;
+        }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getLocation(), getTimestamp(), getSizeInBytes(), getCreatedByTask());
+        synchronized ( this ) {
+            return Objects.hash(getLocation(), getTimestamp(), getSizeInBytes(), getCreatedByTask());
+        }
     }
 
     @Override
     public String toString() {
-        return "LocationWrapper{" +
-                "id=" + id +
-                ", location=" + location.getIdentifier() +
-                ", timestamp=" + timestamp +
-                ", sizeInBytes=" + sizeInBytes +
-                ", createTime=" + createTime +
-                ", createdByTask=" + createdByTask +
-                ", copyOf=" + copyOf +
-                '}';
+        synchronized ( this ) {
+            return "LocationWrapper{" +
+                    "id=" + id +
+                    ", location=" + location.getIdentifier() +
+                    ", timestamp=" + timestamp +
+                    ", sizeInBytes=" + sizeInBytes +
+                    ", createTime=" + createTime +
+                    ", createdByTask=" + createdByTask +
+                    ", copyOf=" + copyOf +
+                    '}';
+        }
     }
 }

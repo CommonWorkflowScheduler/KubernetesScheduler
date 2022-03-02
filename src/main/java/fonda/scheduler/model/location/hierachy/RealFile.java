@@ -31,25 +31,27 @@ public class RealFile extends AbstractFile {
         return false;
     }
 
-    public void addOrUpdateLocation( boolean overwrite, LocationWrapper location ){
+    public LocationWrapper addOrUpdateLocation( boolean overwrite, LocationWrapper location ){
         if ( location == null ) throw new IllegalArgumentException( "location is null" );
-        if ( overwrite ){
-            this.locations = new LocationWrapper[]{ location };
-            return;
-        }
         synchronized ( this ){
+            LocationWrapper locationWrapperToUpdate = null;
             for (int i = 0; i < locations.length; i++) {
                 if ( location.getLocation().equals( locations[i].getLocation() ) ) {
-                    if ( location.getTimestamp() > locations[i].getTimestamp() ) {
-                        locations[i] = location;
+                    locationWrapperToUpdate = locations[i];
+                    if ( overwrite || location.getTimestamp() > locations[i].getTimestamp() ) {
+                        locationWrapperToUpdate.update( location );
                     }
-                    return;
+                    if ( !overwrite ) return locationWrapperToUpdate;
+                } else if ( overwrite ){
+                    locations[i].deactivate();
                 }
             }
+            if ( overwrite && locationWrapperToUpdate != null ) return locationWrapperToUpdate;
             final LocationWrapper[] newLocation = Arrays.copyOf(locations, locations.length + 1);
             newLocation[ locations.length ] = location;
             locations = newLocation;
         }
+        return location;
     }
 
     private List<LocationWrapper> combineResultsWithInitial (
@@ -145,6 +147,9 @@ public class RealFile extends AbstractFile {
         final Set<Process> taskDescendants = taskProcess.getDescendants();
 
         for ( LocationWrapper location : locationsRef ) {
+
+            if ( !location.isActive() ) continue;
+
             //File was modified by an operator (no relation known)
             if ( location.getCreatedByTask() == null ) {
                 initial = addAndCreateList( initial, location );
@@ -188,7 +193,7 @@ public class RealFile extends AbstractFile {
     public LocationWrapper getLastUpdate( LocationType type ){
         LocationWrapper lastLocation = null;
         for (LocationWrapper location : locations) {
-            if( location.getLocation().getType() == type && (lastLocation == null || lastLocation.getCreateTime() < location.getCreateTime() )){
+            if( location.isActive() && location.getLocation().getType() == type && (lastLocation == null || lastLocation.getCreateTime() < location.getCreateTime() )){
                 lastLocation = location;
             }
         }
@@ -197,7 +202,7 @@ public class RealFile extends AbstractFile {
 
     public LocationWrapper getLocationWrapper( Location location ){
         for (LocationWrapper locationWrapper : locations) {
-            if ( locationWrapper.getLocation() == location ) return locationWrapper;
+            if ( locationWrapper.isActive() && locationWrapper.getLocation() == location ) return locationWrapper;
         }
         throw new RuntimeException( "Not found: " + location.getIdentifier() );
     }

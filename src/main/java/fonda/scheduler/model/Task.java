@@ -3,6 +3,7 @@ package fonda.scheduler.model;
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.dag.Process;
 import fonda.scheduler.model.location.NodeLocation;
+import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.util.Batch;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +22,11 @@ public class Task {
 
     @Getter
     @Setter
-    private List< TaskInputFileLocationWrapper > inputFiles;
+    private List<LocationWrapper> inputFiles;
+
+    @Getter
+    @Setter
+    private List< TaskInputFileLocationWrapper > copiedFiles;
 
     @Getter
     @Setter

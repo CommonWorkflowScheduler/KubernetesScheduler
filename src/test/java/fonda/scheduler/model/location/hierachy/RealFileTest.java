@@ -132,6 +132,30 @@ public class RealFileTest {
     }
 
     @Test
+    public void overwriteFile() {
+        final LinkedList<LocationWrapper> results = new LinkedList<>();
+        final LocationWrapper node0 = getLocationWrapper("Node0");
+        results.add( node0 );
+        assertTrue(node0.isActive());
+        final RealFile realFile = new RealFile(node0);
+        assertArrayEquals( results.toArray(), realFile.getLocations() );
+        assertTrue(node0.isActive());
+        final LocationWrapper node1 = getLocationWrapper("Node1");
+        results.add( node1 );
+        realFile.addOrUpdateLocation( true, node1);
+        assertArrayEquals( results.toArray(), realFile.getLocations() );
+        assertFalse(node0.isActive());
+        assertTrue(node1.isActive());
+        final LocationWrapper node2 = getLocationWrapper("Node2");
+        assertArrayEquals( results.toArray(), realFile.getLocations() );
+        results.add( node2 );
+        realFile.addOrUpdateLocation( true, node2);
+        assertFalse(node0.isActive());
+        assertFalse(node1.isActive());
+        assertTrue(node2.isActive());
+    }
+
+    @Test
     public void changeFileOnExistingLocation() {
 
         final RealFile realFile = new RealFile( getLocationWrapper("Node0") );
