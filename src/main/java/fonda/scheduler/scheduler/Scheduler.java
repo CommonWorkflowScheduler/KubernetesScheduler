@@ -238,6 +238,21 @@ public abstract class Scheduler {
 
     /* Nodes */
 
+    boolean canSchedulePodOnNode( Map<String,PodRequirements> availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+        return availableByNode.get( node.getName() ).higherOrEquals( pod.getRequest() )
+                && affinitiesMatch( pod, node );
+    }
+
+    boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
+        final Map<String, String> podsNodeSelector = pod.getSpec().getNodeSelector();
+        final Map<String, String> nodesLabels = node.getMetadata().getLabels();
+        if ( podsNodeSelector == null || podsNodeSelector.isEmpty() ) return true;
+        //cannot be fulfilled if podsNodeSelector is not empty
+        if ( nodesLabels == null || nodesLabels.isEmpty() ) return false;
+
+        return nodesLabels.entrySet().containsAll( podsNodeSelector.entrySet() );
+    }
+
     public void newNode(NodeWithAlloc node) {
         informResourceChange();
     }

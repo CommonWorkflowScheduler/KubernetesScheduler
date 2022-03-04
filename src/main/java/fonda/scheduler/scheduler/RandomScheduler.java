@@ -45,11 +45,7 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
             final PodWithAge pod = task.getPod();
             final List<NodeWithAlloc> matchingNodes = items
                     .stream()
-                    .filter(
-                            x -> availableByNode.get(x.getName()).higherOrEquals(pod.getRequest())
-                                    && this.getDaemonOnNode(x) != null
-                                    //&& !x.getName().equals(this.getWorkflowEngineNode())
-                    )
+                    .filter( x -> this.canSchedulePodOnNode( availableByNode, task.getPod(), x ) )
                     .collect(Collectors.toList());
             log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
             Optional<NodeWithAlloc> node = matchingNodes.isEmpty()

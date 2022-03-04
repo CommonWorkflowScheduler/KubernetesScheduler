@@ -247,6 +247,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         task.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::apply );
     }
 
+    boolean canSchedulePodOnNode( Map<String,PodRequirements> availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+        return this.getDaemonOnNode( node ) != null && super.canSchedulePodOnNode( availableByNode, pod, node );
+    }
+
     /**
      * Since task was not yet initialized: set scheduled
      * @param task
