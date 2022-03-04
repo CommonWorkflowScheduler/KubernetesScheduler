@@ -1,4 +1,4 @@
-package fonda.scheduler.util.inputs;
+package fonda.scheduler.model.taskinputs;
 
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.location.hierachy.RealFile;

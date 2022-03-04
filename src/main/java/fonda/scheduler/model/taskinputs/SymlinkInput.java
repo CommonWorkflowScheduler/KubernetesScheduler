@@ -1,4 +1,4 @@
-package fonda.scheduler.util.inputs;
+package fonda.scheduler.model.taskinputs;
 
 import lombok.Getter;
 
