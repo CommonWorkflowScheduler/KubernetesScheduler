@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.location.LocationType;
+import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.model.location.NodeLocation;
@@ -17,10 +18,10 @@ import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.NodeTaskAlignment;
 import fonda.scheduler.util.NodeTaskFilesAlignment;
-import fonda.scheduler.model.taskinputs.Input;
 import fonda.scheduler.model.taskinputs.PathFileLocationTriple;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import fonda.scheduler.util.FilePath;
+import fonda.scheduler.util.Tuple;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -35,7 +36,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 public abstract class SchedulerWithDaemonSet extends Scheduler {
@@ -163,56 +163,42 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return null;
     }
 
-    private Stream<Input> streamFile(
-                final fonda.scheduler.model.location.hierachy.File file,
-                final Task task,
-                final Path sourcePath )
-    {
-        if( file == null ){
-            log.info( "File to stream was null: {}", sourcePath );
-            return Stream.empty();
-        }
-        if ( file.isSymlink() ){
-            final Path linkTo = ((LinkFile) file).getDst();
-            final fonda.scheduler.model.location.hierachy.File destFile = hierarchyWrapper.getFile(linkTo);
-            final Stream<Input> inputStream = streamFile(destFile, task, linkTo);
-            return Stream.concat(Stream.of( new SymlinkInput( sourcePath, linkTo ) ), inputStream);
-        }
-        if( file.isDirectory() ){
-            return ((Folder) file).getAllChildren( sourcePath )
-                    .entrySet()
-                    .stream()
-                    .flatMap( y -> {
-                                if ( !y.getValue().isSymlink() )
-                                    return Stream.of(new PathFileLocationTriple(
-                                            y.getKey(),
-                                            ((RealFile) y.getValue()),
-                                            ((RealFile) y.getValue()).getFilesForTask( task )
-                                    ));
-                                else {
-                                    return streamFile( y.getValue(), task, y.getKey() );
-                                }
-                            }
-                    );
-        }
-        final RealFile realFile = (RealFile) file;
-        return Stream.of( new PathFileLocationTriple(
-                        sourcePath,
-                        realFile,
-                        realFile.getFilesForTask( task )
-                )
-        );
-    }
+    TaskInputs getInputsOfTask( Task task ){
 
-    List<Input> getInputsOfTask( Task task ){
-        return task.getConfig()
-                .getInputs()
-                .fileInputs
-                .parallelStream()
-                .map( x -> Path.of(x.value.sourceObj) )
-                .filter(this.hierarchyWrapper::isInScope)
-                .flatMap( sourcePath -> streamFile( hierarchyWrapper.getFile(sourcePath), task, sourcePath ))
-                .collect(Collectors.toList());
+        final List<InputParam<FileHolder>> fileInputs = task.getConfig().getInputs().fileInputs;
+        final LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> toProcess = new LinkedList<>();
+        for ( InputParam<FileHolder> fileInput : fileInputs) {
+            final Path path = Path.of(fileInput.value.sourceObj);
+            if ( this.hierarchyWrapper.isInScope( path ) ){
+                toProcess.add( new Tuple<>(hierarchyWrapper.getFile( path ), path) );
+            }
+        }
+
+        List<SymlinkInput> symlinks = new ArrayList<>( fileInputs.size() );
+        List<PathFileLocationTriple> files = new ArrayList<>( fileInputs.size() );
+
+        while ( !toProcess.isEmpty() ){
+            final Tuple<fonda.scheduler.model.location.hierachy.File, Path> pop = toProcess.removeLast();
+            final fonda.scheduler.model.location.hierachy.File file = pop.getA();
+            if( file == null ) continue;
+            final Path path = pop.getB();
+            if ( file.isSymlink() ){
+                final Path linkTo = ((LinkFile) file).getDst();
+                symlinks.add( new SymlinkInput( path, linkTo ) );
+                toProcess.push( new Tuple<>( hierarchyWrapper.getFile( linkTo ), linkTo ) );
+            } else if( file.isDirectory() ){
+                final Map<Path, AbstractFile> allChildren = ((Folder) file).getAllChildren(path);
+                for (Map.Entry<Path, AbstractFile> pathAbstractFileEntry : allChildren.entrySet()) {
+                    toProcess.push( new Tuple<>( pathAbstractFileEntry.getValue(), pathAbstractFileEntry.getKey() ) );
+                }
+            } else {
+                final RealFile realFile = (RealFile) file;
+                files.add( new PathFileLocationTriple( path, realFile, realFile.getFilesForTask(task) ) );
+            }
+        }
+
+        return new TaskInputs( symlinks, files,null );
+
     }
 
     public FileResponse nodeOfLastFileVersion( String path ) throws NotARealFileException {
