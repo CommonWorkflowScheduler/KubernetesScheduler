@@ -3,7 +3,9 @@ package fonda.scheduler.model;
 import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
 
-public class DateParser {
+public final class DateParser {
+
+    private DateParser(){}
 
     public static Long millisFromString( String date ) {
         if( date == null || date.isEmpty() || date.equals("-") || date.equals("w") ) {
