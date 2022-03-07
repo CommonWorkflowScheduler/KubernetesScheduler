@@ -39,7 +39,8 @@ public class LocationWrapper {
     }
 
     public void update( LocationWrapper update ){
-        assert  location == update.location;
+        if (location != update.location)
+            throw new IllegalArgumentException( "Can only update LocationWrapper with the same location." );
         synchronized ( this ) {
             this.timestamp = update.timestamp;
             this.sizeInBytes = update.sizeInBytes;
