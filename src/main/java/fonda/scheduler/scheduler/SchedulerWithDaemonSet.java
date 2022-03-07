@@ -267,7 +267,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      * Since task was not yet initialized: set scheduled
-     * @param task
+     * @param task task that was scheduled
      */
     @Override
     void taskWasScheduledSetState( Task task ){
