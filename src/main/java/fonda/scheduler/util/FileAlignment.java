@@ -1,7 +1,7 @@
 package fonda.scheduler.util;
 
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
-import fonda.scheduler.util.inputs.SymlinkInput;
+import fonda.scheduler.model.taskinputs.SymlinkInput;
 
 import java.util.List;
 import java.util.Map;

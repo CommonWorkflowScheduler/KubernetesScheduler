@@ -6,10 +6,10 @@ import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.NodeTaskAlignment;
 import fonda.scheduler.util.NodeTaskFilesAlignment;
-import fonda.scheduler.util.inputs.Input;
+import fonda.scheduler.model.taskinputs.Input;
 import fonda.scheduler.util.FilePath;
-import fonda.scheduler.util.inputs.PathFileLocationTriple;
-import fonda.scheduler.util.inputs.SymlinkInput;
+import fonda.scheduler.model.taskinputs.PathFileLocationTriple;
+import fonda.scheduler.model.taskinputs.SymlinkInput;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;

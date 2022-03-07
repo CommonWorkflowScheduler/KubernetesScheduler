@@ -1,6 +1,6 @@
 package fonda.scheduler.rest.response.getfile;
 
-import fonda.scheduler.util.inputs.SymlinkInput;
+import fonda.scheduler.model.taskinputs.SymlinkInput;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package fonda.scheduler.scheduler.schedulingstrategy;
 
-import fonda.scheduler.util.inputs.SymlinkInput;
+import fonda.scheduler.model.taskinputs.SymlinkInput;
 
 import java.util.LinkedList;
 import java.util.List;
