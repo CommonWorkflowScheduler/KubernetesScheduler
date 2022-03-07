@@ -37,10 +37,59 @@ public class TaskResultParser {
         return null;
     }
 
+    private void processInput( Stream<String> in, final Map<String, String> inputdata, final String taskRootDir ){
+        in.skip( 1 )
+                .forEach( line -> {
+                    String[] data = line.split(";");
+                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
+                    String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ].substring( taskRootDir.length() + 1 ) : data[ REAL_PATH ];
+                    String modificationDate = data[ MODIFICATION_DATE ];
+                    inputdata.put( path , modificationDate );
+                });
+    }
+
+    private Set<OutputFile> processOutput(
+            final Stream<String> out,
+            final Map<String, String> inputdata,
+            final Location location,
+            final boolean onlyUpdated,
+            final Task finishedTask,
+            final String outputRootDir
+            ){
+        final Set<OutputFile> newOrUpdated = new HashSet<>();
+        out.skip( 1 )
+                .forEach( line -> {
+                    String[] data = line.split(";");
+                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
+                    boolean realFile = data[ REAL_PATH ].equals("");
+                    String path = realFile ? data[ VIRTUAL_PATH ] : data[ REAL_PATH ];
+                    String modificationDate = data[ MODIFICATION_DATE ];
+                    if ( "directory".equals(data[ FILE_TYPE ]) ) return;
+                    String lockupPath = realFile ? path.substring( outputRootDir.length() + 1 ) : path;
+                    if ( ( !inputdata.containsKey(lockupPath) && !onlyUpdated )
+                            ||
+                            !modificationDate.equals( inputdata.get( lockupPath ) ))
+                    {
+                        final LocationWrapper locationWrapper = new LocationWrapper(
+                                location,
+                                DateParser.millisFromString(modificationDate),
+                                Long.parseLong(data[ SIZE ]),
+                                finishedTask
+                        );
+                        newOrUpdated.add( new PathLocationWrapperPair( Paths.get(path), locationWrapper ) );
+                    }
+                    if( !realFile ){
+                        newOrUpdated.add( new SymlinkOutput( data[ VIRTUAL_PATH ], data[ REAL_PATH ]));
+                    }
+                });
+        return newOrUpdated;
+    }
+
     /**
      *
      * @param workdir
      * @param location
+     * @param onlyUpdated
      * @param finishedTask
      * @return A list of all new or updated files
      */
@@ -54,17 +103,15 @@ public class TaskResultParser {
         final Path infile = workdir.resolve(".command.infiles");
         final Path outfile = workdir.resolve(".command.outfiles");
 
-        String taskRootDir = getRootDir( infile.toFile() );
+        final String taskRootDir = getRootDir( infile.toFile() );
         if( taskRootDir == null
                 && (finishedTask.getInputFiles() == null || finishedTask.getInputFiles().isEmpty()) )
             throw new IllegalStateException("taskRootDir is null");
 
 
-        final Set<OutputFile> newOrUpdated = new HashSet<>();
-
-        String outputRootDir = getRootDir( outfile.toFile() );
+        final String outputRootDir = getRootDir( outfile.toFile() );
         //No outputs defined / found
-        if( outputRootDir == null ) return newOrUpdated;
+        if( outputRootDir == null ) return new HashSet<>();
 
         final Map<String, String> inputdata = new HashMap<>();
 
@@ -74,47 +121,14 @@ public class TaskResultParser {
                 Stream<String> out = Files.lines(outfile)
         ) {
 
-            in.skip( 1 )
-                .forEach( line -> {
-                    String[] data = line.split(";");
-                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
-                    String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ].substring( taskRootDir.length() + 1 ) : data[ REAL_PATH ];
-                    String modificationDate = data[ MODIFICATION_DATE ];
-                    inputdata.put( path , modificationDate );
-                });
-
+            processInput( in, inputdata, taskRootDir );
             log.trace( "{}", inputdata );
-
-            out.skip( 1 )
-                .forEach( line -> {
-                    String[] data = line.split(";");
-                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
-                    boolean realFile = data[ REAL_PATH ].equals("");
-                    String path = realFile ? data[ VIRTUAL_PATH ] : data[ REAL_PATH ];
-                    String modificationDate = data[ MODIFICATION_DATE ];
-                    if ( "directory".equals(data[ FILE_TYPE ]) ) return;
-                    String lockupPath = realFile ? path.substring( outputRootDir.length() + 1 ) : path;
-                    if ( ( !inputdata.containsKey(lockupPath) && !onlyUpdated )
-                            ||
-                            !modificationDate.equals( inputdata.get( lockupPath ) ))
-                    {
-                            final LocationWrapper locationWrapper = new LocationWrapper(
-                                                                            location,
-                                                                            DateParser.millisFromString(modificationDate),
-                                                                            Long.parseLong(data[ SIZE ]),
-                                                                            finishedTask
-                                                                    );
-                            newOrUpdated.add( new PathLocationWrapperPair( Paths.get(path), locationWrapper ) );
-                    }
-                    if( !realFile ){
-                        newOrUpdated.add( new SymlinkOutput( data[ VIRTUAL_PATH ], data[ REAL_PATH ]));
-                    }
-                });
+            return processOutput( out, inputdata, location, onlyUpdated, finishedTask, outputRootDir );
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return newOrUpdated;
+        return new HashSet<>();
 
     }
 
