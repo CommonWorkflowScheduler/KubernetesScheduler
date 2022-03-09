@@ -4,6 +4,7 @@ import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.rest.SchedulerRestController;
 import fonda.scheduler.scheduler.RandomScheduler;
+import fonda.scheduler.scheduler.filealignment.RandomAlignment;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,8 @@ public class Main {
     public void afterStart(){
         try{
             log.info( "Started with namespace: {}", client.getNamespace() );
-            final RandomScheduler randomScheduler = new RandomScheduler("testscheduler", client, "default", new SchedulerConfig(null, null, "/localwork/", null, "ftp"));
+            final SchedulerConfig schedlerConfig = new SchedulerConfig(null, null, "/localwork/", null, "ftp");
+            final RandomScheduler randomScheduler = new RandomScheduler("testscheduler", client, "default", schedlerConfig, new RandomAlignment());
             final Pair<String, String> key = new Pair<>("default", "test-run");
             SchedulerRestController.addScheduler( key, randomScheduler );
         } catch (Exception e){

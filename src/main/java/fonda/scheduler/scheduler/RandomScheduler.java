@@ -2,15 +2,12 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
-import fonda.scheduler.model.location.hierachy.LocationWrapper;
+import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.taskinputs.TaskInputs;
+import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.NodeTaskAlignment;
 import fonda.scheduler.util.NodeTaskFilesAlignment;
-import fonda.scheduler.model.taskinputs.Input;
-import fonda.scheduler.util.FilePath;
-import fonda.scheduler.model.taskinputs.PathFileLocationTriple;
-import fonda.scheduler.model.taskinputs.SymlinkInput;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -19,45 +16,56 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RandomScheduler extends SchedulerWithDaemonSet {
 
+    private final InputAlignment inputAlignment;
     private final Random random = new Random();
 
-    public RandomScheduler(String name, KubernetesClient client, String namespace, SchedulerConfig config) {
+    public RandomScheduler(
+            String name,
+            KubernetesClient client,
+            String namespace,
+            SchedulerConfig config,
+            InputAlignment inputAlignment
+    ) {
         super(name, client, namespace, config);
+        this.inputAlignment = inputAlignment;
+    }
+
+    private Optional<NodeWithAlloc> selectNode( Set<NodeWithAlloc> matchingNodes, Task task ){
+        return matchingNodes.isEmpty()
+                ? Optional.empty()
+                : Optional.of( new LinkedList<>(matchingNodes).get(random.nextInt(matchingNodes.size())));
     }
 
     @Override
-    public ScheduleObject getTaskNodeAlignment( final List<Task> unscheduledTasks ){
-        List<NodeWithAlloc> items = getNodeList();
+    public ScheduleObject getTaskNodeAlignment(
+            final List<Task> unscheduledTasks,
+            final Map<NodeWithAlloc,PodRequirements> availableByNode
+    ){
         List<NodeTaskAlignment> alignment = new LinkedList<>();
 
-        Map<String,PodRequirements> availableByNode = new HashMap<>();
-
-        List<String> logInfo = new LinkedList<>();
-        logInfo.add("------------------------------------");
-        for (NodeWithAlloc item : items) {
-            final PodRequirements availableResources = item.getAvailableResources();
-            availableByNode.put(item.getName(), availableResources);
-            logInfo.add("Node: " + item.getName() + " " + availableResources);
-        }
-        logInfo.add("------------------------------------");
-        log.info(String.join("\n", logInfo));
-        
-        for ( final Task task : unscheduledTasks) {
+        for ( final Task task : unscheduledTasks ) {
             final PodWithAge pod = task.getPod();
-            final List<NodeWithAlloc> matchingNodes = items
-                    .stream()
-                    .filter( x -> this.canSchedulePodOnNode( availableByNode, task.getPod(), x ) )
-                    .collect(Collectors.toList());
-            log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
-            Optional<NodeWithAlloc> node = matchingNodes.isEmpty()
-                    ? Optional.empty()
-                    : Optional.of(matchingNodes.get(random.nextInt(matchingNodes.size())));
-            if( node.isPresent() ){
+            final Set<NodeWithAlloc> matchingNodes = getMatchingNodesForTask(availableByNode,task);
+            if( !matchingNodes.isEmpty() ) {
+
+                log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
+
                 final TaskInputs inputsOfTask = getInputsOfTask(task);
-                final FileAlignment fileAlignment = scheduleFiles(task, inputsOfTask, node.get());
-                alignment.add( new NodeTaskFilesAlignment(node.get(),task, fileAlignment ) );
-                availableByNode.get(node.get().getName()).subFromThis(pod.getRequest());
-                log.info("--> " + node.get().getName());
+                filterMatchingNodesForTask( matchingNodes, inputsOfTask );
+
+                if( matchingNodes.isEmpty() ) {
+                    log.info( "No node which fulfills all requirements {}", pod.getName() );
+                    continue;
+                }
+
+                Optional<NodeWithAlloc> node = selectNode( matchingNodes, task );
+                if( node.isPresent() ) {
+                    final FileAlignment fileAlignment = inputAlignment.getInputAlignment( task, inputsOfTask, node.get() );
+                    alignment.add(new NodeTaskFilesAlignment(node.get(), task, fileAlignment));
+                    availableByNode.get(node.get()).subFromThis(pod.getRequest());
+                    log.info("--> " + node.get().getName());
+                }
+
             } else {
                 log.info( "No node with enough resources for {}", pod.getName() );
             }
@@ -65,24 +73,6 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
         final ScheduleObject scheduleObject = new ScheduleObject(alignment);
         scheduleObject.setCheckStillPossible( true );
         return scheduleObject;
-    }
-
-    FileAlignment scheduleFiles(Task task, TaskInputs inputsOfTask, NodeWithAlloc node) {
-        final HashMap<String, List<FilePath>> map = new HashMap<>();
-        final List<SymlinkInput> symlinkInputs = new LinkedList<>();
-        for (PathFileLocationTriple pathFileLocationTriple : inputsOfTask.getFiles()) {
-            final LocationWrapper locationWrapper = pathFileLocationTriple.locations.get(
-                    random.nextInt( pathFileLocationTriple.locations.size() )
-            );
-            final String nodeIdentifier = locationWrapper.getLocation().getIdentifier();
-            map.computeIfAbsent(nodeIdentifier, k -> new LinkedList<>() );
-            final List<FilePath> pathsOfNode = map.get( nodeIdentifier );
-            pathsOfNode.add( new FilePath( pathFileLocationTriple.path.toString(), pathFileLocationTriple.file ) );
-        }
-        for (SymlinkInput symlik : inputsOfTask.getSymliks()) {
-            symlinkInputs.add( symlik );
-        }
-        return new FileAlignment( map, symlinkInputs );
     }
 
 }

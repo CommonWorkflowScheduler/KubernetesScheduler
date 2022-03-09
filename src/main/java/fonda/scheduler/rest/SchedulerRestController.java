@@ -11,6 +11,7 @@ import fonda.scheduler.scheduler.Scheduler;
 import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.model.TaskConfig;
 import fonda.scheduler.scheduler.SchedulerWithDaemonSet;
+import fonda.scheduler.scheduler.filealignment.RandomAlignment;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +72,7 @@ public class SchedulerRestController {
         switch ( strategy.toLowerCase() ){
             case "fifo" :
             case "random" :
-            case "fifo-random" : scheduler = new RandomScheduler(execution, client, namespace, config ); break;
+            case "fifo-random" : scheduler = new RandomScheduler(execution, client, namespace, config, new RandomAlignment() ); break;
             default: return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
         }
 

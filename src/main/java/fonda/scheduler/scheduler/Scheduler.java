@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
-import io.fabric8.kubernetes.client.dsl.PodResource;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,6 +19,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class Scheduler {
@@ -81,7 +81,7 @@ public abstract class Scheduler {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
-        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks);
+        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
 
         //check if still possible...
@@ -114,7 +114,10 @@ public abstract class Scheduler {
         return true;
     }
 
-    abstract ScheduleObject getTaskNodeAlignment( final List<Task> unscheduledTasks );
+    abstract ScheduleObject getTaskNodeAlignment(
+            final List<Task> unscheduledTasks,
+            final Map<NodeWithAlloc,PodRequirements> availableByNode
+    );
 
     abstract int terminateTasks( final List<Task> finishedTasks );
 
@@ -238,9 +241,8 @@ public abstract class Scheduler {
 
     /* Nodes */
 
-    boolean canSchedulePodOnNode( Map<String,PodRequirements> availableByNode, PodWithAge pod, NodeWithAlloc node ) {
-        return availableByNode.get( node.getName() ).higherOrEquals( pod.getRequest() )
-                && affinitiesMatch( pod, node );
+    boolean canSchedulePodOnNode( PodRequirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+        return availableByNode.higherOrEquals( pod.getRequest() ) && affinitiesMatch( pod, node );
     }
 
     boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
@@ -368,6 +370,30 @@ public abstract class Scheduler {
         }
 
         return t;
+    }
+
+    Map<NodeWithAlloc,PodRequirements> getAvailableByNode(){
+        Map<NodeWithAlloc,PodRequirements> availableByNode = new HashMap<>();
+        List<String> logInfo = new LinkedList<>();
+        logInfo.add("------------------------------------");
+        for (NodeWithAlloc item : getNodeList()) {
+            final PodRequirements availableResources = item.getAvailableResources();
+            availableByNode.put(item, availableResources);
+            logInfo.add("Node: " + item.getName() + " " + availableResources);
+        }
+        logInfo.add("------------------------------------");
+        log.info(String.join("\n", logInfo));
+        return availableByNode;
+    }
+
+    Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc,PodRequirements> availableByNode, Task task ){
+        Set<NodeWithAlloc> result = new HashSet<>();
+        for (Map.Entry<NodeWithAlloc, PodRequirements> entry : availableByNode.entrySet()) {
+            if ( this.canSchedulePodOnNode( entry.getValue(), task.getPod(), entry.getKey() ) ){
+                result.add( entry.getKey() );
+            }
+        }
+        return result;
     }
 
     LinkedList<Task> getUpcomingTasksCopy() {

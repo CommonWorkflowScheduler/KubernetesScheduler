@@ -133,7 +133,7 @@ public class RealFile extends AbstractFile {
         return list;
     }
 
-    public List<LocationWrapper> getFilesForTask( Task task ){
+    public MatchingLocationsPair getFilesForTask( Task task ){
         LocationWrapper[] locationsRef = this.locations;
 
         LinkedList<LocationWrapper> current = null;
@@ -146,7 +146,14 @@ public class RealFile extends AbstractFile {
         final Set<Process> taskAncestors = taskProcess.getAncestors();
         final Set<Process> taskDescendants = taskProcess.getDescendants();
 
+        Set<Location> inUse = null;
+
         for ( LocationWrapper location : locationsRef ) {
+
+            if( location.isInUse() ) {
+                if ( inUse == null ) inUse = new HashSet<>();
+                inUse.add(location.getLocation());
+            }
 
             if ( !location.isActive() ) continue;
 
@@ -177,9 +184,35 @@ public class RealFile extends AbstractFile {
                 unrelated = addAndCreateList( unrelated, location );
         }
 
-        return ( initial == null )
+        final List<LocationWrapper> matchingLocations = ( initial == null )
              ? combineResultsEmptyInitial( current, ancestors, descendants, unrelated )
             : combineResultsWithInitial( current, ancestors, descendants, unrelated, initial );
+
+        removeMatchingLocations( matchingLocations, inUse );
+
+        return new MatchingLocationsPair( matchingLocations, inUse );
+    }
+
+    private void removeMatchingLocations( List<LocationWrapper> matchingLocations, Set<Location> locations ){
+        if ( locations == null ) return;
+        for ( LocationWrapper matchingLocation : matchingLocations ) {
+            if( matchingLocation.isInUse() ) {
+                locations.remove(matchingLocation.getLocation());
+            }
+        }
+    }
+
+    @Getter
+    public class MatchingLocationsPair {
+
+        private final List<LocationWrapper> matchingLocations;
+        private final Set<Location> excludedNodes;
+
+        private MatchingLocationsPair(List<LocationWrapper> matchingLocations, Set<Location> excludedNodes) {
+            this.matchingLocations = matchingLocations;
+            this.excludedNodes = excludedNodes;
+        }
+
     }
 
     private void addAllLaterLocationsToResult( List<LocationWrapper> list, List<LocationWrapper> result, long time ){

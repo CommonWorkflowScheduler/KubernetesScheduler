@@ -205,11 +205,11 @@ public class RealFileTest {
             realFile.addOrUpdateLocation(false, next.get(2));
             realFile.addOrUpdateLocation(false, next.get(3));
 
-            assertEquals(new HashSet<>(Arrays.asList(loc1, loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processA)));
-            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processB)));
-            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processC)));
-            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processD)));
-            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processE)));
+            assertEquals(new HashSet<>(Arrays.asList(loc1, loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processA).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processB).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processC).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processD).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processE).getMatchingLocations()));
         }
 
         locationWrapperList = List.of(loc1, loc2, loc3, loc4, loc5);
@@ -223,11 +223,11 @@ public class RealFileTest {
             realFile.addOrUpdateLocation(false, next.get(3));
             realFile.addOrUpdateLocation(false, next.get(4));
 
-            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processA)));
-            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processB)));
-            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processC)));
-            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processD)));
-            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processE)));
+            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processA).getMatchingLocations()));
+            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processB).getMatchingLocations()));
+            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processC).getMatchingLocations()));
+            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processD).getMatchingLocations()));
+            assertEquals(new HashSet<>(List.of(loc5)), new HashSet<>(realFile.getFilesForTask(processE).getMatchingLocations()));
         }
     }
 
@@ -257,11 +257,11 @@ public class RealFileTest {
             realFile.addOrUpdateLocation(false, next.get(3));
             realFile.addOrUpdateLocation(false, next.get(4));
 
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processA)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processB)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processC)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processD)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processE)));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processA).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processB).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processC).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processD).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processE).getMatchingLocations()));
         }
 
     }
@@ -293,11 +293,11 @@ public class RealFileTest {
             realFile.addOrUpdateLocation(false, next.get(3));
             realFile.addOrUpdateLocation(false, next.get(4));
 
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processA)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processB)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processC)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processD)));
-            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processE)));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processA).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processB).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processC).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processD).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc3, loc4, loc5)), new HashSet<>(realFile.getFilesForTask(processE).getMatchingLocations()));
         }
     }
 
@@ -327,11 +327,11 @@ public class RealFileTest {
             realFile.addOrUpdateLocation( false, next.get(3) );
             realFile.addOrUpdateLocation( false, next.get(4) );
 
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processA ) ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processB ) ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processC ) ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processD ) ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processE ) ) );
+            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processA ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processB ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processC ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processD ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processE ).getMatchingLocations() ) );
         }
 
 
@@ -351,11 +351,11 @@ public class RealFileTest {
             realFile.addOrUpdateLocation( false, next.get(3) );
             realFile.addOrUpdateLocation( false, next.get(4) );
 
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processA ) ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processB ) ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processC ) ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processD ) ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processE ) ) );
+            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processA ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processB ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processC ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processD ).getMatchingLocations() ) );
+            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processE ).getMatchingLocations() ) );
         }
 
 

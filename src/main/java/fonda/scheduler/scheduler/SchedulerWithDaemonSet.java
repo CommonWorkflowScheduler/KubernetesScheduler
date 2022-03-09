@@ -3,6 +3,7 @@ package fonda.scheduler.scheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.LocationType;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
@@ -176,6 +177,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
         List<SymlinkInput> symlinks = new ArrayList<>( fileInputs.size() );
         List<PathFileLocationTriple> files = new ArrayList<>( fileInputs.size() );
+        Set<Location> excludedLocations = new HashSet<>();
 
         while ( !toProcess.isEmpty() ){
             final Tuple<fonda.scheduler.model.location.hierachy.File, Path> pop = toProcess.removeLast();
@@ -193,11 +195,15 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 }
             } else {
                 final RealFile realFile = (RealFile) file;
-                files.add( new PathFileLocationTriple( path, realFile, realFile.getFilesForTask(task) ) );
+                final RealFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
+                if ( filesForTask.getExcludedNodes() != null ) {
+                    excludedLocations.addAll(filesForTask.getExcludedNodes());
+                }
+                files.add( new PathFileLocationTriple( path, realFile, filesForTask.getMatchingLocations()) );
             }
         }
 
-        return new TaskInputs( symlinks, files,null );
+        return new TaskInputs( symlinks, files, excludedLocations );
 
     }
 
@@ -247,8 +253,24 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     @Override
-    boolean canSchedulePodOnNode( Map<String,PodRequirements> availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+    boolean canSchedulePodOnNode( PodRequirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
         return this.getDaemonOnNode( node ) != null && super.canSchedulePodOnNode( availableByNode, pod, node );
+    }
+
+    /**
+     * Remove all Nodes with a location contained in taskInputs.excludedNodes
+     * @param matchingNodes
+     * @param taskInputs
+     */
+    void filterMatchingNodesForTask( Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
+        final Iterator<NodeWithAlloc> iterator = matchingNodes.iterator();
+        final Set<Location> excludedNodes = taskInputs.getExcludedNodes();
+        while ( iterator.hasNext() ){
+            final NodeWithAlloc next = iterator.next();
+            if( excludedNodes.contains( next.getNodeLocation() ) ){
+                iterator.remove();
+            }
+        }
     }
 
     /**
