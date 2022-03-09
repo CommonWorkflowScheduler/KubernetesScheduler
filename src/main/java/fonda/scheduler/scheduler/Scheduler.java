@@ -241,6 +241,15 @@ public abstract class Scheduler {
 
     /* Nodes */
 
+    /**
+     * Checks if a node fulfills all requirements for a pod. This means: <br>
+     * - enough resources available <br>
+     * - Affinities match
+     * @param availableByNode
+     * @param pod
+     * @param node
+     * @return
+     */
     boolean canSchedulePodOnNode( PodRequirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
         return availableByNode.higherOrEquals( pod.getRequest() ) && affinitiesMatch( pod, node );
     }
@@ -386,6 +395,12 @@ public abstract class Scheduler {
         return availableByNode;
     }
 
+    /**
+     * Filters all nodes, that have enough resources and fulfill the affinities
+     * @param availableByNode
+     * @param task
+     * @return
+     */
     Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc,PodRequirements> availableByNode, Task task ){
         Set<NodeWithAlloc> result = new HashSet<>();
         for (Map.Entry<NodeWithAlloc, PodRequirements> entry : availableByNode.entrySet()) {
