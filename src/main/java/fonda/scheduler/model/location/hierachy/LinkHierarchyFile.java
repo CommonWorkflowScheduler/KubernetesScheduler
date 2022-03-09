@@ -4,12 +4,12 @@ import lombok.Getter;
 
 import java.nio.file.Path;
 
-public class LinkFile extends AbstractFile {
+public class LinkHierarchyFile extends AbstractHierarchyFile {
 
     @Getter
     private final Path dst;
 
-    public LinkFile( Path dst ) {
+    public LinkHierarchyFile(Path dst ) {
         this.dst = dst;
     }
 

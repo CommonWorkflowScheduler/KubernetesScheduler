@@ -164,8 +164,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return null;
     }
 
-    private LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> filterFilesToProcess( List<InputParam<FileHolder>> fileInputs ){
-        final LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> toProcess = new LinkedList<>();
+    private LinkedList<Tuple<HierarchyFile,Path>> filterFilesToProcess(List<InputParam<FileHolder>> fileInputs ){
+        final LinkedList<Tuple<HierarchyFile,Path>> toProcess = new LinkedList<>();
         for ( InputParam<FileHolder> fileInput : fileInputs) {
             final Path path = Path.of(fileInput.value.sourceObj);
             if ( this.hierarchyWrapper.isInScope( path ) ){
@@ -175,28 +175,28 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return toProcess;
     }
     private void processNext(
-            final LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> toProcess,
+            final LinkedList<Tuple<HierarchyFile,Path>> toProcess,
             final List<SymlinkInput> symlinks,
             final List<PathFileLocationTriple> files,
             final Set<Location> excludedLocations,
             final Task task
     ){
-        final Tuple<fonda.scheduler.model.location.hierachy.File, Path> tuple = toProcess.removeLast();
-        final fonda.scheduler.model.location.hierachy.File file = tuple.getA();
+        final Tuple<HierarchyFile, Path> tuple = toProcess.removeLast();
+        final HierarchyFile file = tuple.getA();
         if( file == null ) return;
         final Path path = tuple.getB();
         if ( file.isSymlink() ){
-            final Path linkTo = ((LinkFile) file).getDst();
+            final Path linkTo = ((LinkHierarchyFile) file).getDst();
             symlinks.add( new SymlinkInput( path, linkTo ) );
             toProcess.push( new Tuple<>( hierarchyWrapper.getFile( linkTo ), linkTo ) );
         } else if( file.isDirectory() ){
-            final Map<Path, AbstractFile> allChildren = ((Folder) file).getAllChildren(path);
-            for (Map.Entry<Path, AbstractFile> pathAbstractFileEntry : allChildren.entrySet()) {
+            final Map<Path, AbstractHierarchyFile> allChildren = ((Folder) file).getAllChildren(path);
+            for (Map.Entry<Path, AbstractHierarchyFile> pathAbstractFileEntry : allChildren.entrySet()) {
                 toProcess.push( new Tuple<>( pathAbstractFileEntry.getValue(), pathAbstractFileEntry.getKey() ) );
             }
         } else {
-            final RealFile realFile = (RealFile) file;
-            final RealFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
+            final RealHierarchyFile realFile = (RealHierarchyFile) file;
+            final RealHierarchyFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
             if ( filesForTask.getExcludedNodes() != null ) {
                 excludedLocations.addAll(filesForTask.getExcludedNodes());
             }
@@ -207,7 +207,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     TaskInputs getInputsOfTask( Task task ){
 
         final List<InputParam<FileHolder>> fileInputs = task.getConfig().getInputs().fileInputs;
-        final LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> toProcess = filterFilesToProcess( fileInputs );
+        final LinkedList<Tuple<HierarchyFile,Path>> toProcess = filterFilesToProcess( fileInputs );
 
         final List<SymlinkInput> symlinks = new ArrayList<>( fileInputs.size() );
         final List<PathFileLocationTriple> files = new ArrayList<>( fileInputs.size() );
@@ -224,9 +224,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     public FileResponse nodeOfLastFileVersion( String path ) throws NotARealFileException {
         LinkedList<SymlinkInput> symlinks = new LinkedList<>();
         Path currentPath = Paths.get(path);
-        fonda.scheduler.model.location.hierachy.File currentFile = hierarchyWrapper.getFile( currentPath );
-        while ( currentFile instanceof LinkFile ){
-            final LinkFile linkFile = (LinkFile) currentFile;
+        HierarchyFile currentFile = hierarchyWrapper.getFile( currentPath );
+        while ( currentFile instanceof LinkHierarchyFile){
+            final LinkHierarchyFile linkFile = (LinkHierarchyFile) currentFile;
             symlinks.add( new SymlinkInput( currentPath, linkFile.getDst() ) );
             currentPath = linkFile.getDst();
             currentFile = hierarchyWrapper.getFile( currentPath );
@@ -236,11 +236,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         if ( currentFile == null ) {
             return new FileResponse( currentPath.toString(), symlinks );
         }
-        if ( ! (currentFile instanceof RealFile) ){
+        if ( ! (currentFile instanceof RealHierarchyFile) ){
             log.info( "File was: {}", currentFile );
             throw new NotARealFileException();
         }
-        final RealFile file = (RealFile) currentFile;
+        final RealHierarchyFile file = (RealHierarchyFile) currentFile;
         final LocationWrapper lastUpdate = file.getLastUpdate(LocationType.NODE);
         if( lastUpdate == null ) return null;
         requestedLocations.put( lastUpdate.getId(), lastUpdate );

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class RealFileTest {
+public class RealHierarchyFileTest {
 
     private Task processA;
     private Task processB;
@@ -63,7 +63,7 @@ public class RealFileTest {
 
         final LocationWrapper node1 = getLocationWrapper("Node1");
         locations.add(node1);
-        final RealFile realFile = new RealFile(node1);
+        final RealHierarchyFile realFile = new RealHierarchyFile(node1);
         assertArrayEquals( locations.toArray(), realFile.getLocations() );
 
         final LocationWrapper node2 = getLocationWrapper("Node2");
@@ -84,7 +84,7 @@ public class RealFileTest {
 
     @Test
     public void addEmptyLocation() {
-        final RealFile realFile = new RealFile( getLocationWrapper("node1") );
+        final RealHierarchyFile realFile = new RealHierarchyFile( getLocationWrapper("node1") );
         assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( false,  null ));
         assertThrows(IllegalArgumentException.class, () -> realFile.addOrUpdateLocation( true,  null ));
     }
@@ -92,7 +92,7 @@ public class RealFileTest {
     @Test
     public void addInParallel() {
         final LocationWrapper node0 = getLocationWrapper("Node0");
-        final RealFile realFile = new RealFile(node0);
+        final RealHierarchyFile realFile = new RealHierarchyFile(node0);
 
         List<LocationWrapper> locations = new LinkedList<>();
 
@@ -116,7 +116,7 @@ public class RealFileTest {
     public void changeFile() {
 
         final LocationWrapper node0 = getLocationWrapper("Node0");
-        final RealFile realFile = new RealFile(node0);
+        final RealHierarchyFile realFile = new RealHierarchyFile(node0);
         final LocationWrapper node1 = getLocationWrapper("Node1");
         realFile.addOrUpdateLocation( false, node1);
         final LocationWrapper node2 = getLocationWrapper("Node2");
@@ -137,7 +137,7 @@ public class RealFileTest {
         final LocationWrapper node0 = getLocationWrapper("Node0");
         results.add( node0 );
         assertTrue(node0.isActive());
-        final RealFile realFile = new RealFile(node0);
+        final RealHierarchyFile realFile = new RealHierarchyFile(node0);
         assertArrayEquals( results.toArray(), realFile.getLocations() );
         assertTrue(node0.isActive());
         final LocationWrapper node1 = getLocationWrapper("Node1");
@@ -158,7 +158,7 @@ public class RealFileTest {
     @Test
     public void changeFileOnExistingLocation() {
 
-        final RealFile realFile = new RealFile( getLocationWrapper("Node0") );
+        final RealHierarchyFile realFile = new RealHierarchyFile( getLocationWrapper("Node0") );
 
         final LocationWrapper nodeNew = new LocationWrapper(NodeLocation.getLocation("Node0"), 5, 120, processA );
         realFile.addOrUpdateLocation( false,  nodeNew );
@@ -174,7 +174,7 @@ public class RealFileTest {
 
     @Test
     public void isFile() {
-        final RealFile realFile = new RealFile( getLocationWrapper("Node0") );
+        final RealHierarchyFile realFile = new RealHierarchyFile( getLocationWrapper("Node0") );
         assertFalse( realFile.isDirectory() );
         assertFalse( realFile.isSymlink() );
     }
@@ -200,7 +200,7 @@ public class RealFileTest {
         PermutationIterator<LocationWrapper> permutationIterator = new PermutationIterator<>(locationWrapperList);
         while ( permutationIterator.hasNext() ) {
             final List<LocationWrapper> next = permutationIterator.next();
-            RealFile realFile = new RealFile(next.get(0));
+            RealHierarchyFile realFile = new RealHierarchyFile(next.get(0));
             realFile.addOrUpdateLocation(false, next.get(1));
             realFile.addOrUpdateLocation(false, next.get(2));
             realFile.addOrUpdateLocation(false, next.get(3));
@@ -217,7 +217,7 @@ public class RealFileTest {
         permutationIterator = new PermutationIterator<>(locationWrapperList);
         while ( permutationIterator.hasNext() ) {
             final List<LocationWrapper> next = permutationIterator.next();
-            RealFile realFile = new RealFile(next.get(0));
+            RealHierarchyFile realFile = new RealHierarchyFile(next.get(0));
             realFile.addOrUpdateLocation(false, next.get(1));
             realFile.addOrUpdateLocation(false, next.get(2));
             realFile.addOrUpdateLocation(false, next.get(3));
@@ -251,7 +251,7 @@ public class RealFileTest {
         PermutationIterator<LocationWrapper> permutationIterator = new PermutationIterator<>(locationWrapperList);
         while ( permutationIterator.hasNext() ) {
             final List<LocationWrapper> next = permutationIterator.next();
-            RealFile realFile = new RealFile(next.get(0));
+            RealHierarchyFile realFile = new RealHierarchyFile(next.get(0));
             realFile.addOrUpdateLocation(false, next.get(1));
             realFile.addOrUpdateLocation(false, next.get(2));
             realFile.addOrUpdateLocation(false, next.get(3));
@@ -287,7 +287,7 @@ public class RealFileTest {
         PermutationIterator<LocationWrapper> permutationIterator = new PermutationIterator<>(locationWrapperList);
         while ( permutationIterator.hasNext() ) {
             final List<LocationWrapper> next = permutationIterator.next();
-            RealFile realFile = new RealFile(next.get(0));
+            RealHierarchyFile realFile = new RealHierarchyFile(next.get(0));
             realFile.addOrUpdateLocation(false, next.get(1));
             realFile.addOrUpdateLocation(false, next.get(2));
             realFile.addOrUpdateLocation(false, next.get(3));
@@ -321,7 +321,7 @@ public class RealFileTest {
         PermutationIterator<LocationWrapper> permutationIterator = new PermutationIterator<>(locationWrapperList);
         while ( permutationIterator.hasNext() ) {
             final List<LocationWrapper> next = permutationIterator.next();
-            RealFile realFile = new RealFile( next.get(0) );
+            RealHierarchyFile realFile = new RealHierarchyFile( next.get(0) );
             realFile.addOrUpdateLocation( false, next.get(1) );
             realFile.addOrUpdateLocation( false, next.get(2) );
             realFile.addOrUpdateLocation( false, next.get(3) );
@@ -345,7 +345,7 @@ public class RealFileTest {
         permutationIterator = new PermutationIterator<>(locationWrapperList);
         while ( permutationIterator.hasNext() ) {
             final List<LocationWrapper> next = permutationIterator.next();
-            RealFile realFile = new RealFile( next.get(0) );
+            RealHierarchyFile realFile = new RealHierarchyFile( next.get(0) );
             realFile.addOrUpdateLocation( false, next.get(1) );
             realFile.addOrUpdateLocation( false, next.get(2) );
             realFile.addOrUpdateLocation( false, next.get(3) );
@@ -376,7 +376,7 @@ public class RealFileTest {
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
         LocationWrapper loc5 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
 
-        RealFile realFile = new RealFile( loc1 );
+        RealHierarchyFile realFile = new RealHierarchyFile( loc1 );
         assertEquals( loc1, realFile.getLastUpdate( LocationType.NODE ));
         realFile.addOrUpdateLocation(false, loc4 );
         assertEquals( loc4, realFile.getLastUpdate( LocationType.NODE ));
@@ -407,7 +407,7 @@ public class RealFileTest {
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
         LocationWrapper loc5 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis(), 2, null );
 
-        RealFile realFile = new RealFile(loc1);
+        RealHierarchyFile realFile = new RealHierarchyFile(loc1);
         assertEquals( loc1, realFile.getLocationWrapper( NodeLocation.getLocation("Node1") ) );
         realFile.addOrUpdateLocation(false, loc4 );
         assertEquals( loc4, realFile.getLocationWrapper( NodeLocation.getLocation("Node3") ) );

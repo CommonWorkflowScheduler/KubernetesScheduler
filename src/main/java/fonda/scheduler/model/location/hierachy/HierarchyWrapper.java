@@ -44,10 +44,10 @@ public class HierarchyWrapper {
      * @param path get all files recursively in this folder (absolute path)
      * @return Null if folder is empty, or not found
      */
-    public Map<Path, AbstractFile> getAllFilesInDir( final Path path ){
+    public Map<Path, AbstractHierarchyFile> getAllFilesInDir(final Path path ){
         final Path relativePath = relativize( path );
         Iterator<Path> iterator = relativePath.iterator();
-        File current = getWorkdir( iterator, false );
+        HierarchyFile current = getWorkdir( iterator, false );
         if( current == null ) return null;
         while(iterator.hasNext()){
             Path p = iterator.next();
@@ -118,7 +118,7 @@ public class HierarchyWrapper {
      * @param path file to get (absolute path)
      * @return File or null if file does not exist
      */
-    public File getFile( Path path ){
+    public HierarchyFile getFile(Path path ){
         final Path relativePath = relativize( path );
         if (relativePath.startsWith("..")){
             return null;
@@ -128,7 +128,7 @@ public class HierarchyWrapper {
         if( current == null ) return null;
         while(iterator.hasNext()) {
             Path p = iterator.next();
-            final File file = current.get( p.toString() );
+            final HierarchyFile file = current.get( p.toString() );
             if( iterator.hasNext() && file.isDirectory() ){
                 //folder
                 current = (Folder) file;

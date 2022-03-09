@@ -8,7 +8,7 @@ import lombok.Getter;
 
 import java.util.*;
 
-public class RealFile extends AbstractFile {
+public class RealHierarchyFile extends AbstractHierarchyFile {
 
     /**
      * This field contains the newest LocationWrapper of one file for each node.
@@ -16,7 +16,7 @@ public class RealFile extends AbstractFile {
     @Getter
     private LocationWrapper[] locations;
 
-    public RealFile( LocationWrapper location ) {
+    public RealHierarchyFile(LocationWrapper location ) {
         if ( location == null ) throw new IllegalArgumentException( "location is null" );
         this.locations = new LocationWrapper[]{ location };
     }
