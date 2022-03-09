@@ -68,7 +68,7 @@ public class LocationWrapper {
     }
 
     public boolean isInUse(){
-        return inUse == 0;
+        return inUse > 0;
     }
 
     public LocationWrapper getCopyOf( Location location ) {
@@ -108,6 +108,7 @@ public class LocationWrapper {
                     "id=" + id +
                     ", location=" + location.getIdentifier() +
                     ", timestamp=" + timestamp +
+                    ", inUse=" + inUse + "x" +
                     ", sizeInBytes=" + sizeInBytes +
                     ", createTime=" + createTime +
                     ", createdByTask=" + createdByTask +
