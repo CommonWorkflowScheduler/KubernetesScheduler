@@ -164,9 +164,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return null;
     }
 
-    TaskInputs getInputsOfTask( Task task ){
-
-        final List<InputParam<FileHolder>> fileInputs = task.getConfig().getInputs().fileInputs;
+    private LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> filterFilesToProcess( List<InputParam<FileHolder>> fileInputs ){
         final LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> toProcess = new LinkedList<>();
         for ( InputParam<FileHolder> fileInput : fileInputs) {
             final Path path = Path.of(fileInput.value.sourceObj);
@@ -174,33 +172,49 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 toProcess.add( new Tuple<>(hierarchyWrapper.getFile( path ), path) );
             }
         }
+        return toProcess;
+    }
+    private void processNext(
+            final LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> toProcess,
+            final List<SymlinkInput> symlinks,
+            final List<PathFileLocationTriple> files,
+            final Set<Location> excludedLocations,
+            final Task task
+    ){
+        final Tuple<fonda.scheduler.model.location.hierachy.File, Path> tuple = toProcess.removeLast();
+        final fonda.scheduler.model.location.hierachy.File file = tuple.getA();
+        if( file == null ) return;
+        final Path path = tuple.getB();
+        if ( file.isSymlink() ){
+            final Path linkTo = ((LinkFile) file).getDst();
+            symlinks.add( new SymlinkInput( path, linkTo ) );
+            toProcess.push( new Tuple<>( hierarchyWrapper.getFile( linkTo ), linkTo ) );
+        } else if( file.isDirectory() ){
+            final Map<Path, AbstractFile> allChildren = ((Folder) file).getAllChildren(path);
+            for (Map.Entry<Path, AbstractFile> pathAbstractFileEntry : allChildren.entrySet()) {
+                toProcess.push( new Tuple<>( pathAbstractFileEntry.getValue(), pathAbstractFileEntry.getKey() ) );
+            }
+        } else {
+            final RealFile realFile = (RealFile) file;
+            final RealFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
+            if ( filesForTask.getExcludedNodes() != null ) {
+                excludedLocations.addAll(filesForTask.getExcludedNodes());
+            }
+            files.add( new PathFileLocationTriple( path, realFile, filesForTask.getMatchingLocations()) );
+        }
+    }
 
-        List<SymlinkInput> symlinks = new ArrayList<>( fileInputs.size() );
-        List<PathFileLocationTriple> files = new ArrayList<>( fileInputs.size() );
-        Set<Location> excludedLocations = new HashSet<>();
+    TaskInputs getInputsOfTask( Task task ){
+
+        final List<InputParam<FileHolder>> fileInputs = task.getConfig().getInputs().fileInputs;
+        final LinkedList<Tuple<fonda.scheduler.model.location.hierachy.File,Path>> toProcess = filterFilesToProcess( fileInputs );
+
+        final List<SymlinkInput> symlinks = new ArrayList<>( fileInputs.size() );
+        final List<PathFileLocationTriple> files = new ArrayList<>( fileInputs.size() );
+        final Set<Location> excludedLocations = new HashSet<>();
 
         while ( !toProcess.isEmpty() ){
-            final Tuple<fonda.scheduler.model.location.hierachy.File, Path> pop = toProcess.removeLast();
-            final fonda.scheduler.model.location.hierachy.File file = pop.getA();
-            if( file == null ) continue;
-            final Path path = pop.getB();
-            if ( file.isSymlink() ){
-                final Path linkTo = ((LinkFile) file).getDst();
-                symlinks.add( new SymlinkInput( path, linkTo ) );
-                toProcess.push( new Tuple<>( hierarchyWrapper.getFile( linkTo ), linkTo ) );
-            } else if( file.isDirectory() ){
-                final Map<Path, AbstractFile> allChildren = ((Folder) file).getAllChildren(path);
-                for (Map.Entry<Path, AbstractFile> pathAbstractFileEntry : allChildren.entrySet()) {
-                    toProcess.push( new Tuple<>( pathAbstractFileEntry.getValue(), pathAbstractFileEntry.getKey() ) );
-                }
-            } else {
-                final RealFile realFile = (RealFile) file;
-                final RealFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
-                if ( filesForTask.getExcludedNodes() != null ) {
-                    excludedLocations.addAll(filesForTask.getExcludedNodes());
-                }
-                files.add( new PathFileLocationTriple( path, realFile, filesForTask.getMatchingLocations()) );
-            }
+            processNext( toProcess, symlinks, files, excludedLocations, task );
         }
 
         return new TaskInputs( symlinks, files, excludedLocations );
