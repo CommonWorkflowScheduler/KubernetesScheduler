@@ -3,12 +3,12 @@ WORKDIR /build
 COPY pom.xml pom.xml
 RUN mvn dependency:go-offline -B -Dmaven.repo.local=/mvn/.m2nrepo/repository
 COPY src/ src/
-RUN mvn package -Dmaven.repo.local=/mvn/.m2nrepo/repository
+RUN mvn package -DskipTests -Dmaven.repo.local=/mvn/.m2nrepo/repository
 
 #
 # Package stage
 #
-FROM openjdk:11-jre-slim
+FROM openjdk:17-jre-slim
 WORKDIR /app
 RUN groupadd -r javauser && useradd --no-log-init -r -g javauser javauser && mkdir data
 COPY --from=build /build/target/k8s-scheduler*.jar k8s-scheduler.jar
