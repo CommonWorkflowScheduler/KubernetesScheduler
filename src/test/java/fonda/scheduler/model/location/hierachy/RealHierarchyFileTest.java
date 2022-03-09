@@ -306,15 +306,22 @@ public class RealHierarchyFileTest {
 
         final CountDownLatch waiter = new CountDownLatch(1);
 
-        LocationWrapper loc1 = new LocationWrapper( NodeLocation.getLocation("Node1"), System.currentTimeMillis() - 2, 2, null );
+        final NodeLocation location1 = NodeLocation.getLocation("Node1");
+        LocationWrapper loc1 = new LocationWrapper( location1, System.currentTimeMillis() - 2, 2, null );
+        loc1.use();
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
         LocationWrapper loc2 = new LocationWrapper( NodeLocation.getLocation("Node2"), System.currentTimeMillis() - 1, 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc3 = new LocationWrapper( NodeLocation.getLocation("Node3"), System.currentTimeMillis() - 5, 2, null );
+        final NodeLocation location3 = NodeLocation.getLocation("Node3");
+        LocationWrapper loc3 = new LocationWrapper( location3, System.currentTimeMillis() - 5, 2, null );
+        loc3.use();
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc4 = new LocationWrapper( NodeLocation.getLocation("Node4"), System.currentTimeMillis() - 2, 2, null );
+        final NodeLocation location4 = NodeLocation.getLocation("Node4");
+        LocationWrapper loc4 = new LocationWrapper( location4, System.currentTimeMillis() - 2, 2, null );
         assertFalse( waiter.await(2, TimeUnit.MILLISECONDS ) );
-        LocationWrapper loc5 = new LocationWrapper( NodeLocation.getLocation("Node5"), System.currentTimeMillis() - 5, 2, null );
+        final NodeLocation location5 = NodeLocation.getLocation("Node5");
+        LocationWrapper loc5 = new LocationWrapper( location5, System.currentTimeMillis() - 5, 2, null );
+        loc5.use();
 
         List<LocationWrapper> locationWrapperList = List.of(loc1, loc2, loc3, loc4, loc5);
 
@@ -327,17 +334,18 @@ public class RealHierarchyFileTest {
             realFile.addOrUpdateLocation( false, next.get(3) );
             realFile.addOrUpdateLocation( false, next.get(4) );
 
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processA ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processB ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processC ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processD ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( realFile.getFilesForTask( processE ).getMatchingLocations() ) );
+            for (Task task : List.of(processA, processB, processC, processD, processE)) {
+                final RealHierarchyFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask( task );
+                assertEquals( new HashSet<>( List.of( loc5 ) ), new HashSet<>( filesForTask.getMatchingLocations() ) );
+                assertEquals( new HashSet<>( List.of( location1, location3 ) ), new HashSet<>( filesForTask.getExcludedNodes() ) );
+            }
+
         }
 
 
         while( loc4.getCreateTime() != loc5.getCreateTime() ){
-            loc4 = new LocationWrapper( NodeLocation.getLocation("Node4"), System.currentTimeMillis() - 2, 2, null );
-            loc5 = new LocationWrapper( NodeLocation.getLocation("Node5"), System.currentTimeMillis() - 5, 2, null );
+            loc4 = new LocationWrapper( location4, System.currentTimeMillis() - 2, 2, null );
+            loc5 = new LocationWrapper( location5, System.currentTimeMillis() - 5, 2, null );
         }
 
         locationWrapperList = List.of(loc1, loc2, loc3, loc4, loc5);
@@ -351,13 +359,13 @@ public class RealHierarchyFileTest {
             realFile.addOrUpdateLocation( false, next.get(3) );
             realFile.addOrUpdateLocation( false, next.get(4) );
 
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processA ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processB ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processC ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processD ).getMatchingLocations() ) );
-            assertEquals( new HashSet<>( Arrays.asList( loc4, loc5 ) ), new HashSet<>( realFile.getFilesForTask( processE ).getMatchingLocations() ) );
-        }
+            for (Task task : List.of(processA, processB, processC, processD, processE)) {
+                final RealHierarchyFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask( task );
+                assertEquals( new HashSet<>( List.of( loc4, loc5 ) ), new HashSet<>( filesForTask.getMatchingLocations() ) );
+                assertEquals( new HashSet<>( List.of( location1, location3 ) ), new HashSet<>( filesForTask.getExcludedNodes() ) );
+            }
 
+        }
 
     }
 
