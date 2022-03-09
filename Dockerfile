@@ -8,7 +8,7 @@ RUN mvn package -DskipTests -Dmaven.repo.local=/mvn/.m2nrepo/repository
 #
 # Package stage
 #
-FROM openjdk:17-jre-slim
+FROM openjdk:17-alpine
 WORKDIR /app
 RUN groupadd -r javauser && useradd --no-log-init -r -g javauser javauser && mkdir data
 COPY --from=build /build/target/k8s-scheduler*.jar k8s-scheduler.jar
