@@ -10,9 +10,9 @@ RUN mvn package -DskipTests -Dmaven.repo.local=/mvn/.m2nrepo/repository
 #
 FROM openjdk:17-alpine
 WORKDIR /app
-RUN groupadd -r javauser && useradd --no-log-init -r -g javauser javauser && mkdir data
+RUN addgroup -S javagroup && adduser -S javauser -G javagroup && mkdir data
 COPY --from=build /build/target/k8s-scheduler*.jar k8s-scheduler.jar
-RUN chown -R javauser:javauser /app
+RUN chown -R javauser:javagroup /app
 USER javauser
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","k8s-scheduler.jar"]
