@@ -45,10 +45,10 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
 
         for ( final Task task : unscheduledTasks ) {
             final PodWithAge pod = task.getPod();
+            log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
+
             final Set<NodeWithAlloc> matchingNodes = getMatchingNodesForTask(availableByNode,task);
             if( !matchingNodes.isEmpty() ) {
-
-                log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
 
                 final TaskInputs inputsOfTask = getInputsOfTask(task);
                 filterMatchingNodesForTask( matchingNodes, inputsOfTask );
