@@ -67,7 +67,7 @@ public class HierarchyWrapper {
      *
      * @param path file to add (absolute path)
      * @param location location where the file is located
-     * @return false if file can not be created
+     * @return null if file can not be created
      */
     public LocationWrapper addFile(final Path path, final LocationWrapper location ){
         return addFile( path, false, location );
@@ -124,9 +124,10 @@ public class HierarchyWrapper {
             return null;
         }
         Iterator<Path> iterator = relativePath.iterator();
-        Folder current = getWorkdir( iterator, true );
+        Folder current = getWorkdir( iterator, false );
         if( current == null ) return null;
-        while(iterator.hasNext()) {
+        if( !iterator.hasNext() ) return current;
+        while( iterator.hasNext() ) {
             Path p = iterator.next();
             final HierarchyFile file = current.get( p.toString() );
             if( iterator.hasNext() && file.isDirectory() ){
