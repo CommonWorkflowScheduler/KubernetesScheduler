@@ -2,7 +2,10 @@ package fonda.scheduler.dag;
 
 import lombok.Getter;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter

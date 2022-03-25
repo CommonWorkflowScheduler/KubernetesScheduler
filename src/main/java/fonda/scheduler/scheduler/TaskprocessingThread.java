@@ -2,7 +2,9 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
-import java.util.*;
+
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Function;
 
 @Slf4j
