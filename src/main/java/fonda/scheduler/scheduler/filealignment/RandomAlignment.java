@@ -30,7 +30,7 @@ public class RandomAlignment implements InputAlignment {
             final List<FilePath> pathsOfNode = map.get( nodeIdentifier );
             pathsOfNode.add( new FilePath( pathFileLocationTriple.path.toString(), pathFileLocationTriple.file, locationWrapper ) );
         }
-        return new FileAlignment( map, inputsOfTask.getSymliks() );
+        return new FileAlignment( map, inputsOfTask.getSymlinks() );
     }
 
 }
