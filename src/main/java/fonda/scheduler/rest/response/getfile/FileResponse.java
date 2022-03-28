@@ -1,9 +1,11 @@
 package fonda.scheduler.rest.response.getfile;
 
 import fonda.scheduler.model.taskinputs.SymlinkInput;
+import lombok.ToString;
 
 import java.util.List;
 
+@ToString( exclude = "locationWrapperID" )
 public class FileResponse {
 
     public final String path;
@@ -34,15 +36,4 @@ public class FileResponse {
         locationWrapperID = -1;
     }
 
-    @Override
-    public String toString() {
-        return "FileResponse{" +
-                "path='" + path + '\'' +
-                ", sameAsEngine=" + sameAsEngine +
-                ", node='" + node + '\'' +
-                ", daemon='" + daemon + '\'' +
-                ", symlinks=" + symlinks +
-                ", notInContext=" + notInContext +
-                '}';
-    }
 }

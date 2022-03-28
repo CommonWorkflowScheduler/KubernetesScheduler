@@ -1,5 +1,8 @@
 package fonda.scheduler.model;
 
+import lombok.ToString;
+
+@ToString
 public class InputParam<T> {
 
     public final String name;
@@ -10,11 +13,4 @@ public class InputParam<T> {
         this.value = null;
     }
 
-    @Override
-    public String toString() {
-        return "InputParam{" +
-                "name='" + name + '\'' +
-                ", value=" + value +
-                '}';
-    }
 }

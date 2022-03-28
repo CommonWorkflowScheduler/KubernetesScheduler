@@ -1,7 +1,10 @@
 package fonda.scheduler.model;
 
+import lombok.ToString;
+
 import java.util.List;
 
+@ToString
 public class SchedulerConfig {
 
     public final List<LocalClaim> localClaims;
@@ -30,6 +33,7 @@ public class SchedulerConfig {
         this.copyStrategy = null;
     }
 
+    @ToString
     public static class LocalClaim {
         public final String mountPath;
         public final String hostPath;
@@ -39,15 +43,9 @@ public class SchedulerConfig {
             this.hostPath = null;
         }
 
-        @Override
-        public String toString() {
-            return "LocalClaim{" +
-                    "mountPath='" + mountPath + '\'' +
-                    ", hostPath='" + hostPath + '\'' +
-                    '}';
-        }
     }
 
+    @ToString
     public static class VolumeClaim {
         public final String mountPath;
         public final String claimName;
@@ -59,22 +57,6 @@ public class SchedulerConfig {
             this.subPath = null;
         }
 
-        @Override
-        public String toString() {
-            return "VolumeClaim{" +
-                    "mountPath='" + mountPath + '\'' +
-                    ", claimName='" + claimName + '\'' +
-                    ", subPath='" + subPath + '\'' +
-                    '}';
-        }
     }
 
-    @Override
-    public String toString() {
-        return "SchedulerConfig{" +
-                "localClaims=" + localClaims +
-                ", volumeClaims=" + volumeClaims +
-                ", workDir='" + workDir + '\'' +
-                '}';
-    }
 }

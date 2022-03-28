@@ -1,10 +1,12 @@
 package fonda.scheduler.model;
 
 import lombok.Getter;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+@ToString
 public class PodRequirements implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -59,11 +61,4 @@ public class PodRequirements implements Serializable {
                 && this.ram.compareTo( podRequirements.ram ) >= 0;
     }
 
-    @Override
-    public String toString() {
-        return "PodRequirements{" +
-                "cpu=" + cpu +
-                ", ram=" + ram +
-                '}';
-    }
 }

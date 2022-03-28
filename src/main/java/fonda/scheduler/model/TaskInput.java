@@ -1,7 +1,10 @@
 package fonda.scheduler.model;
 
+import lombok.ToString;
+
 import java.util.List;
 
+@ToString
 public class TaskInput {
 
     public final List<InputParam<Boolean>> booleanInputs;
@@ -16,13 +19,18 @@ public class TaskInput {
         this.fileInputs    = null;
     }
 
-    @Override
-    public String toString() {
-        return "TaskInput{" +
-                "booleanInputs=" + booleanInputs +
-                ", numberInputs=" + numberInputs +
-                ", stringInputs=" + stringInputs +
-                ", fileInputs=" + fileInputs +
-                '}';
+    /**
+     * Only for testing
+     * @param booleanInputs
+     * @param numberInputs
+     * @param stringInputs
+     * @param fileInputs
+     */
+    TaskInput(List<InputParam<Boolean>> booleanInputs, List<InputParam<Number>> numberInputs, List<InputParam<String>> stringInputs, List<InputParam<FileHolder>> fileInputs) {
+        this.booleanInputs = booleanInputs;
+        this.numberInputs = numberInputs;
+        this.stringInputs = stringInputs;
+        this.fileInputs = fileInputs;
     }
+
 }

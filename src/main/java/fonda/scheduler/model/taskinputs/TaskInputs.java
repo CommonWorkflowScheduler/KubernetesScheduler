@@ -2,10 +2,12 @@ package fonda.scheduler.model.taskinputs;
 
 import fonda.scheduler.model.location.Location;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Set;
 
+@ToString
 @Getter
 public class TaskInputs {
 
@@ -18,4 +20,5 @@ public class TaskInputs {
         this.files = files;
         this.excludedNodes = excludedNodes;
     }
+
 }

@@ -1,5 +1,8 @@
 package fonda.scheduler.model;
 
+import lombok.ToString;
+
+@ToString( exclude = {"stageName", "storePath"})
 public class FileHolder {
 
     public final String storePath;
@@ -10,13 +13,6 @@ public class FileHolder {
         this.storePath = null;
         this.sourceObj = null;
         this.stageName = null;
-    }
-
-    @Override
-    public String toString() {
-        return "FileHolder{" +
-                "sourceObj='" + sourceObj + '\'' +
-                '}';
     }
 
 }
