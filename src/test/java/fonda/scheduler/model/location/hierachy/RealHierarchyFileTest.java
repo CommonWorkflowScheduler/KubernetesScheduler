@@ -206,8 +206,8 @@ public class RealHierarchyFileTest {
             realFile.addOrUpdateLocation(false, next.get(3));
 
             assertEquals(new HashSet<>(Arrays.asList(loc1, loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processA).getMatchingLocations()));
-            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processB).getMatchingLocations()));
-            assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processC).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc1, loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processB).getMatchingLocations()));
+            assertEquals(new HashSet<>(Arrays.asList(loc1, loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processC).getMatchingLocations()));
             assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processD).getMatchingLocations()));
             assertEquals(new HashSet<>(Arrays.asList(loc2, loc3, loc4)), new HashSet<>(realFile.getFilesForTask(processE).getMatchingLocations()));
         }

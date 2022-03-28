@@ -94,7 +94,10 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     ) {
         LinkedList<LocationWrapper> result = null;
         if ( current != null ) result = current;
-        if ( current == null && ancestors != null ) result = ancestors;
+        if ( ancestors != null ) {
+            if (current == null ) result = ancestors;
+            else result.addAll( ancestors );
+        }
         if ( unrelated != null ) {
             if ( result == null ) result = unrelated;
             else result.addAll( unrelated );
