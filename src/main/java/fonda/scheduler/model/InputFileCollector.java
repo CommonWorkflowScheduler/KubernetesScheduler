@@ -48,7 +48,7 @@ public class InputFileCollector {
         }
     }
 
-    public TaskInputs getInputsOfTask(Task task ){
+    public TaskInputs getInputsOfTask( Task task, int numberNode ){
 
         final List<InputParam<FileHolder>> fileInputs = task.getConfig().getInputs().fileInputs;
         final LinkedList<Tuple<HierarchyFile,Path>> toProcess = filterFilesToProcess( fileInputs );
@@ -57,9 +57,11 @@ public class InputFileCollector {
         final List<PathFileLocationTriple> files = new ArrayList<>( fileInputs.size() );
         final Set<Location> excludedLocations = new HashSet<>();
 
-        while ( !toProcess.isEmpty() ){
+        while ( !toProcess.isEmpty() && excludedLocations.size() < numberNode ){
             processNext( toProcess, symlinks, files, excludedLocations, task );
         }
+
+        if( excludedLocations.size() == numberNode ) return null;
 
         return new TaskInputs( symlinks, files, excludedLocations );
 

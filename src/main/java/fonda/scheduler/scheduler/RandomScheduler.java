@@ -51,6 +51,12 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
             if( !matchingNodes.isEmpty() ) {
 
                 final TaskInputs inputsOfTask = getInputsOfTask(task);
+
+                if( inputsOfTask == null ) {
+                    log.info( "No node, where the pod can start, pod: {}", pod.getName() );
+                    continue;
+                }
+
                 filterMatchingNodesForTask( matchingNodes, inputsOfTask );
 
                 if( matchingNodes.isEmpty() ) {

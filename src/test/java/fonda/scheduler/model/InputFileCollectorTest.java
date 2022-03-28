@@ -100,7 +100,7 @@ public class InputFileCollectorTest {
 
         final Set expected = new HashSet( List.of( file1, file2, file3 ) );
 
-        TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(task);
+        TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(task, Integer.MAX_VALUE);
         List<PathFileLocationTriple> inputsOfTaskFiles = inputsOfTask.getFiles();
         assertEquals( 3, inputsOfTaskFiles.size() );
         assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
@@ -111,7 +111,7 @@ public class InputFileCollectorTest {
         final InputParam<FileHolder> c = new InputParam<>("c", new FileHolder(null, root2 + "a.txt", null));
         fileInputs.add( c );
 
-        inputsOfTask = inputFileCollector.getInputsOfTask(task);
+        inputsOfTask = inputFileCollector.getInputsOfTask(task, Integer.MAX_VALUE);
         inputsOfTaskFiles = inputsOfTask.getFiles();
         assertEquals( 3, inputsOfTaskFiles.size() );
         assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
@@ -123,7 +123,7 @@ public class InputFileCollectorTest {
         fileInputs.add( d );
         expected.add( file4 );
 
-        inputsOfTask = inputFileCollector.getInputsOfTask(task);
+        inputsOfTask = inputFileCollector.getInputsOfTask(task, Integer.MAX_VALUE);
         inputsOfTaskFiles = inputsOfTask.getFiles();
         assertEquals( 4, inputsOfTaskFiles.size() );
         assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
@@ -174,7 +174,7 @@ public class InputFileCollectorTest {
         assertNotNull( file );
         final PathFileLocationTriple file1 = new PathFileLocationTriple(path1, (RealHierarchyFile) file, List.of(location12, location13));
 
-        TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(taskC);
+        TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(taskC, Integer.MAX_VALUE);
         List<PathFileLocationTriple> inputsOfTaskFiles = inputsOfTask.getFiles();
         assertEquals( 1, inputsOfTaskFiles.size() );
         assertEquals( file1, inputsOfTaskFiles.get(0) );
@@ -226,7 +226,7 @@ public class InputFileCollectorTest {
         final PathFileLocationTriple file1 = new PathFileLocationTriple(path1, (RealHierarchyFile) file, List.of(location12, location13));
         log.info(file1.toString());
 
-        TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(taskC);
+        TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(taskC, Integer.MAX_VALUE);
         List<PathFileLocationTriple> inputsOfTaskFiles = inputsOfTask.getFiles();
         assertEquals( 1, inputsOfTaskFiles.size() );
         assertEquals( file1, inputsOfTaskFiles.get(0) );
