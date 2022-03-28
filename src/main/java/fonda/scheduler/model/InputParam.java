@@ -13,4 +13,14 @@ public class InputParam<T> {
         this.value = null;
     }
 
+    /**
+     * Only for testing
+     * @param name
+     * @param value
+     */
+    public InputParam( String name, T value ) {
+        this.name = name;
+        this.value = value;
+    }
+
 }

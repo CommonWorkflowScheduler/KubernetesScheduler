@@ -1,10 +1,12 @@
 package fonda.scheduler.model.taskinputs;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.nio.file.Path;
 
 @Getter
+@EqualsAndHashCode
 public class SymlinkInput implements Input {
 
     private final String src;
@@ -14,4 +16,5 @@ public class SymlinkInput implements Input {
         this.src = src.toAbsolutePath().toString();
         this.dst = dst.toAbsolutePath().toString();
     }
+
 }

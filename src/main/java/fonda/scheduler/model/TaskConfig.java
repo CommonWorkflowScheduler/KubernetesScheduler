@@ -3,6 +3,7 @@ package fonda.scheduler.model;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class TaskConfig {
         this.task = task;
         this.name = null;
         this.schedulerParams = null;
-        this.inputs = null;
+        this.inputs = new TaskInput( null, null, null, new LinkedList<>() );
         this.hash = null;
         this.cpus = 0;
         this.memoryInBytes = 0;

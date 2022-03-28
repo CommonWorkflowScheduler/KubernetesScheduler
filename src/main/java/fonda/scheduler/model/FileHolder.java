@@ -15,4 +15,16 @@ public class FileHolder {
         this.stageName = null;
     }
 
+    /**
+     * Only for testing
+     * @param storePath
+     * @param sourceObj
+     * @param stageName
+     */
+    public FileHolder( String storePath, String sourceObj, String stageName ) {
+        this.storePath = storePath;
+        this.sourceObj = sourceObj;
+        this.stageName = stageName;
+    }
+
 }
