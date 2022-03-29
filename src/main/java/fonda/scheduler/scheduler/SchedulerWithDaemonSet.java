@@ -82,15 +82,20 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
     
     @Override
-    void assignTaskToNode( NodeTaskAlignment alignment ) {
+    boolean assignTaskToNode( NodeTaskAlignment alignment ) {
         final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
         final List< TaskInputFileLocationWrapper > locationWrappers = writeInitConfig( nodeTaskFilesAlignment );
+        if ( locationWrappers == null ) return false;
         alignment.task.setCopiedFiles( locationWrappers );
         getCopyStrategy().generateCopyScript( alignment.task );
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         alignment.task.setInputFiles( allLocationWrappers );
         useLocations( allLocationWrappers );
-        super.assignTaskToNode( alignment );
+        return super.assignTaskToNode( alignment );
+    }
+
+    void undoTaskScheduling( Task task ){
+        if ( task.getInputFiles() != null ) freeLocations( task.getInputFiles() );
     }
 
     @Override

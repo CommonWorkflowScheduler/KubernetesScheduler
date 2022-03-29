@@ -89,13 +89,29 @@ public abstract class Scheduler {
             if (!possible) return taskNodeAlignment.size();
         }
 
+        int failure = 0;
         for (NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment) {
-            if (isClose()) return -1;
-            assignTaskToNode( nodeTaskAlignment );
+            try {
+                if (isClose()) return -1;
+                if ( !assignTaskToNode( nodeTaskAlignment ) ){
+                    failure++;
+                    continue;
+                }
+            } catch ( Exception e ){
+                undoTaskScheduling( nodeTaskAlignment.task );
+                continue;
+            }
             taskWasScheduled(nodeTaskAlignment.task);
         }
-        return unscheduledTasks.size() - taskNodeAlignment.size();
+        return unscheduledTasks.size() - taskNodeAlignment.size() + failure;
     }
+
+    /**
+     * Call this method in case of any scheduling problems
+     * @param task
+     */
+    void undoTaskScheduling( Task task ){}
+
 
     public boolean validSchedulePlan( List<NodeTaskAlignment> taskNodeAlignment ){
         List<NodeWithAlloc> items = getNodeList();
@@ -283,7 +299,7 @@ public abstract class Scheduler {
         return node.canSchedule( pod );
     }
 
-    void assignTaskToNode( NodeTaskAlignment alignment ){
+    boolean assignTaskToNode( NodeTaskAlignment alignment ){
 
         final File nodeFile = new File(alignment.task.getWorkingDir() + '/' + ".command.node");
 
@@ -319,6 +335,8 @@ public abstract class Scheduler {
 
         pod.getSpec().setNodeName( alignment.node.getMetadata().getName() );
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
+
+        return true;
     }
 
     /* Helper */
