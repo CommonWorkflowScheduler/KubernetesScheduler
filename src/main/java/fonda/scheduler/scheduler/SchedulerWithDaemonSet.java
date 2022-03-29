@@ -165,7 +165,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     TaskInputs getInputsOfTask(Task task ){
-        return inputFileCollector.getInputsOfTask( task );
+        return inputFileCollector.getInputsOfTask( task, client.getNumberOfNodes() );
     }
 
 
