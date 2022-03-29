@@ -53,7 +53,7 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
                 final TaskInputs inputsOfTask = getInputsOfTask(task);
 
                 if( inputsOfTask == null ) {
-                    log.info( "No node, where the pod can start, pod: {}", pod.getName() );
+                    log.info( "No node where the pod can start, pod: {}", pod.getName() );
                     continue;
                 }
 
