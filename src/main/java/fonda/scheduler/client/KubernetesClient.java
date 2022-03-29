@@ -66,6 +66,10 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         }
     }
 
+    public int getNumberOfNodes(){
+        return this.nodeHolder.size();
+    }
+
     public List<NodeWithAlloc> getAllNodes(){
         return new ArrayList<>(this.nodeHolder.values());
     }
