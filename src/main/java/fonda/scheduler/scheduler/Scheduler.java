@@ -487,6 +487,7 @@ public abstract class Scheduler {
                     break;
                 case DELETED:
                     scheduler.markPodAsDeleted(pwa);
+                    break;
                 default: log.info( "No implementation for {}", action );
             }
 
