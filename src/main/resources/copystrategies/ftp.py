@@ -14,6 +14,7 @@ def getIP( node ):
 
 def clearLocatation( path ):
     if os.path.exists( path ):
+        print("Delete",path)
         if os.path.islink( path ):
             os.unlink( path )
         elif os.path.isdir( path ):
@@ -22,7 +23,7 @@ def clearLocatation( path ):
             os.remove( path )
 
 
-def download( node, files ):
+def download( node, files, syncFile ):
 
     ftp = None
     size = len(files)
@@ -84,6 +85,7 @@ def download( node, files ):
             continue
 
         files.pop(0)
+        syncFile.write(filename + '\n')
 
     if ftp is not None:
         try:
@@ -92,8 +94,43 @@ def download( node, files ):
         except BaseException as err:
             print(f"Unexpected {err=}, {type(err)=}")
 
+def waitForFiles( syncFileTask, files, starttime ):
+    #wait max. 10 seconds
+    while True:
+        if starttime + 10 < time.time():
+            return False
+        if os.path.isfile( syncFileTask ):
+            break
+        print("Wait for file creation")
+        time.sleep(0.1)
 
+    #Read file live
+    with open( syncFileTask, 'r' ) as syncFileTask:
+        current = []
+        while len(files) > 0:
+            data = syncFileTask.read()
+            if not data:
+                time.sleep(0.3)
+            else:
+                for d in data:
+                    if d != "\n":
+                        current.append(d)
+                    else:
+                        text = ''.join(current)
+                        if text == "##FAILURE##":
+                            print("Read FAILURE in " + syncFileTask)
+                            sys.exit(1001)
+                        if text == "##FINISHED##":
+                            print("Read FINISHED in " + syncFileTask + " before all files were found")
+                            sys.exit(1002)
+                        if text in files:
+                            files.remove( text )
+                            if len(files) == 0:
+                                return True
+                        current = []
+    return True
 
+starttime = time.time()
 print("Start to setup the environment")
 
 exitIfFileWasNotFound = False
@@ -104,21 +141,38 @@ if not os.path.isfile( configFilePath ):
     print ("Config file not found:", configFilePath )
     exit(102)
 
-configFile = open(configFilePath)
-config = json.load( configFile )
+with open(configFilePath,'r') as configFile:
+    config = json.load( configFile )
+
 print( config )
 dns = config["dns"]
 
 data = config[ "data" ]
 symlinks = config[ "symlinks" ]
 
-for d in data:
-    files = d["files"]
-    download( d["node"], files )
+os.makedirs( config[ "syncDir" ], exist_ok=True)
+with open( config[ "syncDir" ] + config[ "hash" ], 'w' ) as syncFile:
 
-for s in symlinks:
-    src = s["src"]
-    dst = s["dst"]
-    clearLocatation( src )
-    Path(src[:src.rindex("/")]).mkdir(parents=True, exist_ok=True)
-    os.symlink( dst, src )
+    syncFile.write('##STARTED##\n')
+    syncFile.flush()
+
+    for s in symlinks:
+        src = s["src"]
+        dst = s["dst"]
+        clearLocatation( src )
+        Path(src[:src.rindex("/")]).mkdir(parents=True, exist_ok=True)
+        os.symlink( dst, src )
+
+    syncFile.write('##SYMLINKS##\n')
+
+    for d in data:
+        files = d["files"]
+        download( d["node"], files, syncFile )
+
+    syncFile.write('##FINISHED##\n')
+
+#No check for files of other tasks
+for waitForTask in config[ "waitForFilesOfTask" ]:
+    waitForFilesSet = set( config[ "waitForFilesOfTask" ][ waitForTask ] )
+    if not waitForFiles( config[ "syncDir" ] + waitForTask, waitForFilesSet, starttime ):
+        sys.exit(2000)

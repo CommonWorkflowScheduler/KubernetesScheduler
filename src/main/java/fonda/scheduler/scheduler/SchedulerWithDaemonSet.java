@@ -21,6 +21,7 @@ import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.FilePath;
 import fonda.scheduler.util.NodeTaskAlignment;
 import fonda.scheduler.util.NodeTaskFilesAlignment;
+import fonda.scheduler.util.Tuple;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -34,7 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class SchedulerWithDaemonSet extends Scheduler {
@@ -47,6 +47,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     final HierarchyWrapper hierarchyWrapper;
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long,LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
+    private final String localWorkDir;
 
     SchedulerWithDaemonSet(String execution, KubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
@@ -61,6 +62,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             default:
                 throw new IllegalArgumentException( "Copy strategy is unknown " + config.copyStrategy );
         }
+        this.localWorkDir = config.workDir;
     }
 
     public String getDaemonOnNode( String node ){
@@ -84,9 +86,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     @Override
     boolean assignTaskToNode( NodeTaskAlignment alignment ) {
         final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
-        final List< TaskInputFileLocationWrapper > locationWrappers = writeInitConfig( nodeTaskFilesAlignment );
-        if ( locationWrappers == null ) return false;
-        alignment.task.setCopiedFiles( locationWrappers );
+        final WriteConfigResult writeConfigResult = writeInitConfig(nodeTaskFilesAlignment);
+        if ( writeConfigResult == null ) return false;
+        alignment.task.setCopiedFiles( writeConfigResult.getInputFiles() );
+        addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
+        alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
         getCopyStrategy().generateCopyScript( alignment.task );
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         alignment.task.setInputFiles( allLocationWrappers );
@@ -95,7 +99,16 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     void undoTaskScheduling( Task task ){
-        if ( task.getInputFiles() != null ) freeLocations( task.getInputFiles() );
+        if ( task.getInputFiles() != null ) {
+            freeLocations( task.getInputFiles() );
+            task.setInputFiles( null );
+        }
+        if ( task.getCopyingToNode() != null ) {
+            removeFromCopyingToNode( task.getNode(), task.getCopyingToNode());
+            task.setCopyingToNode( null );
+        }
+        task.setCopiedFiles( null );
+        task.setNode( null );
     }
 
     @Override
@@ -131,38 +144,78 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return 0;
     }
 
-    List<TaskInputFileLocationWrapper> writeInitConfig( NodeTaskFilesAlignment alignment ) {
+    private final Map< NodeLocation, HashMap< String, Tuple<Task,Location>> > copyingToNode = new HashMap<>();
+
+    private void addToCopyingToNode(  NodeLocation nodeLocation, HashMap< String, Tuple<Task,Location> > toAdd ){
+        if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
+        if ( copyingToNode.containsKey( nodeLocation ) ){
+            final HashMap<String, Tuple<Task, Location>> stringTupleHashMap = copyingToNode.get( nodeLocation );
+            stringTupleHashMap.putAll( toAdd );
+        } else {
+            copyingToNode.put( nodeLocation, toAdd );
+        }
+    }
+
+    private void removeFromCopyingToNode(NodeLocation nodeLocation, HashMap< String, Tuple<Task,Location>> toRemove ){
+        if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
+        copyingToNode.get( nodeLocation ).keySet().removeAll( toRemove.keySet() );
+    }
+
+    WriteConfigResult writeInitConfig( NodeTaskFilesAlignment alignment ) {
 
         final File config = new File(alignment.task.getWorkingDir() + '/' + ".command.inputs.json");
+
         LinkedList< TaskInputFileLocationWrapper > inputFiles = new LinkedList<>();
+        Map<String, Task> waitForTask = new HashMap<>();
+
         try {
             final Inputs inputs = new Inputs(
-                    this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/"
+                    this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/",
+                    this.localWorkDir + "/sync/",
+                    alignment.task.getConfig().getHash()
             );
+
+
+            final HashMap<String, Tuple<Task, Location>> filesForCurrentNode = new HashMap<>();
+            final NodeLocation currentNode = alignment.node.getNodeLocation();
+            final HashMap<String, Tuple<Task, Location>> filesOnCurrentNode = copyingToNode.get(currentNode);
+
             for (Map.Entry<String, List<FilePath>> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
                 if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) continue;
-                final List<String> collect = entry  .getValue()
-                                                    .stream()
-                                                    .map(x -> x.path)
-                                                    .collect(Collectors.toList());
-                inputs.data.add( new InputEntry( getDaemonOnNode( entry.getKey() ), entry.getKey(), collect ) );
+
+                final List<String> collect = new LinkedList<>();
 
                 final NodeLocation location = NodeLocation.getLocation( entry.getKey() );
                 for (FilePath filePath : entry.getValue()) {
-                    final LocationWrapper locationWrapper = filePath.file.getLocationWrapper(location);
-                    inputFiles.add(
-                            new TaskInputFileLocationWrapper(
-                                filePath.file,
-                                locationWrapper.getCopyOf( location )
-                            )
-                    );
+                    if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey( filePath.path ) ) {
+                        //Node copies currently from somewhere else!
+                        final Tuple<Task, Location> taskLocationTuple = filesOnCurrentNode.get(filePath.path);
+                        if ( taskLocationTuple.getB() != location ) return null;
+                        else {
+                            //May be problematic if the task depending on fails/is stopped before all files are downloaded
+                            waitForTask.put( filePath.path, taskLocationTuple.getA() );
+                        }
+                    } else {
+                        final LocationWrapper locationWrapper = filePath.file.getLocationWrapper(location);
+                        inputFiles.add(
+                                new TaskInputFileLocationWrapper(
+                                        filePath.file,
+                                        locationWrapper.getCopyOf(location)
+                                )
+                        );
+                        collect.add(filePath.path );
+                        filesForCurrentNode.put( filePath.path, new Tuple<>( alignment.task, location  ) );
+                    }
                 }
-
+                if( !collect.isEmpty() ) {
+                    inputs.data.add(new InputEntry(getDaemonOnNode(entry.getKey()), entry.getKey(), collect));
+                }
             }
+            inputs.waitForTask( waitForTask );
             inputs.symlinks.addAll(alignment.fileAlignment.symlinks);
 
             new ObjectMapper().writeValue( config, inputs );
-            return inputFiles;
+            return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode );
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -217,6 +270,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private void podWasInitialized( Pod pod ){
         final Task task = changeStateOfTask(pod, State.PREPARED);
         task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::apply );
+        task.setCopiedFiles( null );
+        removeFromCopyingToNode( task.getNode(), task.getCopyingToNode() );
+        task.setCopyingToNode( null );
     }
 
     @Override

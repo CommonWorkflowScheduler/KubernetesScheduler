@@ -2,12 +2,15 @@ package fonda.scheduler.model;
 
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.dag.Process;
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.util.Batch;
+import fonda.scheduler.util.Tuple;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class Task {
@@ -39,6 +42,10 @@ public class Task {
     @Getter
     @Setter
     private Batch batch;
+
+    @Getter
+    @Setter
+    private HashMap< String, Tuple<Task, Location>> copyingToNode;
 
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
