@@ -57,7 +57,7 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
                     continue;
                 }
 
-                filterMatchingNodesForTask( matchingNodes, inputsOfTask );
+                filterNotMatchingNodesForTask( matchingNodes, inputsOfTask );
 
                 if( matchingNodes.isEmpty() ) {
                     log.info( "No node which fulfills all requirements {}", pod.getName() );

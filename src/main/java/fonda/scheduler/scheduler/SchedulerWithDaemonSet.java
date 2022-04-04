@@ -285,7 +285,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
      * @param matchingNodes
      * @param taskInputs
      */
-    void filterMatchingNodesForTask( Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
+    void filterNotMatchingNodesForTask(Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
         final Iterator<NodeWithAlloc> iterator = matchingNodes.iterator();
         final Set<Location> excludedNodes = taskInputs.getExcludedNodes();
         while ( iterator.hasNext() ){
