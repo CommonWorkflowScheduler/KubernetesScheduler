@@ -276,7 +276,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     @Override
-    boolean canSchedulePodOnNode( PodRequirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+    boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
         return this.getDaemonOnNode( node ) != null && super.canSchedulePodOnNode( availableByNode, pod, node );
     }
 

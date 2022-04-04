@@ -25,17 +25,17 @@ public class PodWithAge extends Pod {
         this.age = BigDecimal.ZERO;
     }
 
-    public PodRequirements getRequest(){
+    public Requirements getRequest(){
         return this
                 .getSpec().getContainers().stream()
                 .filter( x -> x.getResources() != null
                         && x.getResources().getRequests() != null )
                 .map( x ->
-                        new PodRequirements(
+                        new Requirements(
                                 x.getResources().getRequests().get("cpu") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("cpu")),
                                 x.getResources().getRequests().get("memory") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("memory"))
                         )
-                ).reduce( new PodRequirements(), PodRequirements::addToThis );
+                ).reduce( new Requirements(), Requirements::addToThis );
     }
 
     public String getName(){

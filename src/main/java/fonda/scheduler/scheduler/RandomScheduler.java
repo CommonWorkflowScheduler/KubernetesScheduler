@@ -39,7 +39,7 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
     @Override
     public ScheduleObject getTaskNodeAlignment(
             final List<Task> unscheduledTasks,
-            final Map<NodeWithAlloc,PodRequirements> availableByNode
+            final Map<NodeWithAlloc, Requirements> availableByNode
     ){
         List<NodeTaskAlignment> alignment = new LinkedList<>();
 

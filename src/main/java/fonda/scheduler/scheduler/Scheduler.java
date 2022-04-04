@@ -115,23 +115,23 @@ public abstract class Scheduler {
 
     public boolean validSchedulePlan( List<NodeTaskAlignment> taskNodeAlignment ){
         List<NodeWithAlloc> items = getNodeList();
-        Map< NodeWithAlloc,PodRequirements> availableByNode = new HashMap<>();
+        Map< NodeWithAlloc, Requirements> availableByNode = new HashMap<>();
         for ( NodeWithAlloc item : items ) {
-            final PodRequirements availableResources = item.getAvailableResources();
+            final Requirements availableResources = item.getAvailableResources();
             availableByNode.put(item, availableResources);
         }
         for ( NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment ) {
             availableByNode.get(nodeTaskAlignment.node).subFromThis(nodeTaskAlignment.task.getPod().getRequest());
         }
-        for ( Map.Entry<NodeWithAlloc, PodRequirements> e : availableByNode.entrySet() ) {
-            if ( ! e.getValue().higherOrEquals( PodRequirements.ZERO ) ) return false;
+        for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
+            if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) return false;
         }
         return true;
     }
 
     abstract ScheduleObject getTaskNodeAlignment(
             final List<Task> unscheduledTasks,
-            final Map<NodeWithAlloc,PodRequirements> availableByNode
+            final Map<NodeWithAlloc, Requirements> availableByNode
     );
 
     abstract int terminateTasks( final List<Task> finishedTasks );
@@ -265,7 +265,7 @@ public abstract class Scheduler {
      * @param node
      * @return
      */
-    boolean canSchedulePodOnNode( PodRequirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+    boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
         return availableByNode.higherOrEquals( pod.getRequest() ) && affinitiesMatch( pod, node );
     }
 
@@ -398,12 +398,12 @@ public abstract class Scheduler {
         return t;
     }
 
-    Map<NodeWithAlloc,PodRequirements> getAvailableByNode(){
-        Map<NodeWithAlloc,PodRequirements> availableByNode = new HashMap<>();
+    Map<NodeWithAlloc, Requirements> getAvailableByNode(){
+        Map<NodeWithAlloc, Requirements> availableByNode = new HashMap<>();
         List<String> logInfo = new LinkedList<>();
         logInfo.add("------------------------------------");
         for (NodeWithAlloc item : getNodeList()) {
-            final PodRequirements availableResources = item.getAvailableResources();
+            final Requirements availableResources = item.getAvailableResources();
             availableByNode.put(item, availableResources);
             logInfo.add("Node: " + item.getName() + " " + availableResources);
         }
@@ -418,9 +418,9 @@ public abstract class Scheduler {
      * @param task
      * @return
      */
-    Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc,PodRequirements> availableByNode, Task task ){
+    Set<NodeWithAlloc> getMatchingNodesForTask(Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
         Set<NodeWithAlloc> result = new HashSet<>();
-        for (Map.Entry<NodeWithAlloc, PodRequirements> entry : availableByNode.entrySet()) {
+        for (Map.Entry<NodeWithAlloc, Requirements> entry : availableByNode.entrySet()) {
             if ( this.canSchedulePodOnNode( entry.getValue(), task.getPod(), entry.getKey() ) ){
                 result.add( entry.getKey() );
             }

@@ -17,9 +17,9 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     private static final long serialVersionUID = 1L;
 
-    private final PodRequirements maxResources;
+    private final Requirements maxResources;
 
-    private final Map<String, PodRequirements> assignedPods;
+    private final Map<String, Requirements> assignedPods;
 
     @Getter
     private final NodeLocation nodeLocation;
@@ -38,7 +38,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         BigDecimal maxCpu = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("cpu"));
         BigDecimal maxRam = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("memory"));
 
-        maxResources = new PodRequirements( maxCpu, maxRam);
+        maxResources = new Requirements( maxCpu, maxRam);
 
         assignedPods = new HashMap<>();
 
@@ -48,7 +48,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     }
 
     public void addPod( PodWithAge pod ){
-        PodRequirements request = pod.getRequest();
+        Requirements request = pod.getRequest();
         synchronized (assignedPods) {
             assignedPods.put( pod.getMetadata().getUid(), request );
         }
@@ -60,20 +60,20 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         }
     }
 
-    public PodRequirements getRequestedResources(){
+    public Requirements getRequestedResources(){
         synchronized (assignedPods) {
             return assignedPods.values().stream()
-                    .reduce( new PodRequirements(), PodRequirements::addToThis );
+                    .reduce( new Requirements(), Requirements::addToThis );
         }
     }
 
-    public PodRequirements getAvailableResources(){
+    public Requirements getAvailableResources(){
         return maxResources.sub(getRequestedResources());
     }
 
     public boolean canSchedule( PodWithAge pod ){
-        final PodRequirements request = pod.getRequest();
-        PodRequirements availableResources = getAvailableResources();
+        final Requirements request = pod.getRequest();
+        Requirements availableResources = getAvailableResources();
         return request.getCpu().compareTo(availableResources.getCpu()) <= 0
                 && request.getRam().compareTo(availableResources.getRam()) <= 0;
     }
