@@ -179,7 +179,7 @@ public class SchedulerRestController {
     @GetMapping("/daemon/{namespace}/{execution}/{node}")
     ResponseEntity<String> getDaemonName(@PathVariable String namespace, @PathVariable String execution, @PathVariable String node ) {
 
-        log.info( "Got request: {}{}{}", namespace, execution, node );
+        log.info( "Asking for Daemon ns: {} exec: {} node: {}", namespace, execution, node );
 
         final Pair<String, String> key = getKey( namespace, execution );
         final Scheduler scheduler = schedulerHolder.get( key );
