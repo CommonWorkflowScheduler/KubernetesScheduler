@@ -7,16 +7,22 @@ import lombok.Getter;
 @Getter
 public class TaskInputFileLocationWrapper {
 
+    private final String path;
     private final RealHierarchyFile file;
     private final LocationWrapper wrapper;
 
-    public TaskInputFileLocationWrapper(RealHierarchyFile file, LocationWrapper wrapper) {
+    public TaskInputFileLocationWrapper( String path, RealHierarchyFile file, LocationWrapper wrapper) {
+        this.path = path;
         this.file = file;
         this.wrapper = wrapper;
     }
 
-    public void apply(){
+    public void success(){
         file.addOrUpdateLocation( false, wrapper );
+    }
+
+    public void failure(){
+        file.removeLocation( wrapper );
     }
 
 }

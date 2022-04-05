@@ -28,9 +28,9 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.net.ftp.FTPClient;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -199,6 +199,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                         final LocationWrapper locationWrapper = filePath.file.getLocationWrapper(location);
                         inputFiles.add(
                                 new TaskInputFileLocationWrapper(
+                                        filePath.path,
                                         filePath.file,
                                         locationWrapper.getCopyOf(location)
                                 )
@@ -267,11 +268,73 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
     }
 
+    private void handleProblematicInit( Task task ){
+        String file = this.localWorkDir + "/sync/" + task.getConfig().getHash();
+        try {
+            Map<String,TaskInputFileLocationWrapper> wrapperByPath = new HashMap<>();
+            task.getCopiedFiles().stream().forEach( x -> wrapperByPath.put( x.getPath(), x ));
+            log.info( "Get daemon on node {}; daemons: {}", task.getNode().getIdentifier(), daemonByNode );
+            final InputStream inputStream = getConnection(getDaemonOnNode(task.getNode().getIdentifier())).retrieveFileStream(file);
+            if (inputStream == null) {
+                //Init has not even started
+                return;
+            }
+            Scanner scanner = new Scanner(inputStream);
+            Set<String> openedFiles = new HashSet();
+            while( scanner.hasNext() ){
+                String line = scanner.nextLine();
+                if ( line.startsWith( "S-" ) ){
+                    openedFiles.add( line.substring( 2 ) );
+                } else if ( line.startsWith( "F-" ) ){
+                    openedFiles.remove( line.substring( 2 ) );
+                    wrapperByPath.get( line.substring( 2 ) ).success();
+                    log.info("task {}, file: {} success", task.getConfig().getName(), line);
+                }
+            }
+            for ( String openedFile : openedFiles ) {
+                wrapperByPath.get( openedFile ).failure();
+                log.info("task {}, file: {} success", task.getConfig().getName(), openedFile);
+            }
+        } catch ( Exception e ){
+            log.info( "Can't handle failed init from pod " + task.getPod().getName());
+            e.printStackTrace();
+        }
+    }
+
+    private FTPClient getConnection( String daemon ){
+        int trial = 0;
+        while ( true ) {
+            try {
+                FTPClient f = new FTPClient();
+                f.connect(daemon);
+                f.login("ftp", "nextflowClient");
+                f.enterLocalPassiveMode();
+                return f;
+            } catch ( IOException e ) {
+                if ( trial > 5 ) throw new RuntimeException(e);
+                log.error("Cannot create FTP client: {}", daemon);
+                try {
+                    Thread.sleep((long) Math.pow(2, trial++));
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+    }
+
     private void podWasInitialized( Pod pod ){
         final Task task = changeStateOfTask(pod, State.PREPARED);
-        task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::apply );
-        task.setCopiedFiles( null );
+        task.setPod( new PodWithAge( pod ) );
+        final Integer exitCode = pod.getStatus().getInitContainerStatuses().get(0).getState().getTerminated().getExitCode();
+        log.info( "Pod {}, Init Code: {}", pod.getMetadata().getName(), exitCode);
         removeFromCopyingToNode( task.getNode(), task.getCopyingToNode() );
+        if( exitCode == 0 ){
+            task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success);
+        } else {
+            handleProblematicInit( task );
+            task.setInputFiles( null );
+        }
+        task.setCopiedFiles( null );
         task.setCopyingToNode( null );
     }
 
