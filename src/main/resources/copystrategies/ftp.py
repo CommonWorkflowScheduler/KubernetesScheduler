@@ -16,14 +16,14 @@ log.basicConfig(format='%(levelname)s: %(message)s', level=log.DEBUG)
 def myExit( code ):
     global EXIT
     EXIT = code
+    global CLOSE
+    CLOSE = True
     exit(EXIT)
 
 def close( signalnum, syncfile ):
     syncFile.write('##FAILURE##\n')
     syncFile.flush()
     syncFile.close()
-    global CLOSE
-    CLOSE = True
     log.info( "Killed: %s",str(signalnum))
     myExit(50)
 
