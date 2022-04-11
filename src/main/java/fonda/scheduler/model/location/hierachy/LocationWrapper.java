@@ -106,6 +106,7 @@ public class LocationWrapper {
         synchronized ( this ) {
             return "LocationWrapper{" +
                     "id=" + id +
+                    ", active=" + active +
                     ", location=" + location.getIdentifier() +
                     ", timestamp=" + timestamp +
                     ", inUse=" + inUse + "x" +

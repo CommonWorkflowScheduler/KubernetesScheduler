@@ -293,7 +293,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             }
             for ( String openedFile : openedFiles ) {
                 wrapperByPath.get( openedFile ).failure();
-                log.info("task {}, file: {} success", task.getConfig().getName(), openedFile);
+                log.info("task {}, file: {} deactivated on node {}", task.getConfig().getName(), openedFile, wrapperByPath.get( openedFile ).getWrapper().getLocation());
             }
         } catch ( Exception e ){
             log.info( "Can't handle failed init from pod " + task.getPod().getName());
@@ -323,13 +323,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     private void podWasInitialized( Pod pod ){
-        final Task task = changeStateOfTask(pod, State.PREPARED);
-        task.setPod( new PodWithAge( pod ) );
         final Integer exitCode = pod.getStatus().getInitContainerStatuses().get(0).getState().getTerminated().getExitCode();
+        final Task task = changeStateOfTask(pod, exitCode == 0 ? State.PREPARED : State.INIT_WITH_ERRORS);
+        task.setPod( new PodWithAge( pod ) );
         log.info( "Pod {}, Init Code: {}", pod.getMetadata().getName(), exitCode);
         removeFromCopyingToNode( task.getNode(), task.getCopyingToNode() );
         if( exitCode == 0 ){
-            task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success);
+            task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
         } else {
             handleProblematicInit( task );
             task.setInputFiles( null );
