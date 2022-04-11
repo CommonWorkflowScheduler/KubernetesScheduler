@@ -201,7 +201,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                 new TaskInputFileLocationWrapper(
                                         filePath.path,
                                         filePath.file,
-                                        locationWrapper.getCopyOf(location)
+                                        locationWrapper.getCopyOf( currentNode )
                                 )
                         );
                         collect.add(filePath.path );
