@@ -5,10 +5,7 @@ import fonda.scheduler.dag.InputEdge;
 import fonda.scheduler.dag.Process;
 import fonda.scheduler.dag.Vertex;
 import fonda.scheduler.model.location.NodeLocation;
-import fonda.scheduler.model.location.hierachy.HierarchyFile;
-import fonda.scheduler.model.location.hierachy.HierarchyWrapper;
-import fonda.scheduler.model.location.hierachy.LocationWrapper;
-import fonda.scheduler.model.location.hierachy.RealHierarchyFile;
+import fonda.scheduler.model.location.hierachy.*;
 import fonda.scheduler.model.taskinputs.PathFileLocationTriple;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import fonda.scheduler.model.taskinputs.TaskInputs;
@@ -50,7 +47,7 @@ public class InputFileCollectorTest {
     }
 
     @Test
-    public void getInputsOfTaskTest() {
+    public void getInputsOfTaskTest() throws NoAlignmentFoundException {
 
         final String root = "/workdir/00/db62d739d658b839f07a1a77d877df/";
         final String root2 = "/workdir/01/db62d739d658b839f07a1a77d877d1/";
@@ -134,7 +131,7 @@ public class InputFileCollectorTest {
     }
 
     @Test
-    public void getInputsOfTaskTestExcludeNodes() {
+    public void getInputsOfTaskTestExcludeNodes() throws NoAlignmentFoundException {
 
         final String root = "/workdir/00/db62d739d658b839f07a1a77d877df/";
 
@@ -185,7 +182,7 @@ public class InputFileCollectorTest {
     }
 
     @Test
-    public void getInputsOfTaskTestNotExcludeNodes() {
+    public void getInputsOfTaskTestNotExcludeNodes() throws NoAlignmentFoundException {
 
         final String root = "/workdir/00/db62d739d658b839f07a1a77d877df/";
 

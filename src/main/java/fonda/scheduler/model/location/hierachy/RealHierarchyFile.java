@@ -5,9 +5,11 @@ import fonda.scheduler.model.Task;
 import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.LocationType;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
+@Slf4j
 public class RealHierarchyFile extends AbstractHierarchyFile {
 
     /**
@@ -147,7 +149,7 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
         return list;
     }
 
-    public MatchingLocationsPair getFilesForTask( Task task ){
+    public MatchingLocationsPair getFilesForTask( Task task ) throws NoAlignmentFoundException {
         LocationWrapper[] locationsRef = this.locations;
 
         LinkedList<LocationWrapper> current = null;
@@ -202,13 +204,14 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
              ? combineResultsEmptyInitial( current, ancestors, descendants, unrelated )
             : combineResultsWithInitial( current, ancestors, descendants, unrelated, initial );
 
+        if ( matchingLocations == null ) throw new NoAlignmentFoundException();
         removeMatchingLocations( matchingLocations, inUse );
 
         return new MatchingLocationsPair( matchingLocations, inUse );
     }
 
     private void removeMatchingLocations( List<LocationWrapper> matchingLocations, Set<Location> locations ){
-        if ( locations == null ) return;
+        if ( locations == null || matchingLocations == null ) return;
         for ( LocationWrapper matchingLocation : matchingLocations ) {
             if( matchingLocation.isInUse() ) {
                 locations.remove(matchingLocation.getLocation());

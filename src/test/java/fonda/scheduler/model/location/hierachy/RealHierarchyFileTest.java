@@ -181,7 +181,7 @@ public class RealHierarchyFileTest {
 
 
     @Test
-    public void getFilesForTaskTest() throws InterruptedException {
+    public void getFilesForTaskTest() throws InterruptedException, NoAlignmentFoundException {
 
         final CountDownLatch waiter = new CountDownLatch(1);
 
@@ -232,7 +232,7 @@ public class RealHierarchyFileTest {
     }
 
     @Test
-    public void getFilesForTaskTestInitFiles() throws InterruptedException {
+    public void getFilesForTaskTestInitFiles() throws InterruptedException, NoAlignmentFoundException {
 
         final CountDownLatch waiter = new CountDownLatch(1);
 
@@ -267,7 +267,7 @@ public class RealHierarchyFileTest {
     }
 
     @Test
-    public void getFilesForTaskTestMultipleInitFiles() throws InterruptedException {
+    public void getFilesForTaskTestMultipleInitFiles() throws InterruptedException, NoAlignmentFoundException {
 
         final CountDownLatch waiter = new CountDownLatch(1);
 
@@ -302,7 +302,7 @@ public class RealHierarchyFileTest {
     }
 
     @Test
-    public void getFilesForTaskTestDifferentAncestors() throws InterruptedException {
+    public void getFilesForTaskTestDifferentAncestors() throws InterruptedException, NoAlignmentFoundException {
 
         final CountDownLatch waiter = new CountDownLatch(1);
 

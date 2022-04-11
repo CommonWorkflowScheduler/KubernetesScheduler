@@ -223,7 +223,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return null;
     }
 
-    TaskInputs getInputsOfTask(Task task ){
+    TaskInputs getInputsOfTask(Task task ) throws NoAlignmentFoundException {
         return inputFileCollector.getInputsOfTask( task, client.getNumberOfNodes() );
     }
 

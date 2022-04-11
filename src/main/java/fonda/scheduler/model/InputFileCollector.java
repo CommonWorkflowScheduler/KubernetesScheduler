@@ -6,10 +6,12 @@ import fonda.scheduler.model.taskinputs.PathFileLocationTriple;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.util.Tuple;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.util.*;
 
+@Slf4j
 public class InputFileCollector {
 
     private final HierarchyWrapper hierarchyWrapper;
@@ -24,7 +26,7 @@ public class InputFileCollector {
             final List<PathFileLocationTriple> files,
             final Set<Location> excludedLocations,
             final Task task
-    ){
+    ) throws NoAlignmentFoundException {
         final Tuple<HierarchyFile, Path> tuple = toProcess.removeLast();
         final HierarchyFile file = tuple.getA();
         if( file == null ) return;
@@ -40,15 +42,20 @@ public class InputFileCollector {
             }
         } else {
             final RealHierarchyFile realFile = (RealHierarchyFile) file;
-            final RealHierarchyFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
-            if ( filesForTask.getExcludedNodes() != null ) {
-                excludedLocations.addAll(filesForTask.getExcludedNodes());
+            try {
+                final RealHierarchyFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
+                if ( filesForTask.getExcludedNodes() != null ) {
+                    excludedLocations.addAll(filesForTask.getExcludedNodes());
+                }
+                files.add( new PathFileLocationTriple( path, realFile, filesForTask.getMatchingLocations()) );
+            } catch ( NoAlignmentFoundException e ){
+                log.error( "No alignment for task: " + task.getConfig().getName() + " path: " + path, e );
+                throw e;
             }
-            files.add( new PathFileLocationTriple( path, realFile, filesForTask.getMatchingLocations()) );
         }
     }
 
-    public TaskInputs getInputsOfTask( Task task, int numberNode ){
+    public TaskInputs getInputsOfTask( Task task, int numberNode ) throws NoAlignmentFoundException {
 
         final List<InputParam<FileHolder>> fileInputs = task.getConfig().getInputs().fileInputs;
         final LinkedList<Tuple<HierarchyFile,Path>> toProcess = filterFilesToProcess( fileInputs );

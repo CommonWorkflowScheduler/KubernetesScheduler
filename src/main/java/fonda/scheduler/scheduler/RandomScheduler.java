@@ -3,6 +3,7 @@ package fonda.scheduler.scheduler;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.location.NodeLocation;
+import fonda.scheduler.model.location.hierachy.NoAlignmentFoundException;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.util.FileAlignment;
@@ -50,7 +51,12 @@ public class RandomScheduler extends SchedulerWithDaemonSet {
             final Set<NodeWithAlloc> matchingNodes = getMatchingNodesForTask(availableByNode,task);
             if( !matchingNodes.isEmpty() ) {
 
-                final TaskInputs inputsOfTask = getInputsOfTask(task);
+                final TaskInputs inputsOfTask;
+                try {
+                    inputsOfTask = getInputsOfTask(task);
+                } catch (NoAlignmentFoundException e) {
+                    continue;
+                }
 
                 if( inputsOfTask == null ) {
                     log.info( "No node where the pod can start, pod: {}", pod.getName() );
