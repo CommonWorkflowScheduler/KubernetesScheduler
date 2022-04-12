@@ -141,12 +141,13 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 NodeWithAlloc node = kubernetesClient.nodeHolder.get( pod.getSpec().getNodeName() );
                 switch ( action ){
                     case ADDED:
-                        node.addPod( new PodWithAge(pod) ); break;
+                        if ( !PodWithAge.hasFinishedOrFailed( pod ) ) {
+                            node.addPod(new PodWithAge(pod));
+                        }
+                        break;
                     case MODIFIED:
                         final List<ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
-                        if ( containerStatuses.isEmpty()
-                                ||
-                                containerStatuses.get(0).getState().getTerminated() == null ) {
+                        if ( !PodWithAge.hasFinishedOrFailed( pod ) ) {
                             break;
                         }
                         //Pod is finished

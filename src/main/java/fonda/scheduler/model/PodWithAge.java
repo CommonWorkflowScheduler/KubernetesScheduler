@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class PodWithAge extends Pod {
 
@@ -38,6 +39,10 @@ public class PodWithAge extends Pod {
                 ).reduce( new Requirements(), Requirements::addToThis );
     }
 
+    public boolean hasFinishedOrFailed(){
+        return hasFinishedOrFailed( this );
+    }
+
     public String getName(){
         return this.getMetadata().getName();
     }
@@ -58,5 +63,22 @@ public class PodWithAge extends Pod {
         int result = super.hashCode();
         result = 31 * result + (getAge() != null ? getAge().hashCode() : 0);
         return result;
+    }
+
+    public static boolean hasFinishedOrFailed( Pod pod ){
+        //init Failure
+        final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
+        for ( ContainerStatus containerStatus : initContainerStatuses ) {
+            final ContainerStateTerminated terminated = containerStatus.getState().getTerminated();
+            if ( terminated != null && terminated.getExitCode() != 0 ){
+                return true;
+            }
+        }
+        final List<ContainerStatus> containerStatuses = pod.getStatus().getInitContainerStatuses();
+        if ( containerStatuses.isEmpty() ) return false;
+        for ( ContainerStatus containerStatus : containerStatuses ) {
+            if ( containerStatus.getState().getTerminated() == null ) return false;
+        }
+        return true;
     }
 }
