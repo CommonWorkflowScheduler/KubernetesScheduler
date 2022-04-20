@@ -86,7 +86,10 @@ public abstract class Scheduler {
         //check if still possible...
         if ( scheduleObject.isCheckStillPossible() ) {
             boolean possible = validSchedulePlan ( taskNodeAlignment );
-            if (!possible) return taskNodeAlignment.size();
+            if (!possible) {
+                log.info("The whole scheduling plan is not possible anymore.");
+                return taskNodeAlignment.size();
+            }
         }
 
         int failure = 0;
