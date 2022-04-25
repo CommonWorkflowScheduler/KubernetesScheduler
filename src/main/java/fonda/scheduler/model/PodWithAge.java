@@ -1,5 +1,6 @@
 package fonda.scheduler.model;
 
+import fonda.scheduler.util.PodPhase;
 import io.fabric8.kubernetes.api.model.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -66,19 +67,6 @@ public class PodWithAge extends Pod {
     }
 
     public static boolean hasFinishedOrFailed( Pod pod ){
-        //init Failure
-        final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
-        for ( ContainerStatus containerStatus : initContainerStatuses ) {
-            final ContainerStateTerminated terminated = containerStatus.getState().getTerminated();
-            if ( terminated != null && terminated.getExitCode() != 0 ){
-                return true;
-            }
-        }
-        final List<ContainerStatus> containerStatuses = pod.getStatus().getInitContainerStatuses();
-        if ( containerStatuses.isEmpty() ) return false;
-        for ( ContainerStatus containerStatus : containerStatuses ) {
-            if ( containerStatus.getState().getTerminated() == null ) return false;
-        }
-        return true;
+        return PodPhase.get( pod.getStatus().getPhase() ).isFinished();
     }
 }
