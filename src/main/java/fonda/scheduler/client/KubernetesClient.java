@@ -6,11 +6,13 @@ import fonda.scheduler.scheduler.Scheduler;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @Slf4j
@@ -22,7 +24,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     public KubernetesClient(){
         for( Node node : this.nodes().list().getItems() ){
-            nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node) );
+            nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node,this) );
         }
         this.pods().inAnyNamespace().watch( new PodWatcher( this ) );
         this.nodes().watch( new NodeWatcher( this ) );
@@ -74,6 +76,16 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         return new ArrayList<>(this.nodeHolder.values());
     }
 
+    public BigDecimal getMemoryOfNode(NodeWithAlloc node ){
+        final Quantity memory = this
+                .top()
+                .nodes()
+                .metrics(node.getName())
+                .getUsage()
+                .get("memory");
+        return Quantity.getAmountInBytes(memory);
+    }
+
     static class NodeWatcher implements Watcher<Node>{
 
         private final KubernetesClient kubernetesClient;
@@ -91,7 +103,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                     log.info("New Node {} was added", node.getMetadata().getName());
                     synchronized ( kubernetesClient.nodeHolder ){
                         if ( ! kubernetesClient.nodeHolder.containsKey( node.getMetadata().getName() ) ){
-                            processedNode = new NodeWithAlloc(node);
+                            processedNode = new NodeWithAlloc(node,kubernetesClient);
                             kubernetesClient.nodeHolder.put( node.getMetadata().getName(), processedNode );
                             change = true;
                         }

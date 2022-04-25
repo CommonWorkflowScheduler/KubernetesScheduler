@@ -1,5 +1,6 @@
 package fonda.scheduler.model;
 
+import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.location.NodeLocation;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -15,6 +16,8 @@ import java.util.Map;
 @Slf4j
 public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
+    private final KubernetesClient kubernetesClient;
+
     private static final long serialVersionUID = 1L;
 
     private final Requirements maxResources;
@@ -24,7 +27,9 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     @Getter
     private final NodeLocation nodeLocation;
 
-    public NodeWithAlloc(Node node) {
+    public NodeWithAlloc( Node node, KubernetesClient kubernetesClient ) {
+
+        this.kubernetesClient = kubernetesClient;
 
         this.setApiVersion( node.getApiVersion() );
         this.setKind( node.getKind() );
@@ -60,11 +65,20 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         }
     }
 
+    /**
+     * @return max(Requested by all and currently used )
+     */
     public Requirements getRequestedResources(){
+        final Requirements requestedByPods;
         synchronized (assignedPods) {
-            return assignedPods.values().stream()
-                    .reduce( new Requirements(), Requirements::addToThis );
+            requestedByPods = assignedPods.values().stream()
+                    .reduce(new Requirements(), Requirements::addToThis);
         }
+        final BigDecimal currentMemoryOfNode = kubernetesClient.getMemoryOfNode( this );
+        if ( requestedByPods.getRam().compareTo(currentMemoryOfNode) == -1 ){
+            requestedByPods.addRAMtoThis(currentMemoryOfNode.subtract(requestedByPods.getRam()));
+        }
+        return requestedByPods;
     }
 
     public Requirements getAvailableResources(){
