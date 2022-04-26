@@ -15,12 +15,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class RandomScheduler extends SchedulerWithDaemonSet {
+public class RandomLAScheduler extends SchedulerWithDaemonSet {
 
     private final InputAlignment inputAlignment;
     private final Random random = new Random();
 
-    public RandomScheduler(
+    public RandomLAScheduler(
             String name,
             KubernetesClient client,
             String namespace,

@@ -8,7 +8,7 @@ import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.model.TaskConfig;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
-import fonda.scheduler.scheduler.RandomScheduler;
+import fonda.scheduler.scheduler.RandomLAScheduler;
 import fonda.scheduler.scheduler.Scheduler;
 import fonda.scheduler.scheduler.SchedulerWithDaemonSet;
 import fonda.scheduler.scheduler.filealignment.RandomAlignment;
@@ -72,7 +72,7 @@ public class SchedulerRestController {
         switch ( strategy.toLowerCase() ){
             case "fifo" :
             case "random" :
-            case "fifo-random" : scheduler = new RandomScheduler(execution, client, namespace, config, new RandomAlignment() ); break;
+            case "fifo-random" : scheduler = new RandomLAScheduler(execution, client, namespace, config, new RandomAlignment() ); break;
             default: return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
         }
 
