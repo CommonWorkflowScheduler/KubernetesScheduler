@@ -16,7 +16,11 @@ public class DAG {
     }
 
     public Process getByProcess( String s ){
-        return processes.get( s );
+        final Process process = processes.get(s);
+        if ( process == null ){
+            throw new IllegalStateException("Process can not be found! Searching: " + s + " processes: " + processes );
+        }
+        return process;
     }
 
     public void registerVertices( List<Vertex> vertices ){
