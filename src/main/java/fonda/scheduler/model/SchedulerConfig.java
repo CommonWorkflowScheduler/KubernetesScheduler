@@ -13,16 +13,20 @@ public class SchedulerConfig {
     public final String dns;
     public final String copyStrategy;
 
+    public final boolean locationAware;
+
     public SchedulerConfig(List<LocalClaim> localClaims,
                            List<VolumeClaim> volumeClaims,
                            String workDir,
                            String dns,
-                           String copyStrategy) {
+                           String copyStrategy,
+                           boolean locationAware) {
         this.localClaims = localClaims;
         this.volumeClaims = volumeClaims;
         this.workDir = workDir;
         this.dns = dns;
         this.copyStrategy = copyStrategy;
+        this.locationAware = locationAware;
     }
 
     private SchedulerConfig(){
@@ -31,6 +35,7 @@ public class SchedulerConfig {
         this.workDir = null;
         this.dns = null;
         this.copyStrategy = null;
+        this.locationAware = false;
     }
 
     @ToString

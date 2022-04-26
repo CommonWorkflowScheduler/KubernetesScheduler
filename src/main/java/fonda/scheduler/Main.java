@@ -34,8 +34,8 @@ public class Main {
     public void afterStart(){
         try{
             log.info( "Started with namespace: {}", client.getNamespace() );
-            final SchedulerConfig schedlerConfig = new SchedulerConfig(null, null, "/localwork/", null, "ftp");
-            final RandomLAScheduler randomLAScheduler = new RandomLAScheduler("testscheduler", client, "default", schedlerConfig, new RandomAlignment());
+            final SchedulerConfig schedulerConfig = new SchedulerConfig(null, null, "/localwork/", null, "ftp", true);
+            final RandomLAScheduler randomLAScheduler = new RandomLAScheduler("testscheduler", client, "default", schedulerConfig, new RandomAlignment());
             final Pair<String, String> key = new Pair<>("default", "test-run");
             SchedulerRestController.addScheduler( key, randomLAScheduler);
         } catch (Exception e){
