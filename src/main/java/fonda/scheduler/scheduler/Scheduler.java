@@ -137,7 +137,12 @@ public abstract class Scheduler {
             final Map<NodeWithAlloc, Requirements> availableByNode
     );
 
-    abstract int terminateTasks( final List<Task> finishedTasks );
+    int terminateTasks( final List<Task> finishedTasks ) {
+        for (Task finishedTask : finishedTasks) {
+            taskWasFinished( finishedTask );
+        }
+        return 0;
+    }
 
     /* Pod Event */
 
