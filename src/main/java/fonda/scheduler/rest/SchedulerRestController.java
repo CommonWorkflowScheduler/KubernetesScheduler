@@ -9,6 +9,7 @@ import fonda.scheduler.model.TaskConfig;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.RandomLAScheduler;
+import fonda.scheduler.scheduler.RandomScheduler;
 import fonda.scheduler.scheduler.Scheduler;
 import fonda.scheduler.scheduler.SchedulerWithDaemonSet;
 import fonda.scheduler.scheduler.filealignment.RandomAlignment;
@@ -45,7 +46,8 @@ public class SchedulerRestController {
     }
 
     private ResponseEntity<String> noSchedulerFor( String execution ){
-        return new ResponseEntity<>( "There is already a scheduler for " + execution, HttpStatus.BAD_REQUEST );
+        log.warn( "No scheduler for execution: {}", execution );
+        return new ResponseEntity<>( "There is no scheduler for " + execution, HttpStatus.BAD_REQUEST );
     }
 
     /**
@@ -72,8 +74,13 @@ public class SchedulerRestController {
         switch ( strategy.toLowerCase() ){
             case "fifo" :
             case "random" :
-            case "fifo-random" : scheduler = new RandomLAScheduler(execution, client, namespace, config, new RandomAlignment() ); break;
-            default: return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
+            case "fifo-random" :
+                scheduler = config.locationAware
+                        ? new RandomLAScheduler( execution, client, namespace, config, new RandomAlignment() )
+                        : new RandomScheduler( execution, client, namespace, config );
+                break;
+            default:
+                return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
         }
 
         schedulerHolder.put( key, scheduler );
@@ -163,7 +170,7 @@ public class SchedulerRestController {
     @DeleteMapping ("/scheduler/{namespace}/{execution}")
     ResponseEntity<String> delete(@PathVariable String namespace,  @PathVariable String execution) {
 
-        log.info("Delete name: " + execution);
+        log.info("Delete scheduler: " + execution);
         final Pair<String, String> key = getKey( namespace, execution );
 
         final Scheduler scheduler = schedulerHolder.get( key );
