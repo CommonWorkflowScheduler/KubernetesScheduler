@@ -15,4 +15,4 @@ COPY --from=build /build/target/k8s-scheduler*.jar k8s-scheduler.jar
 RUN chown -R javauser:javagroup /app
 USER javauser
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","k8s-scheduler.jar"]
+ENTRYPOINT ["java","-jar","/app/k8s-scheduler.jar"]
