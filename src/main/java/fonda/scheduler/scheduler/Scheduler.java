@@ -50,6 +50,8 @@ public abstract class Scheduler {
     private final TaskprocessingThread schedulingThread;
     private final TaskprocessingThread finishThread;
 
+    final boolean traceEnabled;
+
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
         this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + execution;
@@ -58,6 +60,7 @@ public abstract class Scheduler {
         this.client = client;
         this.dns = config.dns;
         this.dag = new DAG();
+        this.traceEnabled = config.traceEnabled;
 
         PodWatcher podWatcher = new PodWatcher(this);
 
