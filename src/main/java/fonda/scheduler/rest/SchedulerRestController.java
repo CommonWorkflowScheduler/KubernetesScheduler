@@ -63,10 +63,6 @@ public class SchedulerRestController {
         }
     }
 
-    public static void addScheduler(Pair<String,String> key, Scheduler scheduler ){
-        schedulerHolder.put( key, scheduler );
-    }
-
     private ResponseEntity<String> noSchedulerFor( String execution ){
         log.warn( "No scheduler for execution: {}", execution );
         return new ResponseEntity<>( "There is no scheduler for " + execution, HttpStatus.BAD_REQUEST );
