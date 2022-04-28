@@ -37,7 +37,7 @@ public class SchedulerRestController {
     private final KubernetesClient client;
     private final boolean autoClose;
     private final ApplicationContext appContext;
-    private boolean closedOneScheduler = false;
+    private long closedLastScheduler = -1;
 
     /**
      * Holds the scheduler for one execution
@@ -57,9 +57,9 @@ public class SchedulerRestController {
 
     @Scheduled(fixedDelay = 5000)
     public void close() throws InterruptedException {
-        if ( autoClose && closedOneScheduler && schedulerHolder.isEmpty() ) {
-            Thread.sleep( 1000 );
-            SpringApplication.exit(appContext, () -> 0);
+        if ( autoClose && schedulerHolder.isEmpty() && closedLastScheduler != -1 ) {
+            Thread.sleep( System.currentTimeMillis() - closedLastScheduler + 5000 );
+            if ( schedulerHolder.isEmpty() ) SpringApplication.exit(appContext, () -> 0);
         }
     }
 
@@ -198,7 +198,7 @@ public class SchedulerRestController {
         schedulerHolder.remove( key );
         client.removeScheduler( scheduler );
         scheduler.close();
-        closedOneScheduler = true;
+        closedLastScheduler = System.currentTimeMillis();
         return new ResponseEntity<>( HttpStatus.OK );
     }
 
