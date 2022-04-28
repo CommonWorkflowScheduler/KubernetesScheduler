@@ -16,8 +16,13 @@ import fonda.scheduler.scheduler.filealignment.RandomAlignment;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,9 +31,13 @@ import java.util.Map;
 
 @RestController
 @Slf4j
+@EnableScheduling
 public class SchedulerRestController {
 
     private final KubernetesClient client;
+    private final boolean autoClose;
+    private final ApplicationContext appContext;
+    private boolean closedOneScheduler = false;
 
     /**
      * Holds the scheduler for one execution
@@ -37,8 +46,21 @@ public class SchedulerRestController {
      */
     private static final Map< Pair<String,String>, Scheduler > schedulerHolder = new HashMap<>();
 
-    public SchedulerRestController( @Autowired KubernetesClient client ){
+    public SchedulerRestController(
+            @Autowired KubernetesClient client,
+            @Value("#{environment.AUTOCLOSE}") String autoClose,
+            @Autowired ApplicationContext appContext ){
         this.client = client;
+        this.autoClose = Boolean.parseBoolean(autoClose);
+        this.appContext = appContext;
+    }
+
+    @Scheduled(fixedDelay = 5000)
+    public void close() throws InterruptedException {
+        if ( autoClose && closedOneScheduler && schedulerHolder.isEmpty() ) {
+            Thread.sleep( 1000 );
+            SpringApplication.exit(appContext, () -> 0);
+        }
     }
 
     public static void addScheduler(Pair<String,String> key, Scheduler scheduler ){
@@ -180,6 +202,7 @@ public class SchedulerRestController {
         schedulerHolder.remove( key );
         client.removeScheduler( scheduler );
         scheduler.close();
+        closedOneScheduler = true;
         return new ResponseEntity<>( HttpStatus.OK );
     }
 
