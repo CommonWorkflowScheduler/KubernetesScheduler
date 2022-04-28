@@ -17,31 +17,11 @@ import javax.annotation.PostConstruct;
 @Slf4j
 public class Main {
 
-    private final KubernetesClient client;
-
     public static void main(String[] args) {
         if( System.getenv( "SCHEDULER_NAME" ) == null || System.getenv( "SCHEDULER_NAME" ).isEmpty() ){
             throw new IllegalArgumentException( "Please define environment variable: SCHEDULER_NAME" );
         }
         SpringApplication.run(Main.class, args);
-    }
-
-    Main(@Autowired KubernetesClient client){
-        this.client = client;
-    }
-
-    @PostConstruct
-    public void afterStart(){
-        try{
-            log.info( "Started with namespace: {}", client.getNamespace() );
-            final SchedulerConfig schedulerConfig = new SchedulerConfig(null, null, "/localwork/", null, "ftp", true);
-            final RandomLAScheduler randomLAScheduler = new RandomLAScheduler("testscheduler", client, "default", schedulerConfig, new RandomAlignment());
-            final Pair<String, String> key = new Pair<>("default", "test-run");
-            SchedulerRestController.addScheduler( key, randomLAScheduler);
-        } catch (Exception e){
-            e.printStackTrace();
-            System.exit(1);
-        }
     }
 
 }
