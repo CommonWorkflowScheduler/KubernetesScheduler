@@ -79,7 +79,7 @@ public class Task {
     }
 
     public void setPod(PodWithAge pod) {
-        if( pod == null )
+        if( this.pod == null )
             timeAddedToQueue = System.currentTimeMillis();
         this.pod = pod;
     }
