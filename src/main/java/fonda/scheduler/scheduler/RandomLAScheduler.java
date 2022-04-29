@@ -12,7 +12,6 @@ import fonda.scheduler.util.NodeTaskFilesAlignment;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class RandomLAScheduler extends SchedulerWithDaemonSet {

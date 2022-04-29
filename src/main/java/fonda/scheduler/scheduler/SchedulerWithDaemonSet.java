@@ -30,7 +30,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.ftp.FTPClient;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -82,7 +84,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private void freeLocations( List<LocationWrapper> locationWrappers ){
         locationWrappers.parallelStream().forEach( LocationWrapper::free );
     }
-    
+
     @Override
     boolean assignTaskToNode( NodeTaskAlignment alignment ) {
         final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
