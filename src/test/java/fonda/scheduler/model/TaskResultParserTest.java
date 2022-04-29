@@ -12,7 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.PrintWriter;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -34,15 +35,17 @@ public class TaskResultParserTest {
 
             tmpDir = Files.createTempDirectory( "results" );
             log.info("Path: {}", tmpDir );
-            PrintWriter pw = new PrintWriter( tmpDir.resolve(".command.infiles").toString() );
+            BufferedWriter pw = new BufferedWriter( new FileWriter( tmpDir.resolve(".command.infiles").toString() ) );
             for (String s : inputdata) {
-                pw.println( s );
+                pw.write( s );
+                pw.write( '\n' );
             }
             pw.close();
 
-            pw = new PrintWriter( tmpDir.resolve(".command.outfiles").toString() );
+            pw = new BufferedWriter( new FileWriter( tmpDir.resolve(".command.outfiles").toString() ) );
             for (String s : outputdata) {
-                pw.println( s );
+                pw.write( s );
+                pw.write( '\n' );
             }
             pw.close();
         } catch ( Exception ignored ){}

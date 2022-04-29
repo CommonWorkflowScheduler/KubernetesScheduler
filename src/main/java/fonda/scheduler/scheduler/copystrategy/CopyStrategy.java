@@ -15,7 +15,7 @@ public abstract class CopyStrategy {
 
         File file = new File(task.getWorkingDir() + '/' + ".command.init.run");
 
-        try (PrintWriter pw = new PrintWriter(file)) {
+        try (BufferedWriter pw = new BufferedWriter( new FileWriter( file) ) ) {
 
             ClassLoader classLoader = getClass().getClassLoader();
 
@@ -26,7 +26,8 @@ public abstract class CopyStrategy {
 
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        pw.println(line);
+                        pw.write( line );
+                        pw.write( '\n' );
                     }
 
                     Set<PosixFilePermission> executable = PosixFilePermissions.fromString("rwxrwxrwx");
@@ -38,6 +39,8 @@ public abstract class CopyStrategy {
 
 
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

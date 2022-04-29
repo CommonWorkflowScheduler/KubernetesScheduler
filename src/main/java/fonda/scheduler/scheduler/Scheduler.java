@@ -15,9 +15,7 @@ import io.fabric8.kubernetes.client.WatcherException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 @Slf4j
@@ -314,9 +312,12 @@ public abstract class Scheduler {
 
         final File nodeFile = new File(alignment.task.getWorkingDir() + '/' + ".command.node");
 
-        try(PrintWriter printWriter = new PrintWriter(nodeFile)){
-            printWriter.println( alignment.node.getName() );
+        try(BufferedWriter printWriter = new BufferedWriter( new FileWriter( nodeFile ))){
+            printWriter.write( alignment.node.getName() );
+            printWriter.write( '\n' );
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
