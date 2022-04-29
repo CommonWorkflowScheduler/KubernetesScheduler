@@ -43,7 +43,9 @@ public class RandomLAScheduler extends SchedulerWithDaemonSet {
     ){
         List<NodeTaskAlignment> alignment = new LinkedList<>();
 
+        int index = 0;
         for ( final Task task : unscheduledTasks ) {
+            index++;
             final PodWithAge pod = task.getPod();
             log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
 
@@ -75,6 +77,15 @@ public class RandomLAScheduler extends SchedulerWithDaemonSet {
                     alignment.add(new NodeTaskFilesAlignment(node.get(), task, fileAlignment));
                     availableByNode.get(node.get()).subFromThis(pod.getRequest());
                     log.info("--> " + node.get().getName());
+                    if ( traceEnabled ){
+                        task.getTraceRecord().setSchedulerPlaceInQueue( index );
+                        task.getTraceRecord().setSchedulerLocationCount(
+                                inputsOfTask.getFiles()
+                                        .parallelStream()
+                                        .mapToInt( x -> x.locations.size() )
+                                        .sum()
+                        );
+                    }
                 }
 
             } else {

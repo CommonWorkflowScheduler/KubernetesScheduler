@@ -5,14 +5,17 @@ import fonda.scheduler.dag.Process;
 import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
+import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.util.Batch;
 import fonda.scheduler.util.Tuple;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.List;
 
+@Slf4j
 public class Task {
 
     @Getter
@@ -47,6 +50,11 @@ public class Task {
     @Setter
     private HashMap< String, Tuple<Task, Location>> copyingToNode;
 
+    @Getter
+    private final TraceRecord traceRecord = new TraceRecord();
+
+    private long timeAddedToQueue;
+
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
         this.process = dag.getByProcess( config.getTask() );
@@ -59,6 +67,25 @@ public class Task {
 
     public boolean wasSuccessfullyExecuted(){
         return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode() == 0;
+    }
+
+    public void writeTrace(){
+        try {
+            final String tracePath = getWorkingDir() + '/' + ".command.scheduler.trace";
+            traceRecord.writeRecord(tracePath);
+        } catch ( Exception e ){
+            log.warn( "Cannot write trace of task: " + this.getConfig().getName(), e );
+        }
+    }
+
+    public void setPod(PodWithAge pod) {
+        if( pod == null )
+            timeAddedToQueue = System.currentTimeMillis();
+        this.pod = pod;
+    }
+
+    public void submitted(){
+        traceRecord.setSchedulerTimeInQueue( System.currentTimeMillis() - timeAddedToQueue );
     }
 
     @Override

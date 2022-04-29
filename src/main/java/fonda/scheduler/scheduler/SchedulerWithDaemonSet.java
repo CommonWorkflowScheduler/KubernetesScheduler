@@ -12,6 +12,7 @@ import fonda.scheduler.model.outfiles.PathLocationWrapperPair;
 import fonda.scheduler.model.outfiles.SymlinkOutput;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import fonda.scheduler.model.taskinputs.TaskInputs;
+import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
@@ -85,6 +86,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         locationWrappers.parallelStream().forEach( LocationWrapper::free );
     }
 
+    private void calculateTrace( NodeTaskFilesAlignment nodeTaskFilesAlignment ){
+        final Task task = nodeTaskFilesAlignment.task;
+
+    }
+
     @Override
     boolean assignTaskToNode( NodeTaskAlignment alignment ) {
         final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
@@ -97,6 +103,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         alignment.task.setInputFiles( allLocationWrappers );
         useLocations( allLocationWrappers );
+        calculateTrace( nodeTaskFilesAlignment );
         return super.assignTaskToNode( alignment );
     }
 
@@ -163,6 +170,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         copyingToNode.get( nodeLocation ).keySet().removeAll( toRemove.keySet() );
     }
 
+    /**
+     *
+     * @param alignment
+     * @return null if the task cannot be scheduled
+     */
     WriteConfigResult writeInitConfig( NodeTaskFilesAlignment alignment ) {
 
         final File config = new File(alignment.task.getWorkingDir() + '/' + ".command.inputs.json");
@@ -177,13 +189,30 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     alignment.task.getConfig().getHash()
             );
 
-
             final HashMap<String, Tuple<Task, Location>> filesForCurrentNode = new HashMap<>();
             final NodeLocation currentNode = alignment.node.getNodeLocation();
             final HashMap<String, Tuple<Task, Location>> filesOnCurrentNode = copyingToNode.get(currentNode);
 
+            final TraceRecord traceRecord = alignment.task.getTraceRecord();
+
+            int filesOnNode = 0;
+            int filesOnNodeOtherTask = 0;
+            int filesNotOnNode = 0;
+            long filesOnNodeByte = 0;
+            long filesOnNodeOtherTaskByte = 0;
+            long filesNotOnNodeByte = 0;
+
             for (Map.Entry<String, List<FilePath>> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
-                if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) continue;
+                if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) {
+                    if (traceEnabled) {
+                        filesOnNode = entry.getValue().size();
+                        filesOnNodeByte = entry.getValue()
+                                .parallelStream()
+                                .mapToLong(x -> x.file.getLocationWrapper(currentNode).getSizeInBytes())
+                                .sum();
+                    }
+                    continue;
+                }
 
                 final List<String> collect = new LinkedList<>();
 
@@ -196,6 +225,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                         else {
                             //May be problematic if the task depending on fails/is stopped before all files are downloaded
                             waitForTask.put( filePath.path, taskLocationTuple.getA() );
+                            if (traceEnabled) {
+                                filesOnNodeOtherTask++;
+                                filesOnNodeOtherTaskByte += filePath.locationWrapper.getSizeInBytes();
+                            }
                         }
                     } else {
                         final LocationWrapper locationWrapper = filePath.file.getLocationWrapper(location);
@@ -208,6 +241,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                         );
                         collect.add(filePath.path );
                         filesForCurrentNode.put( filePath.path, new Tuple<>( alignment.task, location  ) );
+                        if (traceEnabled) {
+                            filesNotOnNode++;
+                            filesNotOnNodeByte += filePath.locationWrapper.getSizeInBytes();
+                        }
                     }
                 }
                 if( !collect.isEmpty() ) {
@@ -216,6 +253,16 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             }
             inputs.waitForTask( waitForTask );
             inputs.symlinks.addAll(alignment.fileAlignment.symlinks);
+
+            if (traceEnabled) {
+                traceRecord.setSchedulerFilesNode(filesOnNode);
+                traceRecord.setSchedulerFilesNodeBytes(filesOnNodeByte);
+                traceRecord.setSchedulerFilesNodeOtherTask(filesOnNodeOtherTask);
+                traceRecord.setSchedulerFilesNodeOtherTaskBytes(filesOnNodeOtherTaskByte);
+                traceRecord.setSchedulerFiles(filesOnNode + filesOnNodeOtherTask + filesNotOnNode);
+                traceRecord.setSchedulerFilesBytes(filesOnNodeByte + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
+                traceRecord.setSchedulerDependingTask( (int) waitForTask.values().stream().distinct().count() );
+            }
 
             new ObjectMapper().writeValue( config, inputs );
             return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode );

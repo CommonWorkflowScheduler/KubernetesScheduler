@@ -209,3 +209,8 @@ for waitForTask in config[ "waitForFilesOfTask" ]:
     if not waitForFiles( config[ "syncDir" ] + waitForTask, waitForFilesSet, starttime ):
         log.error( config[ "syncDir" ] + waitForTask + " was not successful" )
         myExit( 200 )
+
+traceFilePath = ".command.scheduler.trace"
+
+with open(traceFilePath, "a") as traceFile:
+    traceFile.write("scheduler_init_runtime=" + str(int((time.time()-starttime)*1000)))

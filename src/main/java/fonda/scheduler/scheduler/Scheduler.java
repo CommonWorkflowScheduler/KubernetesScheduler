@@ -81,6 +81,7 @@ public abstract class Scheduler {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
+        if( traceEnabled ) unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule() );
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
 
@@ -347,6 +348,9 @@ public abstract class Scheduler {
 
         pod.getSpec().setNodeName( alignment.node.getMetadata().getName() );
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
+
+        alignment.task.submitted();
+        if( traceEnabled ) alignment.task.writeTrace();
 
         return true;
     }
