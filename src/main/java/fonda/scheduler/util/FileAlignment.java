@@ -15,10 +15,12 @@ public class FileAlignment {
      */
     public final Map<String, List<FilePath>> nodeFileAlignment;
     public final List<SymlinkInput> symlinks;
+    public final double cost;
 
-    public FileAlignment(Map<String, List<FilePath>> nodeFileAlignment, List<SymlinkInput> symlinks) {
+    public FileAlignment(Map<String, List<FilePath>> nodeFileAlignment, List<SymlinkInput> symlinks, double cost) {
         this.nodeFileAlignment = nodeFileAlignment;
         this.symlinks = symlinks;
+        this.cost = cost;
     }
 
     public List<LocationWrapper> getAllLocationWrappers(){

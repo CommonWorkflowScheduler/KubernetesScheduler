@@ -19,7 +19,7 @@ public class RandomAlignment implements InputAlignment {
     private final Random random = new Random();
 
     @Override
-    public FileAlignment getInputAlignment(Task task, @NotNull TaskInputs inputsOfTask, NodeWithAlloc node) {
+    public FileAlignment getInputAlignment(Task task, @NotNull TaskInputs inputsOfTask, NodeWithAlloc node, double maxCost) {
         final HashMap<String, List<FilePath>> map = new HashMap<>();
         for (PathFileLocationTriple pathFileLocationTriple : inputsOfTask.getFiles()) {
             final LocationWrapper locationWrapper = pathFileLocationTriple.locations.get(
@@ -30,7 +30,7 @@ public class RandomAlignment implements InputAlignment {
             final List<FilePath> pathsOfNode = map.get( nodeIdentifier );
             pathsOfNode.add( new FilePath( pathFileLocationTriple.path.toString(), pathFileLocationTriple.file, locationWrapper ) );
         }
-        return new FileAlignment( map, inputsOfTask.getSymlinks() );
+        return new FileAlignment( map, inputsOfTask.getSymlinks(), 0);
     }
 
 }
