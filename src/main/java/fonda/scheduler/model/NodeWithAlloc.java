@@ -59,9 +59,9 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         }
     }
 
-    public void removePod( Pod pod ){
+    public boolean removePod( Pod pod ){
         synchronized (assignedPods) {
-            assignedPods.remove( pod.getMetadata().getUid() );
+            return assignedPods.remove( pod.getMetadata().getUid() ) != null;
         }
     }
 

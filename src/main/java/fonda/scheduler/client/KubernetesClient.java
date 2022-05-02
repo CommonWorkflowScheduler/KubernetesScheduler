@@ -165,10 +165,11 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                         //Pod is finished
                     case DELETED:
                     case ERROR:
-                        log.info("Pod has released its resources: {}", pod.getMetadata().getName());
                         //Delete Pod in any case
-                        node.removePod( pod );
-                        kubernetesClient.informAllScheduler();
+                        if ( node.removePod( pod ) ){
+                            log.info("Pod has released its resources: {}", pod.getMetadata().getName());
+                            kubernetesClient.informAllScheduler();
+                        }
                         break;
                     default: log.warn("No implementation for {}", action);
                 }
