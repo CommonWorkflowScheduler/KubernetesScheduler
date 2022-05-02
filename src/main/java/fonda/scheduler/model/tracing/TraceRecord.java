@@ -52,6 +52,9 @@ public class TraceRecord {
 
     private int schedulerTriedToSchedule = 0;
 
+    @Getter
+    @Setter
+    private Integer schedulerNodesToCopyFrom = null;
 
     public void writeRecord( String tracePath ) throws IOException {
 
@@ -68,6 +71,7 @@ public class TraceRecord {
             writeValue("scheduler_place_in_queue", schedulerPlaceInQueue, bw);
             writeValue("scheduler_location_count", schedulerLocationCount, bw);
             writeValue("scheduler_tried_to_schedule", schedulerTriedToSchedule, bw);
+            writeValue("scheduler_nodes_to_copy_from", schedulerNodesToCopyFrom, bw);
         }
 
     }

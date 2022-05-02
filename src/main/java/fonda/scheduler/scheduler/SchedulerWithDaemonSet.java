@@ -262,6 +262,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 traceRecord.setSchedulerFiles(filesOnNode + filesOnNodeOtherTask + filesNotOnNode);
                 traceRecord.setSchedulerFilesBytes(filesOnNodeByte + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
                 traceRecord.setSchedulerDependingTask( (int) waitForTask.values().stream().distinct().count() );
+                traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.nodeFileAlignment.size() - (filesOnNode > 0 ? 1 : 0) );
             }
 
             new ObjectMapper().writeValue( config, inputs );
