@@ -3,8 +3,6 @@ package fonda.scheduler.scheduler;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.location.NodeLocation;
-import fonda.scheduler.model.location.hierachy.NoAlignmentFoundException;
-import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.NodeTaskAlignment;
@@ -49,48 +47,29 @@ public class RandomLAScheduler extends SchedulerWithDaemonSet {
             final PodWithAge pod = task.getPod();
             log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest());
 
-            final Set<NodeWithAlloc> matchingNodes = getMatchingNodesForTask(availableByNode,task);
-            if( !matchingNodes.isEmpty() ) {
+            final MatchingFilesAndNodes matchingFilesAndNodes = getMatchingFilesAndNodes(task, availableByNode);
 
-                final TaskInputs inputsOfTask;
-                try {
-                    inputsOfTask = getInputsOfTask(task);
-                } catch (NoAlignmentFoundException e) {
-                    continue;
-                }
-
-                if( inputsOfTask == null ) {
-                    log.info( "No node where the pod can start, pod: {}", pod.getName() );
-                    continue;
-                }
-
-                filterNotMatchingNodesForTask( matchingNodes, inputsOfTask );
-
-                if( matchingNodes.isEmpty() ) {
-                    log.info( "No node which fulfills all requirements {}", pod.getName() );
-                    continue;
-                }
-
-                Optional<NodeWithAlloc> node = selectNode( matchingNodes, task );
-                if( node.isPresent() ) {
-                    final FileAlignment fileAlignment = inputAlignment.getInputAlignment( task, inputsOfTask, node.get() );
-                    alignment.add(new NodeTaskFilesAlignment(node.get(), task, fileAlignment));
-                    availableByNode.get(node.get()).subFromThis(pod.getRequest());
-                    log.info("--> " + node.get().getName());
-                    if ( traceEnabled ){
-                        task.getTraceRecord().setSchedulerPlaceInQueue( index );
-                        task.getTraceRecord().setSchedulerLocationCount(
-                                inputsOfTask.getFiles()
-                                        .parallelStream()
-                                        .mapToInt( x -> x.locations.size() )
-                                        .sum()
-                        );
-                    }
-                }
-
-            } else {
-                log.info( "No node with enough resources for {}", pod.getName() );
+            if( matchingFilesAndNodes == null ){
+                continue;
             }
+
+            Optional<NodeWithAlloc> node = selectNode( matchingFilesAndNodes.getNodes(), task );
+            if( node.isPresent() ) {
+                final FileAlignment fileAlignment = inputAlignment.getInputAlignment( task, matchingFilesAndNodes.getInputsOfTask(), node.get() );
+                alignment.add(new NodeTaskFilesAlignment(node.get(), task, fileAlignment));
+                availableByNode.get(node.get()).subFromThis(pod.getRequest());
+                log.info("--> " + node.get().getName());
+                if ( traceEnabled ){
+                    task.getTraceRecord().setSchedulerPlaceInQueue( index );
+                    task.getTraceRecord().setSchedulerLocationCount(
+                            matchingFilesAndNodes.getInputsOfTask().getFiles()
+                                    .parallelStream()
+                                    .mapToInt( x -> x.locations.size() )
+                                    .sum()
+                    );
+                }
+            }
+
         }
         final ScheduleObject scheduleObject = new ScheduleObject(alignment);
         scheduleObject.setCheckStillPossible( true );

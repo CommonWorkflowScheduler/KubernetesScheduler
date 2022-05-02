@@ -305,6 +305,33 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return new FileResponse( currentPath.toString(), node, getDaemonOnNode(node), node.equals(workflowEngineNode), symlinks, lastUpdate.getId() );
     }
 
+    MatchingFilesAndNodes getMatchingFilesAndNodes( final Task task, final Map<NodeWithAlloc, Requirements> availableByNode ){
+        final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask(availableByNode, task);
+        if( matchingNodesForTask.isEmpty() ) {
+            log.info( "No node with enough resources for {}", task.getConfig().getHash() );
+            return null;
+        }
+
+        final TaskInputs inputsOfTask;
+        try {
+            inputsOfTask = getInputsOfTask(task);
+        } catch (NoAlignmentFoundException e) {
+            return null;
+        }
+        if( inputsOfTask == null ) {
+            log.info( "No node where the pod can start, pod: {}", task.getConfig().getHash() );
+            return null;
+        }
+
+        filterNotMatchingNodesForTask( matchingNodesForTask, inputsOfTask );
+        if( matchingNodesForTask.isEmpty() ) {
+            log.info( "No node which fulfills all requirements {}", task.getConfig().getHash() );
+            return null;
+        }
+
+        return new MatchingFilesAndNodes( matchingNodesForTask, inputsOfTask );
+    }
+
     public void addFile( String path, long size, long timestamp, long locationWrapperID, boolean overwrite, String node ){
         final NodeLocation location = NodeLocation.getLocation( node == null ? workflowEngineNode : node );
 
