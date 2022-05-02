@@ -44,7 +44,9 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         long startTime = System.nanoTime();
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
         final int currentIndex = index.incrementAndGet();
-        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, availableByNode);
+        final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask( availableByNode, taskData.getTask());
+        if ( matchingNodesForTask.isEmpty() ) return null;
+        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, matchingNodesForTask);
         if ( result == null ) return null;
         final Task task = taskData.getTask();
         availableByNode.get(result.getA()).subFromThis(task.getPod().getRequest());
@@ -70,7 +72,12 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         AtomicInteger index = new AtomicInteger( 0 );
         final List<NodeTaskAlignment> alignment = unscheduledTasks
                 .parallelStream()
-                .map( task -> calculateTaskData( task, availableByNode ) )
+                .map( task -> {
+                    long startTime = System.nanoTime();
+                    final TaskData taskData = calculateTaskData(task, availableByNode);
+                    taskData.addNs( System.nanoTime() - startTime );
+                    return taskData;
+                } )
                 .filter(Objects::nonNull)
                 .sorted(Comparator.reverseOrder())
                 .sequential()
@@ -84,9 +91,8 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
 
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            final Map<NodeWithAlloc, Requirements> availableByNode
+            final Set<NodeWithAlloc> matchingNodesForTask
     ){
-        final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask( availableByNode, taskData.getTask());
         FileAlignment bestAlignment = null;
         NodeWithAlloc bestNode = null;
         //Remove all nodes which do not fit anymore
@@ -113,11 +119,16 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     }
 
 
+    /**
+     * Create a TaskData object for the input Task
+     * @param task
+     * @param availableByNode
+     * @return null if no nodes available
+     */
     TaskData calculateTaskData(
             final Task task,
             final Map<NodeWithAlloc, Requirements> availableByNode
     ) {
-        long startTime = System.nanoTime();
         final MatchingFilesAndNodes matchingFilesAndNodes = getMatchingFilesAndNodes(task, availableByNode);
         if ( matchingFilesAndNodes.getNodes().isEmpty() ) return null;
         final TaskInputs inputsOfTask = matchingFilesAndNodes.getInputsOfTask();
@@ -131,7 +142,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         final double fracOnNode = nodeDataTuples.get(0).getSizeInBytes() / (double) size;
         final double antiStarvingFactor = 0;
         final double value = fracOnNode + antiStarvingFactor;
-        return new TaskData( value, task, nodeDataTuples, matchingFilesAndNodes, System.nanoTime() - startTime );
+        return new TaskData( value, task, nodeDataTuples, matchingFilesAndNodes );
     }
 
 }
