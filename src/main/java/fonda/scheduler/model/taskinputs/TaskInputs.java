@@ -21,4 +21,22 @@ public class TaskInputs {
         this.excludedNodes = excludedNodes;
     }
 
+    public long calculateDataOnNode( Location loc ) {
+        long size = 0;
+        for ( PathFileLocationTriple fileLocation : files ) {
+            if (fileLocation.locatedOnLocation(loc)) {
+                size += fileLocation.getSizeInBytes();
+            }
+        }
+        return size;
+    }
+
+    public long calculateAvgSize() {
+        long size = 0;
+        for ( PathFileLocationTriple file : files ) {
+            size += file.getSizeInBytes();
+        }
+        return size;
+    }
+
 }
