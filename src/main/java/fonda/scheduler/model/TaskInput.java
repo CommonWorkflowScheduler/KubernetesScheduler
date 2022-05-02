@@ -4,7 +4,6 @@ import lombok.ToString;
 
 import java.util.List;
 
-@ToString
 public class TaskInput {
 
     public final List<InputParam<Boolean>> booleanInputs;
@@ -33,4 +32,13 @@ public class TaskInput {
         this.fileInputs = fileInputs;
     }
 
+    @Override
+    public String toString() {
+        return "TaskInput{" +
+                "booleanInputs=" + booleanInputs +
+                ", numberInputs=" + numberInputs +
+                ", stringInputs=" + stringInputs +
+                ", fileInputs=#" + (fileInputs != null ?  fileInputs.size() : 0) +
+                '}';
+    }
 }
