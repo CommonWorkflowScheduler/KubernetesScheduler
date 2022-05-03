@@ -94,6 +94,11 @@ public class SchedulerRestController {
                         ? new RandomLAScheduler( execution, client, namespace, config, new RandomAlignment() )
                         : new RandomScheduler( execution, client, namespace, config );
                 break;
+            case "lav1" :
+                if ( !config.locationAware )
+                    return new ResponseEntity<>( "LA scheduler only work if location aware", HttpStatus.BAD_REQUEST );
+                scheduler = new LASchedulerV1( execution, client, namespace, config, new RandomAlignment() );
+                break;
             default:
                 return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
         }
