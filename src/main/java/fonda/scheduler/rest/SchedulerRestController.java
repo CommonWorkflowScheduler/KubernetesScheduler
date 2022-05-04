@@ -9,7 +9,9 @@ import fonda.scheduler.model.TaskConfig;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.*;
+import fonda.scheduler.scheduler.filealignment.GreedyAlignment;
 import fonda.scheduler.scheduler.filealignment.RandomAlignment;
+import fonda.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +78,7 @@ public class SchedulerRestController {
     @PutMapping("/scheduler/registerScheduler/{namespace}/{execution}/{strategy}")
     ResponseEntity<String> registerScheduler(@PathVariable String namespace, @PathVariable String execution, @PathVariable String strategy, @RequestBody(required = false) SchedulerConfig config ) {
 
-        log.trace("Register execution: {} strategy: {} config: {}", execution, strategy, config);
+        log.info("Register execution: {} strategy: {} config: {}", execution, strategy, config);
 
         Scheduler scheduler;
 
@@ -97,7 +99,7 @@ public class SchedulerRestController {
             case "lav1" :
                 if ( !config.locationAware )
                     return new ResponseEntity<>( "LA scheduler only work if location aware", HttpStatus.BAD_REQUEST );
-                scheduler = new LASchedulerV1( execution, client, namespace, config, new RandomAlignment() );
+                scheduler = new LASchedulerV1( execution, client, namespace, config, new GreedyAlignment(new MinSizeCost(0)) );
                 break;
             default:
                 return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
