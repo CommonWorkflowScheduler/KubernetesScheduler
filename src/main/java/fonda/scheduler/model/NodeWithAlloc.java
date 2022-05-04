@@ -24,6 +24,8 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     private final Map<String, Requirements> assignedPods;
 
+    private long lastMetricsFetchingProblem = 0;
+
     @Getter
     private final NodeLocation nodeLocation;
 
@@ -74,9 +76,16 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
             requestedByPods = assignedPods.values().stream()
                     .reduce(new Requirements(), Requirements::addToThis);
         }
-        final BigDecimal currentMemoryOfNode = kubernetesClient.getMemoryOfNode( this );
-        if ( requestedByPods.getRam().compareTo(currentMemoryOfNode) == -1 ){
-            requestedByPods.addRAMtoThis(currentMemoryOfNode.subtract(requestedByPods.getRam()));
+        if ( System.currentTimeMillis() > lastMetricsFetchingProblem + 10_000 ) {
+            try {
+                final BigDecimal currentMemoryOfNode = kubernetesClient.getMemoryOfNode(this);
+                if (requestedByPods.getRam().compareTo(currentMemoryOfNode) == -1) {
+                    requestedByPods.addRAMtoThis(currentMemoryOfNode.subtract(requestedByPods.getRam()));
+                }
+            } catch (Exception e) {
+                log.warn( "Couldn't fetch metrics for {}", getName() );
+                lastMetricsFetchingProblem = System.currentTimeMillis();
+            }
         }
         return requestedByPods;
     }
