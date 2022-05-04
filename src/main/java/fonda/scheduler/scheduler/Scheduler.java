@@ -276,7 +276,9 @@ public abstract class Scheduler {
      * @return
      */
     boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
-        return availableByNode.higherOrEquals( pod.getRequest() ) && affinitiesMatch( pod, node );
+        return node.canScheduleNewPod()
+                && availableByNode.higherOrEquals( pod.getRequest() )
+                && affinitiesMatch( pod, node );
     }
 
     boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){

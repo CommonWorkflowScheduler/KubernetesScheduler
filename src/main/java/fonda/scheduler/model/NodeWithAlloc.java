@@ -102,6 +102,10 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         }
     }
 
+    public boolean canScheduleNewPod(){
+        return isReady() && ( getSpec().getUnschedulable() == null || !getSpec().getUnschedulable() );
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
