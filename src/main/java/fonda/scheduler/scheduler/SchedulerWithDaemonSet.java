@@ -208,7 +208,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                         filesOnNode = entry.getValue().size();
                         filesOnNodeByte = entry.getValue()
                                 .parallelStream()
-                                .mapToLong(x -> x.file.getLocationWrapper(currentNode).getSizeInBytes())
+                                .mapToLong(x -> x.getFile().getLocationWrapper(currentNode).getSizeInBytes())
                                 .sum();
                     }
                     continue;
@@ -218,32 +218,32 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
                 final NodeLocation location = NodeLocation.getLocation( entry.getKey() );
                 for (FilePath filePath : entry.getValue()) {
-                    if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey( filePath.path ) ) {
+                    if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey(filePath.getPath()) ) {
                         //Node copies currently from somewhere else!
-                        final Tuple<Task, Location> taskLocationTuple = filesOnCurrentNode.get(filePath.path);
+                        final Tuple<Task, Location> taskLocationTuple = filesOnCurrentNode.get(filePath.getPath());
                         if ( taskLocationTuple.getB() != location ) return null;
                         else {
                             //May be problematic if the task depending on fails/is stopped before all files are downloaded
-                            waitForTask.put( filePath.path, taskLocationTuple.getA() );
+                            waitForTask.put(filePath.getPath(), taskLocationTuple.getA() );
                             if (traceEnabled) {
                                 filesOnNodeOtherTask++;
-                                filesOnNodeOtherTaskByte += filePath.locationWrapper.getSizeInBytes();
+                                filesOnNodeOtherTaskByte += filePath.getLocationWrapper().getSizeInBytes();
                             }
                         }
                     } else {
-                        final LocationWrapper locationWrapper = filePath.file.getLocationWrapper(location);
+                        final LocationWrapper locationWrapper = filePath.getFile().getLocationWrapper(location);
                         inputFiles.add(
                                 new TaskInputFileLocationWrapper(
-                                        filePath.path,
-                                        filePath.file,
+                                        filePath.getPath(),
+                                        filePath.getFile(),
                                         locationWrapper.getCopyOf( currentNode )
                                 )
                         );
-                        collect.add(filePath.path );
-                        filesForCurrentNode.put( filePath.path, new Tuple<>( alignment.task, location  ) );
+                        collect.add(filePath.getPath());
+                        filesForCurrentNode.put(filePath.getPath(), new Tuple<>( alignment.task, location  ) );
                         if (traceEnabled) {
                             filesNotOnNode++;
-                            filesNotOnNodeByte += filePath.locationWrapper.getSizeInBytes();
+                            filesNotOnNodeByte += filePath.getLocationWrapper().getSizeInBytes();
                         }
                     }
                 }

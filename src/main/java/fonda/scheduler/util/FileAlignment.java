@@ -30,7 +30,7 @@ public class FileAlignment {
                 .flatMap( l -> l
                         .getValue()
                         .parallelStream()
-                        .map( p -> p.locationWrapper )
+                        .map( p -> p.getLocationWrapper() )
                 )
                 .collect(Collectors.toList());
     }

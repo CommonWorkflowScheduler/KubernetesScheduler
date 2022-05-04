@@ -26,9 +26,8 @@ public class RandomAlignment implements InputAlignment {
                     random.nextInt( pathFileLocationTriple.locations.size() )
             );
             final String nodeIdentifier = locationWrapper.getLocation().getIdentifier();
-            map.computeIfAbsent(nodeIdentifier, k -> new LinkedList<>() );
-            final List<FilePath> pathsOfNode = map.get( nodeIdentifier );
-            pathsOfNode.add( new FilePath( pathFileLocationTriple.path.toString(), pathFileLocationTriple.file, locationWrapper ) );
+            final List<FilePath> pathsOfNode = map.computeIfAbsent(nodeIdentifier, k -> new LinkedList<>() );
+            pathsOfNode.add( new FilePath( pathFileLocationTriple, locationWrapper ) );
         }
         return new FileAlignment( map, inputsOfTask.getSymlinks(), 0);
     }
