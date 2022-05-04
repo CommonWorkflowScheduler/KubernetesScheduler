@@ -139,7 +139,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 .map(node -> new NodeDataTuple(node, inputsOfTask.calculateDataOnNode( node.getNodeLocation() ) ) )
                 .sorted(Comparator.reverseOrder())
                 .collect(Collectors.toList());
-        final double fracOnNode = nodeDataTuples.get(0).getSizeInBytes() / (double) size;
+        final double fracOnNode = size == 0 ? 1 : nodeDataTuples.get(0).getSizeInBytes() / (double) size;
         final double antiStarvingFactor = 0;
         final double value = fracOnNode + antiStarvingFactor;
         return new TaskData( value, task, nodeDataTuples, matchingFilesAndNodes );
