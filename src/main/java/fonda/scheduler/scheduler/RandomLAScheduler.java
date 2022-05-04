@@ -55,7 +55,7 @@ public class RandomLAScheduler extends LocationAwareScheduler {
             final Map<NodeWithAlloc, Requirements> availableByNode
     ) {
         final MatchingFilesAndNodes matchingFilesAndNodes = getMatchingFilesAndNodes(task, availableByNode);
-        if ( matchingFilesAndNodes.getNodes().isEmpty() ) return null;
+        if ( matchingFilesAndNodes == null || matchingFilesAndNodes.getNodes().isEmpty() ) return null;
         final List<NodeDataTuple> nodeDataTuples = matchingFilesAndNodes
                 .getNodes()
                 .parallelStream()

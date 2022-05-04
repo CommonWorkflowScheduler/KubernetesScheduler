@@ -75,7 +75,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 .map( task -> {
                     long startTime = System.nanoTime();
                     final TaskData taskData = calculateTaskData(task, availableByNode);
-                    taskData.addNs( System.nanoTime() - startTime );
+                    if ( taskData != null ) taskData.addNs( System.nanoTime() - startTime );
                     return taskData;
                 } )
                 .filter(Objects::nonNull)
@@ -130,7 +130,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             final Map<NodeWithAlloc, Requirements> availableByNode
     ) {
         final MatchingFilesAndNodes matchingFilesAndNodes = getMatchingFilesAndNodes(task, availableByNode);
-        if ( matchingFilesAndNodes.getNodes().isEmpty() ) return null;
+        if ( matchingFilesAndNodes == null || matchingFilesAndNodes.getNodes().isEmpty() ) return null;
         final TaskInputs inputsOfTask = matchingFilesAndNodes.getInputsOfTask();
         long size = inputsOfTask.calculateAvgSize();
         final List<NodeDataTuple> nodeDataTuples = matchingFilesAndNodes
