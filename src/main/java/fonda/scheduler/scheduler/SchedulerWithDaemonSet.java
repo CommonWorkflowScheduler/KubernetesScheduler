@@ -200,7 +200,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             long filesNotOnNodeByte = 0;
 
             for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
-                if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) {
+                if( entry.getKey() == alignment.node.getNodeLocation() ) {
                     if (traceEnabled) {
                         final List<FilePath> alignment1 = entry.getValue().getAlignment();
                         filesOnNode = alignment1.size();
