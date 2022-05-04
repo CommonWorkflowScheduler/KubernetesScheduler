@@ -15,6 +15,8 @@ public class TaskInputs {
     private final List<PathFileLocationTriple> files;
     private final Set<Location> excludedNodes;
 
+    private boolean sorted = false;
+
     public TaskInputs(List<SymlinkInput> symlinks, List<PathFileLocationTriple> files, Set<Location> excludedNodes) {
         this.symlinks = symlinks;
         this.files = files;
@@ -37,6 +39,15 @@ public class TaskInputs {
             size += file.getSizeInBytes();
         }
         return size;
+    }
+
+    public void sort(){
+        synchronized ( files ) {
+            if (!sorted) {
+                files.sort((x, y) -> Long.compare(y.getSizeInBytes(), x.getSizeInBytes()));
+                sorted = true;
+            }
+        }
     }
 
 }
