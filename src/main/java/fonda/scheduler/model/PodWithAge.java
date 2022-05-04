@@ -39,10 +39,6 @@ public class PodWithAge extends Pod {
                 ).reduce( new Requirements(), Requirements::addToThis );
     }
 
-    public boolean hasFinishedOrFailed(){
-        return hasFinishedOrFailed( this );
-    }
-
     public String getName(){
         return this.getMetadata().getName();
     }
