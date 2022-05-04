@@ -119,14 +119,11 @@ public abstract class Scheduler {
 
 
     public boolean validSchedulePlan( List<NodeTaskAlignment> taskNodeAlignment ){
-        List<NodeWithAlloc> items = getNodeList();
-        Map< NodeWithAlloc, Requirements> availableByNode = new HashMap<>();
-        for ( NodeWithAlloc item : items ) {
-            final Requirements availableResources = item.getAvailableResources();
-            availableByNode.put(item, availableResources);
-        }
+        Map< NodeWithAlloc, Requirements> availableByNode = getAvailableByNode();
         for ( NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment ) {
-            availableByNode.get(nodeTaskAlignment.node).subFromThis(nodeTaskAlignment.task.getPod().getRequest());
+            final Requirements requirements = availableByNode.get(nodeTaskAlignment.node);
+            if ( requirements == null ) return false;
+            requirements.subFromThis(nodeTaskAlignment.task.getPod().getRequest());
         }
         for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
             if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) return false;
