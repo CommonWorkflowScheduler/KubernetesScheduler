@@ -33,6 +33,12 @@ public class GreedyAlignment implements InputAlignment {
             LocationWrapper bestLocationWrapper = null;
             for (LocationWrapper locationWrapper : pathFileLocationTriple.locations) {
                 final Location currentLoc = locationWrapper.getLocation();
+                if ( currentLoc != node.getNodeLocation() ) {
+                    minCost = 0;
+                    bestLoc = currentLoc;
+                    bestLocationWrapper = locationWrapper;
+                    break;
+                }
                 final AlignmentWrapper alignmentWrapper = map.get(currentLoc);
                 final double calculatedCost = cf.calculateCost(alignmentWrapper, locationWrapper);
                 if ( calculatedCost < minCost ) {
