@@ -33,7 +33,7 @@ def getIP( node ):
 
 def clearLocatation( path ):
     if os.path.exists( path ):
-        log.debug( "Delete",path )
+        log.debug( "Delete %s",path )
         if os.path.islink( path ):
             os.unlink( path )
         elif os.path.isdir( path ):
