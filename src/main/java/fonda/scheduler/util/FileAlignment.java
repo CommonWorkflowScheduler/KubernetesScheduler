@@ -1,5 +1,6 @@
 package fonda.scheduler.util;
 
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 
@@ -13,11 +14,11 @@ public class FileAlignment {
     Key: node
     Value: Files from the node
      */
-    public final Map<String, AlignmentWrapper> nodeFileAlignment;
+    public final Map<Location, AlignmentWrapper> nodeFileAlignment;
     public final List<SymlinkInput> symlinks;
     public final double cost;
 
-    public FileAlignment(Map<String, AlignmentWrapper> nodeFileAlignment, List<SymlinkInput> symlinks, double cost) {
+    public FileAlignment(Map<Location, AlignmentWrapper> nodeFileAlignment, List<SymlinkInput> symlinks, double cost) {
         this.nodeFileAlignment = nodeFileAlignment;
         this.symlinks = symlinks;
         this.cost = cost;

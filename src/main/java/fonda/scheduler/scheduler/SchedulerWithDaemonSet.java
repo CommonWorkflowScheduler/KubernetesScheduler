@@ -199,7 +199,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             long filesOnNodeOtherTaskByte = 0;
             long filesNotOnNodeByte = 0;
 
-            for (Map.Entry<String, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
+            for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
                 if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) {
                     if (traceEnabled) {
                         final List<FilePath> alignment1 = entry.getValue().getAlignment();
@@ -214,7 +214,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
                 final List<String> collect = new LinkedList<>();
 
-                final NodeLocation location = NodeLocation.getLocation( entry.getKey() );
+                final NodeLocation location = (NodeLocation) entry.getKey();
                 for (FilePath filePath : entry.getValue().getAlignment()) {
                     if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey(filePath.getPath()) ) {
                         //Node copies currently from somewhere else!
@@ -246,7 +246,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     }
                 }
                 if( !collect.isEmpty() ) {
-                    inputs.data.add(new InputEntry(getDaemonOnNode(entry.getKey()), entry.getKey(), collect));
+                    inputs.data.add(new InputEntry(getDaemonOnNode(entry.getKey().getIdentifier()), entry.getKey().getIdentifier(), collect));
                 }
             }
             inputs.waitForTask( waitForTask );
