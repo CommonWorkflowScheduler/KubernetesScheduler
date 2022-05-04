@@ -83,11 +83,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         locationWrappers.parallelStream().forEach( LocationWrapper::free );
     }
 
-    private void calculateTrace( NodeTaskFilesAlignment nodeTaskFilesAlignment ){
-        final Task task = nodeTaskFilesAlignment.task;
-
-    }
-
     @Override
     boolean assignTaskToNode( NodeTaskAlignment alignment ) {
         final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
@@ -100,10 +95,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         alignment.task.setInputFiles( allLocationWrappers );
         useLocations( allLocationWrappers );
-        calculateTrace( nodeTaskFilesAlignment );
         return super.assignTaskToNode( alignment );
     }
 
+    @Override
     void undoTaskScheduling( Task task ){
         if ( task.getInputFiles() != null ) {
             freeLocations( task.getInputFiles() );
@@ -347,7 +342,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         String file = this.localWorkDir + "/sync/" + task.getConfig().getHash();
         try {
             Map<String,TaskInputFileLocationWrapper> wrapperByPath = new HashMap<>();
-            task.getCopiedFiles().stream().forEach( x -> wrapperByPath.put( x.getPath(), x ));
+            task.getCopiedFiles().forEach( x -> wrapperByPath.put( x.getPath(), x ));
             log.info( "Get daemon on node {}; daemons: {}", task.getNode().getIdentifier(), daemonByNode );
             final InputStream inputStream = getConnection(getDaemonOnNode(task.getNode().getIdentifier())).retrieveFileStream(file);
             if (inputStream == null) {
@@ -355,7 +350,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 return;
             }
             Scanner scanner = new Scanner(inputStream);
-            Set<String> openedFiles = new HashSet();
+            Set<String> openedFiles = new HashSet<>();
             while( scanner.hasNext() ){
                 String line = scanner.nextLine();
                 if ( line.startsWith( "S-" ) ){
