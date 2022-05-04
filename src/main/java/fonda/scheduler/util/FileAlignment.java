@@ -13,11 +13,11 @@ public class FileAlignment {
     Key: node
     Value: Files from the node
      */
-    public final Map<String, List<FilePath>> nodeFileAlignment;
+    public final Map<String, AlignmentWrapper> nodeFileAlignment;
     public final List<SymlinkInput> symlinks;
     public final double cost;
 
-    public FileAlignment(Map<String, List<FilePath>> nodeFileAlignment, List<SymlinkInput> symlinks, double cost) {
+    public FileAlignment(Map<String, AlignmentWrapper> nodeFileAlignment, List<SymlinkInput> symlinks, double cost) {
         this.nodeFileAlignment = nodeFileAlignment;
         this.symlinks = symlinks;
         this.cost = cost;
@@ -29,6 +29,7 @@ public class FileAlignment {
                 .parallelStream()
                 .flatMap( l -> l
                         .getValue()
+                        .getAlignment()
                         .parallelStream()
                         .map( p -> p.getLocationWrapper() )
                 )

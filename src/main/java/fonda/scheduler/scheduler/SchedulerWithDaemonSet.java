@@ -19,10 +19,7 @@ import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
 import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
-import fonda.scheduler.util.FilePath;
-import fonda.scheduler.util.NodeTaskAlignment;
-import fonda.scheduler.util.NodeTaskFilesAlignment;
-import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.*;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -202,11 +199,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             long filesOnNodeOtherTaskByte = 0;
             long filesNotOnNodeByte = 0;
 
-            for (Map.Entry<String, List<FilePath>> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
+            for (Map.Entry<String, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
                 if( entry.getKey().equals( alignment.node.getMetadata().getName() ) ) {
                     if (traceEnabled) {
-                        filesOnNode = entry.getValue().size();
-                        filesOnNodeByte = entry.getValue()
+                        final List<FilePath> alignment1 = entry.getValue().getAlignment();
+                        filesOnNode = alignment1.size();
+                        filesOnNodeByte = alignment1
                                 .parallelStream()
                                 .mapToLong(x -> x.getFile().getLocationWrapper(currentNode).getSizeInBytes())
                                 .sum();
@@ -217,7 +215,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 final List<String> collect = new LinkedList<>();
 
                 final NodeLocation location = NodeLocation.getLocation( entry.getKey() );
-                for (FilePath filePath : entry.getValue()) {
+                for (FilePath filePath : entry.getValue().getAlignment()) {
                     if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey(filePath.getPath()) ) {
                         //Node copies currently from somewhere else!
                         final Tuple<Task, Location> taskLocationTuple = filesOnCurrentNode.get(filePath.getPath());
