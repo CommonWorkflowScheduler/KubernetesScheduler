@@ -5,6 +5,7 @@ import fonda.scheduler.model.location.NodeLocation;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -130,5 +131,9 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         result = 31 * result + (getAssignedPods() != null ? getAssignedPods().hashCode() : 0);
         result = 31 * result + (getNodeLocation() != null ? getNodeLocation().hashCode() : 0);
         return result;
+    }
+
+    public boolean isReady(){
+        return Readiness.isNodeReady(this);
     }
 }

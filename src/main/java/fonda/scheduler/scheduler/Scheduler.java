@@ -419,6 +419,7 @@ public abstract class Scheduler {
         List<String> logInfo = new LinkedList<>();
         logInfo.add("------------------------------------");
         for (NodeWithAlloc item : getNodeList()) {
+            if ( !item.isReady() ) continue;
             final Requirements availableResources = item.getAvailableResources();
             availableByNode.put(item, availableResources);
             logInfo.add("Node: " + item.getName() + " " + availableResources);
