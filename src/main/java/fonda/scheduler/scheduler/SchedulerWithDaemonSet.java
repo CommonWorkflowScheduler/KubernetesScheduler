@@ -145,19 +145,19 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return 0;
     }
 
-    private final Map< NodeLocation, HashMap< String, Tuple<Task,Location>> > copyingToNode = new HashMap<>();
+    private final Map< NodeLocation, Map< String, Tuple<Task,Location>> > copyingToNode = new HashMap<>();
 
-    private void addToCopyingToNode(  NodeLocation nodeLocation, HashMap< String, Tuple<Task,Location> > toAdd ){
+    private void addToCopyingToNode(  NodeLocation nodeLocation, Map< String, Tuple<Task,Location> > toAdd ){
         if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
         if ( copyingToNode.containsKey( nodeLocation ) ){
-            final HashMap<String, Tuple<Task, Location>> stringTupleHashMap = copyingToNode.get( nodeLocation );
+            final Map<String, Tuple<Task, Location>> stringTupleHashMap = copyingToNode.get( nodeLocation );
             stringTupleHashMap.putAll( toAdd );
         } else {
             copyingToNode.put( nodeLocation, toAdd );
         }
     }
 
-    private void removeFromCopyingToNode(NodeLocation nodeLocation, HashMap< String, Tuple<Task,Location>> toRemove ){
+    private void removeFromCopyingToNode(NodeLocation nodeLocation, Map< String, Tuple<Task,Location>> toRemove ){
         if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
         copyingToNode.get( nodeLocation ).keySet().removeAll( toRemove.keySet() );
     }
@@ -183,7 +183,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
             final HashMap<String, Tuple<Task, Location>> filesForCurrentNode = new HashMap<>();
             final NodeLocation currentNode = alignment.node.getNodeLocation();
-            final HashMap<String, Tuple<Task, Location>> filesOnCurrentNode = copyingToNode.get(currentNode);
+            final Map<String, Tuple<Task, Location>> filesOnCurrentNode = copyingToNode.get(currentNode);
 
             final TraceRecord traceRecord = alignment.task.getTraceRecord();
 

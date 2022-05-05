@@ -2,12 +2,14 @@ package fonda.scheduler.scheduler.data;
 
 import fonda.scheduler.model.Task;
 import fonda.scheduler.scheduler.MatchingFilesAndNodes;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 @Getter
+@EqualsAndHashCode
 public class TaskData implements Comparable<TaskData> {
         private final double value;
         private final Task task;

@@ -12,8 +12,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class Task {
@@ -48,7 +48,7 @@ public class Task {
 
     @Getter
     @Setter
-    private HashMap< String, Tuple<Task, Location>> copyingToNode;
+    private Map< String, Tuple<Task, Location>> copyingToNode;
 
     @Getter
     private final TraceRecord traceRecord = new TraceRecord();

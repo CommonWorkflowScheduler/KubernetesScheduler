@@ -1,12 +1,13 @@
 package fonda.scheduler.scheduler.data;
 
 import fonda.scheduler.model.NodeWithAlloc;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 @Getter
-public
-class NodeDataTuple implements Comparable<NodeDataTuple> {
+@EqualsAndHashCode
+public class NodeDataTuple implements Comparable<NodeDataTuple> {
 
         private final NodeWithAlloc node;
         private final long sizeInBytes;

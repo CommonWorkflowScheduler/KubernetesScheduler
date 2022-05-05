@@ -8,7 +8,7 @@ import java.util.List;
 @Getter
 public class AlignmentWrapper {
 
-    private final List<FilePath> alignment = new LinkedList();
+    private final List<FilePath> alignment = new LinkedList<>();
     private double cost = 0;
 
     public void addAlignment( FilePath filePath, double cost ) {

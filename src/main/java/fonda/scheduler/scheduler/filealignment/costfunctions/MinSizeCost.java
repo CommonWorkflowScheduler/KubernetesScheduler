@@ -1,10 +1,6 @@
 package fonda.scheduler.scheduler.filealignment.costfunctions;
 
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
-import fonda.scheduler.util.AlignmentWrapper;
-import fonda.scheduler.util.FilePath;
-
-import java.util.List;
 
 public class MinSizeCost implements CostFunction {
 

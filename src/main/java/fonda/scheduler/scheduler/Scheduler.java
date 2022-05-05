@@ -315,8 +315,6 @@ public abstract class Scheduler {
         try(BufferedWriter printWriter = new BufferedWriter( new FileWriter( nodeFile ))){
             printWriter.write( alignment.node.getName() );
             printWriter.write( '\n' );
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

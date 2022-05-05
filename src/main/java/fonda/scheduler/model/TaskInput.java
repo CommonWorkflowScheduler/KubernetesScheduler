@@ -1,7 +1,5 @@
 package fonda.scheduler.model;
 
-import lombok.ToString;
-
 import java.util.List;
 
 public class TaskInput {

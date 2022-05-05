@@ -37,11 +37,14 @@ public class RandomLAScheduler extends LocationAwareScheduler {
                 : Optional.of( new LinkedList<>(matchingNodes).get(random.nextInt(matchingNodes.size())));
     }
 
+    @Override
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
             final Set<NodeWithAlloc> matchingNodesForTask
     ){
-        final NodeWithAlloc node = selectNode( matchingNodesForTask, taskData.getTask() ).get();
+        final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(matchingNodesForTask, taskData.getTask());
+        if (nodeWithAlloc.isEmpty()) return null;
+        final NodeWithAlloc node = nodeWithAlloc.get();
         final FileAlignment fileAlignment = getInputAlignment().getInputAlignment(
                 taskData.getTask(),
                 taskData.getMatchingFilesAndNodes().getInputsOfTask(),
@@ -50,6 +53,7 @@ public class RandomLAScheduler extends LocationAwareScheduler {
         return new Tuple<>( node, fileAlignment );
     }
 
+    @Override
     TaskData calculateTaskData(
             final Task task,
             final Map<NodeWithAlloc, Requirements> availableByNode

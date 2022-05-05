@@ -16,34 +16,32 @@ public abstract class CopyStrategy {
         File file = new File(task.getWorkingDir() + '/' + ".command.init.run");
 
         try (BufferedWriter pw = new BufferedWriter( new FileWriter( file) ) ) {
-
-            ClassLoader classLoader = getClass().getClassLoader();
-
-            try (InputStream inputStream = classLoader.getResourceAsStream( getResource() )) {
-                assert inputStream != null;
-                try (InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-                     BufferedReader reader = new BufferedReader(streamReader)) {
-
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        pw.write( line );
-                        pw.write( '\n' );
-                    }
-
-                    Set<PosixFilePermission> executable = PosixFilePermissions.fromString("rwxrwxrwx");
-                    Files.setPosixFilePermissions( file.toPath(), executable );
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            write( pw, file );
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+    }
+
+    private void write( BufferedWriter pw, File file ){
+        ClassLoader classLoader = getClass().getClassLoader();
+        try (InputStream inputStream = classLoader.getResourceAsStream( getResource() )) {
+            assert inputStream != null;
+            try (InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+                 BufferedReader reader = new BufferedReader(streamReader)) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    pw.write( line );
+                    pw.write( '\n' );
+                }
+
+                Set<PosixFilePermission> executable = PosixFilePermissions.fromString("rwxrwxrwx");
+                Files.setPosixFilePermissions( file.toPath(), executable );
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     abstract String getResource();

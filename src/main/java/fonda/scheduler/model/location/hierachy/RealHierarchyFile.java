@@ -17,9 +17,10 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
      */
     @Getter
     private LocationWrapper[] locations;
+    static final String LOCATION_IS_NULL = "location is null";
 
     public RealHierarchyFile(LocationWrapper location ) {
-        if ( location == null ) throw new IllegalArgumentException( "location is null" );
+        if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
         this.locations = new LocationWrapper[]{ location };
     }
 
@@ -34,7 +35,7 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     }
 
     public void removeLocation( LocationWrapper location ){
-        if ( location == null ) throw new IllegalArgumentException( "location is null" );
+        if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
         synchronized ( this ){
             for (int i = 0; i < locations.length; i++) {
                 if ( location.getLocation().equals( locations[i].getLocation() ) ) {
@@ -45,7 +46,7 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     }
 
     public LocationWrapper addOrUpdateLocation( boolean overwrite, LocationWrapper location ){
-        if ( location == null ) throw new IllegalArgumentException( "location is null" );
+        if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
         synchronized ( this ){
             LocationWrapper locationWrapperToUpdate = null;
             for (int i = 0; i < locations.length; i++) {

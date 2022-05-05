@@ -32,7 +32,7 @@ public class FileAlignment {
                         .getValue()
                         .getAlignment()
                         .parallelStream()
-                        .map( p -> p.getLocationWrapper() )
+                        .map(FilePath::getLocationWrapper)
                 )
                 .collect(Collectors.toList());
     }

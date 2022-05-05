@@ -17,7 +17,7 @@ import java.util.Map;
 @Slf4j
 public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
-    private final KubernetesClient kubernetesClient;
+    private final transient KubernetesClient kubernetesClient;
 
     private static final long serialVersionUID = 1L;
 

@@ -17,26 +17,15 @@ public class SchedulerConfig {
 
     public final String costFunction;
 
-    public SchedulerConfig(List<LocalClaim> localClaims,
-                           List<VolumeClaim> volumeClaims,
-                           String workDir,
-                           String dns,
-                           String copyStrategy,
-                           boolean locationAware,
-                           boolean traceEnabled,
-                           String costFunction) {
-        this.localClaims = localClaims;
-        this.volumeClaims = volumeClaims;
-        this.workDir = workDir;
-        this.dns = dns;
-        this.copyStrategy = copyStrategy;
-        this.locationAware = locationAware;
-        this.traceEnabled = traceEnabled;
-        this.costFunction = costFunction;
-    }
-
     private SchedulerConfig(){
-        this(null,null,null,null,null,false,false, null);
+        this.localClaims = null;
+        this.volumeClaims = null;
+        this.workDir = null;
+        this.dns = null;
+        this.copyStrategy = null;
+        this.locationAware = false;
+        this.traceEnabled = false;
+        this.costFunction = null;
     }
 
     @ToString

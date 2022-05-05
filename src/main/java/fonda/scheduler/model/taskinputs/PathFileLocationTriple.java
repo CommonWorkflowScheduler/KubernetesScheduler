@@ -26,11 +26,11 @@ public class PathFileLocationTriple implements Input {
 
     public long getSizeInBytes() {
         if ( this.size != -1 ) return this.size;
-        long size = 0;
+        long currentSize = 0;
         for (LocationWrapper location : locations) {
-            size += location.getSizeInBytes();
+            currentSize += location.getSizeInBytes();
         }
-        this.size = size / locations.size();
+        this.size = currentSize / locations.size();
         return this.size;
     }
 

@@ -102,40 +102,49 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         int couldStopFetching = 0;
         final List<Double> costs = traceEnabled ? new LinkedList<>() : null;
         for (NodeDataTuple nodeDataTuple : nodeDataTuples) {
+            
             final NodeWithAlloc currentNode = nodeDataTuple.getNode();
-            if ( matchingNodesForTask.contains(currentNode) ) {
+            if ( !matchingNodesForTask.contains(currentNode) ) continue;
+
+            final FileAlignment fileAlignment = inputAlignment.getInputAlignment(
+                    taskData.getTask(),
+                    taskData.getMatchingFilesAndNodes().getInputsOfTask(),
+                    currentNode,
+                    bestAlignment == null ? Double.MAX_VALUE : bestAlignment.cost
+            );
+            if ( fileAlignment == null ){
+                couldStopFetching++;
+            } else if ( bestAlignment == null || bestAlignment.cost < fileAlignment.cost ){
+                bestAlignment = fileAlignment;
+                bestNode = currentNode;
+                log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.cost );
+            }
+            if ( traceEnabled ) {
                 triedNodes++;
-                final FileAlignment fileAlignment = inputAlignment.getInputAlignment(
-                        taskData.getTask(),
-                        taskData.getMatchingFilesAndNodes().getInputsOfTask(),
-                        currentNode,
-                        bestAlignment == null ? Double.MAX_VALUE : bestAlignment.cost
-                );
-                if ( fileAlignment == null ){
-                    couldStopFetching++;
-                } else if ( bestAlignment == null || bestAlignment.cost < fileAlignment.cost ){
-                    bestAlignment = fileAlignment;
-                    bestNode = currentNode;
-                    log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.cost );
-                }
-                if ( traceEnabled ) {
-                    costs.add(fileAlignment == null ? null : fileAlignment.cost);
-                }
+                final Double thisRoundCost = fileAlignment == null
+                        ? null
+                        : fileAlignment.cost;
+                costs.add( thisRoundCost );
             }
         }
 
-        if ( bestAlignment != null ){
-            if ( traceEnabled ){
-                final TraceRecord record = taskData.getTask().getTraceRecord();
-                record.setSchedulerNodesTried( triedNodes );
-                record.setSchedulerNodesCost( costs );
-                record.setSchedulerCouldStopFetching( couldStopFetching );
-                record.setSchedulerBestCost( bestAlignment.cost );
-            }
-            return new Tuple<>( bestNode, bestAlignment );
-        } else {
-            return null;
-        }
+        if ( bestAlignment == null ) return null;
+        storeTraceData(
+                taskData.getTask().getTraceRecord(),
+                triedNodes,
+                costs,
+                couldStopFetching,
+                bestAlignment.cost
+        );
+        return new Tuple<>( bestNode, bestAlignment );
+    }
+
+    private void storeTraceData( final TraceRecord traceRecord, int triedNodes, List<Double> costs, int couldStopFetching, double bestCost ){
+        if ( !traceEnabled ) return;
+        traceRecord.setSchedulerNodesTried( triedNodes );
+        traceRecord.setSchedulerNodesCost( costs );
+        traceRecord.setSchedulerCouldStopFetching( couldStopFetching );
+        traceRecord.setSchedulerBestCost( bestCost );
     }
 
 
