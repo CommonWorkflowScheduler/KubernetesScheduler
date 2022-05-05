@@ -29,9 +29,9 @@ public class Inputs {
     public void waitForTask( Map<String, Task> waitForTask ){
         for (Map.Entry<String, Task> e : waitForTask.entrySet()) {
             final String hash = e.getValue().getConfig().getHash();
-            if ( !waitForFilesOfTask.containsValue( hash ) ) waitForFilesOfTask.put( hash, new LinkedList<>() );
-            final List<String> listOfPathes = waitForFilesOfTask.get(hash);
-            listOfPathes.add( e.getKey() );
+            if ( !waitForFilesOfTask.containsKey( hash ) ) waitForFilesOfTask.put( hash, new LinkedList<>() );
+            final List<String> listOfPaths = waitForFilesOfTask.get(hash);
+            listOfPaths.add( e.getKey() );
         }
     }
 
