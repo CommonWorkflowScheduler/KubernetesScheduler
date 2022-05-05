@@ -6,6 +6,8 @@ import lombok.Setter;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class TraceRecord {
@@ -40,15 +42,31 @@ public class TraceRecord {
 
     @Getter
     @Setter
-    private long schedulerTimeInQueue = -1;
+    private Long schedulerTimeInQueue = null;
 
     @Getter
     @Setter
-    private int schedulerPlaceInQueue = -1;
+    private Integer schedulerPlaceInQueue = null;
 
     @Getter
     @Setter
-    private int schedulerLocationCount = -1;
+    private Integer schedulerLocationCount = null;
+
+    @Getter
+    @Setter
+    private Integer schedulerNodesTried = null;
+
+    @Getter
+    @Setter
+    private List<Double> schedulerNodesCost = null;
+
+    @Getter
+    @Setter
+    private Integer schedulerCouldStopFetching = null;
+
+    @Getter
+    @Setter
+    private Double schedulerBestCost = null;
 
     private int schedulerTriedToSchedule = 0;
 
@@ -74,6 +92,10 @@ public class TraceRecord {
             writeValue("scheduler_time_in_queue", schedulerTimeInQueue, bw);
             writeValue("scheduler_place_in_queue", schedulerPlaceInQueue, bw);
             writeValue("scheduler_location_count", schedulerLocationCount, bw);
+            writeValue("scheduler_nodes_tried", schedulerNodesTried, bw);
+            writeValue("scheduler_nodes_cost", schedulerNodesCost, bw);
+            writeValue("scheduler_could_stop_fetching", schedulerCouldStopFetching, bw);
+            writeValue("scheduler_best_cost", schedulerBestCost, bw);
             writeValue("scheduler_tried_to_schedule", schedulerTriedToSchedule, bw);
             writeValue("scheduler_nodes_to_copy_from", schedulerNodesToCopyFrom, bw);
             writeValue("scheduler_time_to_schedule", schedulerTimeToSchedule, bw);
@@ -81,15 +103,18 @@ public class TraceRecord {
 
     }
 
-    private void writeValue( String name, Long value, BufferedWriter bw ) throws IOException {
+    private <T extends Number> void writeValue( String name, T value, BufferedWriter bw ) throws IOException {
         if ( value != null ) {
             bw.write( name + '=' + value + '\n' );
         }
     }
 
-    private void writeValue( String name, Integer value, BufferedWriter bw ) throws IOException {
+    private void writeValue( String name, List<Double> value, BufferedWriter bw ) throws IOException {
         if ( value != null ) {
-            bw.write( name + '=' + value + '\n' );
+            final String collect = value.stream()
+                    .map( x -> x==null ? "null" : x.toString() )
+                    .collect(Collectors.joining(";"));
+            bw.write( name + "=\"" + collect + "\"\n" );
         }
     }
 

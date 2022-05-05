@@ -3,6 +3,7 @@ package fonda.scheduler.scheduler;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.taskinputs.TaskInputs;
+import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.scheduler.data.NodeDataTuple;
 import fonda.scheduler.scheduler.data.TaskData;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
@@ -97,25 +98,44 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         NodeWithAlloc bestNode = null;
         //Remove all nodes which do not fit anymore
         final List<NodeDataTuple> nodeDataTuples = taskData.getNodeDataTuples();
-
+        int triedNodes = 0;
+        int couldStopFetching = 0;
+        final List<Double> costs = traceEnabled ? new LinkedList<>() : null;
         for (NodeDataTuple nodeDataTuple : nodeDataTuples) {
             final NodeWithAlloc currentNode = nodeDataTuple.getNode();
             if ( matchingNodesForTask.contains(currentNode) ) {
+                triedNodes++;
                 final FileAlignment fileAlignment = inputAlignment.getInputAlignment(
                         taskData.getTask(),
                         taskData.getMatchingFilesAndNodes().getInputsOfTask(),
                         currentNode,
                         bestAlignment == null ? Double.MAX_VALUE : bestAlignment.cost
                 );
-
-                if ( fileAlignment != null && (bestAlignment == null || bestAlignment.cost < fileAlignment.cost ) ){
+                if ( fileAlignment == null ){
+                    couldStopFetching++;
+                } else if ( bestAlignment == null || bestAlignment.cost < fileAlignment.cost ){
                     bestAlignment = fileAlignment;
                     bestNode = currentNode;
+                    log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.cost );
+                }
+                if ( traceEnabled ) {
+                    costs.add(fileAlignment == null ? null : fileAlignment.cost);
                 }
             }
         }
 
-        return bestAlignment == null ? null : new Tuple<>( bestNode, bestAlignment );
+        if ( bestAlignment != null ){
+            if ( traceEnabled ){
+                final TraceRecord record = taskData.getTask().getTraceRecord();
+                record.setSchedulerNodesTried( triedNodes );
+                record.setSchedulerNodesCost( costs );
+                record.setSchedulerCouldStopFetching( couldStopFetching );
+                record.setSchedulerBestCost( bestAlignment.cost );
+            }
+            return new Tuple<>( bestNode, bestAlignment );
+        } else {
+            return null;
+        }
     }
 
 
