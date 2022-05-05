@@ -32,7 +32,7 @@ public class TaskResultParser {
         try ( Scanner sc  = new Scanner( file ) ) {
             if( sc.hasNext() ) return sc.next().split(";")[0];
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            log.error( "Cannot read " + file, e);
         }
         return null;
     }
@@ -126,7 +126,7 @@ public class TaskResultParser {
             return processOutput( out, inputdata, location, onlyUpdated, finishedTask, outputRootDir );
 
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error( "Cannot read in/outfile in workdir: " + workdir, e);
         }
         return new HashSet<>();
 

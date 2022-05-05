@@ -261,7 +261,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             new ObjectMapper().writeValue( config, inputs );
             return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode );
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error( "Cannot write " + config, e);
         }
         return null;
     }
@@ -366,8 +366,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 log.info("task {}, file: {} deactivated on node {}", task.getConfig().getName(), openedFile, wrapperByPath.get( openedFile ).getWrapper().getLocation());
             }
         } catch ( Exception e ){
-            log.info( "Can't handle failed init from pod " + task.getPod().getName());
-            e.printStackTrace();
+            log.error( "Can't handle failed init from pod " + task.getPod().getName(), e);
         }
     }
 
@@ -386,7 +385,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 try {
                     Thread.sleep((long) Math.pow(2, trial++));
                 } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                    Thread.currentThread().interrupt();
+                    log.error( "Interrupted while waiting for retry to connect to FTP client", e);
                 }
             }
         }

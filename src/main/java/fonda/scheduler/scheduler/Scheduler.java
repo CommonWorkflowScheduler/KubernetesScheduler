@@ -316,7 +316,7 @@ public abstract class Scheduler {
             printWriter.write( alignment.node.getName() );
             printWriter.write( '\n' );
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error( "Cannot read " + nodeFile, e);
         }
 
         alignment.task.setNode( alignment.node.getNodeLocation() );

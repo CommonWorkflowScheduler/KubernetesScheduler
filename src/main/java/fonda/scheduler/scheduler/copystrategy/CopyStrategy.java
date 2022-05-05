@@ -1,6 +1,7 @@
 package fonda.scheduler.scheduler.copystrategy;
 
 import fonda.scheduler.model.Task;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +10,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
+@Slf4j
 public abstract class CopyStrategy {
 
     public void generateCopyScript( Task task ){
@@ -18,7 +20,7 @@ public abstract class CopyStrategy {
         try (BufferedWriter pw = new BufferedWriter( new FileWriter( file) ) ) {
             write( pw, file );
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error( "Cannot write " + file, e);
         }
 
     }
@@ -40,7 +42,7 @@ public abstract class CopyStrategy {
                 Files.setPosixFilePermissions( file.toPath(), executable );
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error( "Cannot write " + file, e);
         }
     }
 
