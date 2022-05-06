@@ -11,6 +11,7 @@ import logging as log
 
 exitIfFileWasNotFound = False
 CLOSE = False
+UNEXPECTED_ERROR = "Unexpected error"
 EXIT = 0
 log.basicConfig(format='%(levelname)s: %(message)s', level=log.DEBUG)
 
@@ -21,12 +22,15 @@ def myExit( code ):
     CLOSE = True
     exit(EXIT)
 
-def close( signalnum, syncfile ):
+def close( signalnum, syncFile ):
+    log.info( "Killed: %s",str(signalnum))
+    closeWithWarning( 50, syncFile )
+
+def closeWithWarning( errorCode, syncFile ):
     syncFile.write('##FAILURE##\n')
     syncFile.flush()
     syncFile.close()
-    log.info( "Killed: %s",str(signalnum))
-    myExit(50)
+    myExit( errorCode )
 
 def getIP( node ):
     ip = urllib.request.urlopen(dns + node).read()
@@ -42,7 +46,7 @@ def clearLocatation( path ):
         else:
             os.remove( path )
 
-def getFTP( node ):
+def getFTP( node, syncFile ):
     connectionProblem = 0
     while( connectionProblem < 8 ):
         try:
@@ -54,13 +58,13 @@ def getFTP( node ):
             ftp.encoding='utf-8'
             log.info( "Connection established" )
             return ftp
-        except ConnectionRefusedError as err:
+        except ConnectionRefusedError:
             log.warning(  "Connection refused! Try again..." )
-        except BaseException as err:
-            log.exception( "Unexpected error" )
+        except BaseException:
+            log.exception( UNEXPECTED_ERROR )
         connectionProblem += 1
         time.sleep(2**connectionProblem)
-    myExit( 8 )
+    closeWithWarning( 8, syncFile )
 
 def closeFTP( ftp ):
     if ftp is None:
@@ -68,52 +72,48 @@ def closeFTP( ftp ):
     try:
         ftp.quit()
         ftp.close()
-    except BaseException as err:
-        log.exception( "Unexpected error" )
+    except BaseException:
+        log.exception( UNEXPECTED_ERROR )
+
+def downloadFile( ftp, filename, size, index, node ):
+    log.info( "Download [%s/%s] - %s", str( index ).rjust( len( str( size ) ) ), str( size ), filename )
+    try:
+        syncFile.write("S-" + filename + '\n')
+        clearLocatation( filename )
+        Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
+        ftp.retrbinary( 'RETR %s' % filename, open( filename, 'wb').write, 102400)
+    except ftplib.error_perm as err:
+        if( str(err) == "550 Failed to open file." ):
+            log.warning(  "File not found node: %s file: %s", node, filename )
+        if exitIfFileWasNotFound:
+            closeWithWarning( 40, syncFile )
+    except FileNotFoundError:
+        log.warning( "File not found node: %s file: %s", node, filename )
+        if exitIfFileWasNotFound:
+            closeWithWarning( 41, syncFile )
+    except EOFError:
+        log.warning( "It seems the connection was lost! Try again..." )
+        return False
+    except BaseException:
+        log.exception( UNEXPECTED_ERROR )
+        return False
+    return True
 
 def download( node, files, syncFile ):
-
     ftp = None
     size = len(files)
-
     global CLOSE
-
     while not CLOSE and len(files) > 0:
-
         if ftp is None:
-            ftp = getFTP( node )
+            ftp = getFTP( node, syncFile )
         filename = files[0]
         index = size - len(files) + 1
-        log.info( "Download [%s/%s] - %s", str( index ).rjust( len( str( size ) ) ), str( size ), filename )
-
-        try:
-            syncFile.write("S-" + filename + '\n')
-            clearLocatation( filename )
-            Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
-            ftp.retrbinary( 'RETR %s' % filename, open( filename, 'wb').write, 102400)
-        except ftplib.error_perm as err:
-            if( str(err) == "550 Failed to open file." ):
-                log.warning(  "File not found node: %s file: %s", node, filename )
-            if exitIfFileWasNotFound:
-                myExit( 40 )
-        except FileNotFoundError as err:
-            log.warning( "File not found node: %s file: %s", node, filename )
-            if exitIfFileWasNotFound:
-                myExit( 41 )
-        except EOFError as err:
-            log.warning( "It seems the connection was lost! Try again..." )
+        if not downloadFile( ftp, filename, size, index, node ):
             ftp = None
             continue
-        except BaseException as err:
-            log.exception( "Unexpected error" )
-            ftp = None
-            continue
-
         files.pop(0)
         syncFile.write("F-" + filename + '\n')
-
-    closeFTP( ftp )
-        
+    closeFTP( ftp )        
 
 def waitForFiles( syncFileTask, files, starttime ):
     #wait max. 10 seconds
@@ -160,7 +160,7 @@ log.info( "Start to setup the environment" )
 configFilePath = ".command.inputs.json"
 
 if not os.path.isfile( configFilePath ):
-    log.error( "Config file not found:", configFilePath )
+    log.error( "Config file not found: %s", configFilePath )
     myExit( 102 )
 
 with open(configFilePath,'r') as configFile:
@@ -203,7 +203,7 @@ with open( config[ "syncDir" ] + config[ "hash" ], 'w' ) as syncFile:
     signal.signal( signal.SIGINT, lambda signalnum, handler: myExit( 1 ) )
     signal.signal( signal.SIGTERM, lambda signalnum, handler: myExit( 1 ) )
 
-#No check for files of other tasks
+#Now check for files of other tasks
 for waitForTask in config[ "waitForFilesOfTask" ]:
     waitForFilesSet = set( config[ "waitForFilesOfTask" ][ waitForTask ] )
     if not waitForFiles( config[ "syncDir" ] + waitForTask, waitForFilesSet, starttime ):
