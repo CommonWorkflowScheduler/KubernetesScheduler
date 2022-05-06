@@ -9,6 +9,7 @@ import shutil
 import signal
 import logging as log
 
+exitIfFileWasNotFound = False
 CLOSE = False
 EXIT = 0
 log.basicConfig(format='%(levelname)s: %(message)s', level=log.DEBUG)
@@ -41,41 +42,46 @@ def clearLocatation( path ):
         else:
             os.remove( path )
 
+def getFTP( node ):
+    connectionProblem = 0
+    while( connectionProblem < 8 ):
+        try:
+            ip = getIP( node )
+            log.info( "Try to connect to %s", ip )
+            ftp = ftplib.FTP( ip )
+            ftp.login("ftp", "pythonclient")
+            ftp.set_pasv(True)
+            ftp.encoding='utf-8'
+            log.info( "Connection established" )
+            return ftp
+        except ConnectionRefusedError as err:
+            log.warning(  "Connection refused! Try again..." )
+        except BaseException as err:
+            log.exception( "Unexpected error" )
+        connectionProblem += 1
+        time.sleep(2**connectionProblem)
+    myExit( 8 )
+
+def closeFTP( ftp ):
+    if ftp is None:
+        return
+    try:
+        ftp.quit()
+        ftp.close()
+    except BaseException as err:
+        log.exception( "Unexpected error" )
+
 def download( node, files, syncFile ):
 
     ftp = None
     size = len(files)
 
-    connectionProblem = 0
     global CLOSE
 
     while not CLOSE and len(files) > 0:
 
-        if connectionProblem > 1:
-            ftp = None
-            if connectionProblem == 8:
-                myExit( 8 )
-            log.warning(  "Connection refused! Try again..." )
-            time.sleep(2**connectionProblem)
-
         if ftp is None:
-            try:
-                connectionProblem += 1
-                ip = getIP( node )
-                log.info( "Try to connect to %s", ip )
-                ftp = ftplib.FTP( ip )
-                ftp.login("ftp", "pythonclient")
-                ftp.set_pasv(True)
-                ftp.encoding='utf-8'
-                log.info( "Connection established" )
-                connectionProblem = 0
-            except ConnectionRefusedError as err:
-                continue
-            except BaseException as err:
-                log.exception( "Unexpected error" )
-                continue
-
-
+            ftp = getFTP( node )
         filename = files[0]
         index = size - len(files) + 1
         log.info( "Download [%s/%s] - %s", str( index ).rjust( len( str( size ) ) ), str( size ), filename )
@@ -106,12 +112,8 @@ def download( node, files, syncFile ):
         files.pop(0)
         syncFile.write("F-" + filename + '\n')
 
-    if ftp is not None:
-        try:
-            ftp.quit()
-            ftp.close()
-        except BaseException as err:
-            log.exception( "Unexpected error" )
+    closeFTP( ftp )
+        
 
 def waitForFiles( syncFileTask, files, starttime ):
     #wait max. 10 seconds
@@ -154,8 +156,6 @@ def waitForFiles( syncFileTask, files, starttime ):
 
 starttime = time.time()
 log.info( "Start to setup the environment" )
-
-exitIfFileWasNotFound = False
 
 configFilePath = ".command.inputs.json"
 
