@@ -114,7 +114,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             );
             if ( fileAlignment == null ){
                 couldStopFetching++;
-            } else if ( bestAlignment == null || bestAlignment.cost < fileAlignment.cost ){
+            } else if ( bestAlignment == null || bestAlignment.cost > fileAlignment.cost ){
                 bestAlignment = fileAlignment;
                 bestNode = currentNode;
                 log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.cost );
