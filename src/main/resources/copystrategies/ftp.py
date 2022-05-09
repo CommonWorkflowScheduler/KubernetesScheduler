@@ -15,118 +15,128 @@ UNEXPECTED_ERROR = "Unexpected error"
 EXIT = 0
 log.basicConfig(format='%(levelname)s: %(message)s', level=log.DEBUG)
 
-def myExit( code ):
+
+def myExit(code):
     global EXIT
     EXIT = code
     global CLOSE
     CLOSE = True
     exit(EXIT)
 
-def close( signalnum, syncFile ):
-    log.info( "Killed: %s",str(signalnum))
-    closeWithWarning( 50, syncFile )
 
-def closeWithWarning( errorCode, syncFile ):
+def close(signalnum, syncFile):
+    log.info("Killed: %s", str(signalnum))
+    closeWithWarning(50, syncFile)
+
+
+def closeWithWarning(errorCode, syncFile):
     syncFile.write('##FAILURE##\n')
     syncFile.flush()
     syncFile.close()
-    myExit( errorCode )
+    myExit(errorCode)
 
-def getIP( node ):
+
+def getIP(node, dns):
     ip = urllib.request.urlopen(dns + node).read()
-    return str(ip.decode("utf-8") )
+    return str(ip.decode("utf-8"))
 
-def clearLocatation( path ):
-    if os.path.exists( path ):
-        log.debug( "Delete %s",path )
-        if os.path.islink( path ):
-            os.unlink( path )
-        elif os.path.isdir( path ):
-            shutil.rmtree( path )
+
+def clearLocatation(path):
+    if os.path.exists(path):
+        log.debug("Delete %s", path)
+        if os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
         else:
-            os.remove( path )
+            os.remove(path)
 
-def getFTP( node, syncFile ):
+
+def getFTP(node, dns, syncFile):
     connectionProblem = 0
-    while( connectionProblem < 8 ):
+    while connectionProblem < 8:
         try:
-            ip = getIP( node )
-            log.info( "Try to connect to %s", ip )
-            ftp = ftplib.FTP( ip )
+            ip = getIP(node, dns)
+            log.info("Try to connect to %s", ip)
+            ftp = ftplib.FTP(ip)
             ftp.login("ftp", "pythonclient")
             ftp.set_pasv(True)
-            ftp.encoding='utf-8'
-            log.info( "Connection established" )
+            ftp.encoding = 'utf-8'
+            log.info("Connection established")
             return ftp
         except ConnectionRefusedError:
-            log.warning(  "Connection refused! Try again..." )
+            log.warning("Connection refused! Try again...")
         except BaseException:
-            log.exception( UNEXPECTED_ERROR )
+            log.exception(UNEXPECTED_ERROR)
         connectionProblem += 1
-        time.sleep(2**connectionProblem)
-    closeWithWarning( 8, syncFile )
+        time.sleep(2 ** connectionProblem)
+    closeWithWarning(8, syncFile)
 
-def closeFTP( ftp ):
+
+def closeFTP(ftp):
     if ftp is None:
         return
     try:
         ftp.quit()
         ftp.close()
     except BaseException:
-        log.exception( UNEXPECTED_ERROR )
+        log.exception(UNEXPECTED_ERROR)
 
-def downloadFile( ftp, filename, size, index, node ):
-    log.info( "Download [%s/%s] - %s", str( index ).rjust( len( str( size ) ) ), str( size ), filename )
+
+def downloadFile(ftp, filename, size, index, node, syncFile):
+    log.info("Download [%s/%s] - %s", str(index).rjust(len(str(size))), str(size), filename)
     try:
         syncFile.write("S-" + filename + '\n')
-        clearLocatation( filename )
+        clearLocatation(filename)
         Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
-        ftp.retrbinary( 'RETR %s' % filename, open( filename, 'wb').write, 102400)
+        ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write, 102400)
     except ftplib.error_perm as err:
-        if( str(err) == "550 Failed to open file." ):
-            log.warning(  "File not found node: %s file: %s", node, filename )
+        if str(err) == "550 Failed to open file.":
+            log.warning("File not found node: %s file: %s", node, filename)
         if exitIfFileWasNotFound:
-            closeWithWarning( 40, syncFile )
+            closeWithWarning(40, syncFile)
     except FileNotFoundError:
-        log.warning( "File not found node: %s file: %s", node, filename )
+        log.warning("File not found node: %s file: %s", node, filename)
         if exitIfFileWasNotFound:
-            closeWithWarning( 41, syncFile )
+            closeWithWarning(41, syncFile)
     except EOFError:
-        log.warning( "It seems the connection was lost! Try again..." )
+        log.warning("It seems the connection was lost! Try again...")
         return False
     except BaseException:
-        log.exception( UNEXPECTED_ERROR )
+        log.exception(UNEXPECTED_ERROR)
         return False
     return True
 
-def download( node, files, syncFile ):
+
+def download(node, files, dns, syncFile):
     ftp = None
     size = len(files)
     global CLOSE
     while not CLOSE and len(files) > 0:
         if ftp is None:
-            ftp = getFTP( node, syncFile )
+            ftp = getFTP(node, dns, syncFile)
         filename = files[0]
         index = size - len(files) + 1
-        if not downloadFile( ftp, filename, size, index, node ):
+        if not downloadFile(ftp, filename, size, index, node, syncFile):
             ftp = None
             continue
         files.pop(0)
         syncFile.write("F-" + filename + '\n')
-    closeFTP( ftp )        
+    closeFTP(ftp)
 
-def waitForFiles( syncFileTask, files, starttime ):
-    #wait max. 10 seconds
+
+def waitForFiles(syncFilePath, files, starttime):
+    # wait max. 10 seconds
     while True:
         if starttime + 10 < time.time():
             return False
-        if os.path.isfile( syncFileTask ):
+        if os.path.isfile(syncFilePath):
             break
-        log.debug( "Wait for file creation" )
+        log.debug("Wait for file creation")
         time.sleep(0.1)
 
-    #Read file live
-    with open( syncFileTask, 'r' ) as syncFileTask:
+    # Read file live
+    with open(syncFilePath, 'r') as syncFileTask:
         current = []
         while len(files) > 0:
             data = syncFileTask.read()
@@ -139,78 +149,107 @@ def waitForFiles( syncFileTask, files, starttime ):
                     else:
                         text = ''.join(current)
                         current = []
-                        if text.startswith( "S-" ):
+                        if text.startswith("S-"):
                             continue
                         if text == "##FAILURE##":
-                            log.debug( "Read FAILURE in %s", syncFileTask )
-                            myExit( 51 )
+                            log.debug("Read FAILURE in %s", syncFilePath)
+                            myExit(51)
                         if text == "##FINISHED##":
-                            log.debug( "Read FINISHED in " + syncFileTask + " before all files were found" )
-                            myExit( 52 )
-                        log.debug( "Look for " + text[:2] + " with " + text[2:] + " in " + str(files) )
+                            log.debug("Read FINISHED in " + syncFilePath + " before all files were found")
+                            myExit(52)
+                        log.debug("Look for " + text[:2] + " with " + text[2:] + " in " + str(files))
                         if text[:2] == "F-" and text[2:] in files:
-                            files.remove( text[2:] )
+                            files.remove(text[2:])
                             if len(files) == 0:
                                 return True
     return len(files) == 0
 
-starttime = time.time()
-log.info( "Start to setup the environment" )
 
-configFilePath = ".command.inputs.json"
+def loadConfig(configFilePath):
+    if not os.path.isfile(configFilePath):
+        log.error("Config file not found: %s", configFilePath)
+        myExit(102)
 
-if not os.path.isfile( configFilePath ):
-    log.error( "Config file not found: %s", configFilePath )
-    myExit( 102 )
+    with open(configFilePath, 'r') as configFile:
+        config = json.load(configFile)
 
-with open(configFilePath,'r') as configFile:
-    config = json.load( configFile )
+    log.info(str(config))
 
-log.info( str(config) )
-dns = config["dns"]
+    os.makedirs(config["syncDir"], exist_ok=True)
+    return config
 
-data = config[ "data" ]
-symlinks = config[ "symlinks" ]
 
-os.makedirs( config[ "syncDir" ], exist_ok=True)
-with open( config[ "syncDir" ] + config[ "hash" ], 'w' ) as syncFile:
+def registerSignal(syncFile):
+    signal.signal(signal.SIGINT, lambda signalnum, handler: close(signalnum, syncFile))
+    signal.signal(signal.SIGTERM, lambda signalnum, handler: close(signalnum, syncFile))
 
-    signal.signal( signal.SIGINT, lambda signalnum, handler: close( signalnum, syncFile ) )
-    signal.signal( signal.SIGTERM, lambda signalnum, handler: close( signalnum, syncFile ) )
 
-    syncFile.write('##STARTED##\n')
-    syncFile.flush()
+def registerSignal2():
+    signal.signal(signal.SIGINT, lambda signalnum, handler: myExit(1))
+    signal.signal(signal.SIGTERM, lambda signalnum, handler: myExit(1))
 
+
+def generateSymlinks(symlinks):
     for s in symlinks:
         src = s["src"]
         dst = s["dst"]
-        clearLocatation( src )
+        clearLocatation(src)
         Path(src[:src.rindex("/")]).mkdir(parents=True, exist_ok=True)
-        os.symlink( dst, src )
+        os.symlink(dst, src)
 
-    syncFile.write('##SYMLINKS##\n')
 
+def downloadAllData(data, dns, syncFile):
     for d in data:
         files = d["files"]
-        download( d["node"], files, syncFile )
+        download(d["node"], files, dns, syncFile)
 
-    if CLOSE:
-        log.debug( "Close with code %s", str(EXIT) )
-        exit( EXIT )
 
-    syncFile.write('##FINISHED##\n')
+def waitForDependingTasks(waitForFilesOfTask, starttime, syncDir):
+    # Now check for files of other tasks
+    for waitForTask in waitForFilesOfTask:
+        waitForFilesSet = set(waitForFilesOfTask[waitForTask])
+        if not waitForFiles(syncDir + waitForTask, waitForFilesSet, starttime):
+            log.error(syncDir + waitForTask + " was not successful")
+            myExit(200)
 
-    signal.signal( signal.SIGINT, lambda signalnum, handler: myExit( 1 ) )
-    signal.signal( signal.SIGTERM, lambda signalnum, handler: myExit( 1 ) )
 
-#Now check for files of other tasks
-for waitForTask in config[ "waitForFilesOfTask" ]:
-    waitForFilesSet = set( config[ "waitForFilesOfTask" ][ waitForTask ] )
-    if not waitForFiles( config[ "syncDir" ] + waitForTask, waitForFilesSet, starttime ):
-        log.error( config[ "syncDir" ] + waitForTask + " was not successful" )
-        myExit( 200 )
+def writeTrace(traceFilePath, dataMap):
+    with open(traceFilePath, "a") as traceFile:
+        for d in dataMap:
+            traceFile.write(d + "=" + str(dataMap[d]))
 
-traceFilePath = ".command.scheduler.trace"
 
-with open(traceFilePath, "a") as traceFile:
-    traceFile.write("scheduler_init_runtime=" + str(int((time.time()-starttime)*1000)))
+def run():
+    starttime = time.time()
+    log.info("Start to setup the environment")
+    config = loadConfig(".command.inputs.json")
+
+    dns = config["dns"]
+    data = config["data"]
+    symlinks = config["symlinks"]
+
+    with open(config["syncDir"] + config["hash"], 'w') as syncFile:
+        registerSignal(syncFile)
+        syncFile.write('##STARTED##\n')
+        syncFile.flush()
+        generateSymlinks(symlinks)
+        syncFile.write('##SYMLINKS##\n')
+        syncFile.flush()
+        downloadAllData(data, dns, syncFile)
+        if CLOSE:
+            log.debug("Closed with code %s", str(EXIT))
+            exit(EXIT)
+        syncFile.write('##FINISHED##\n')
+        registerSignal2()
+
+    waitForDependingTasks(config["waitForFilesOfTask"], starttime, config["syncDir"])
+
+    runtime = str(int((time.time() - starttime) * 1000))
+    trace = {
+        "scheduler_init_runtime": runtime
+    }
+    writeTrace(".command.scheduler.trace", trace)
+
+
+if __name__ == '__main__':
+    run()
