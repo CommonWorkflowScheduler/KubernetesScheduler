@@ -258,10 +258,12 @@ def run():
         if CLOSE:
             log.debug("Closed with code %s", str(EXIT))
             exit(EXIT)
+        log.info("Finished Download")
         syncFile.write('##FINISHED##\n')
         registerSignal2()
 
     waitForDependingTasks(config["waitForFilesOfTask"], starttime, config["syncDir"])
+    log.info("Waited for all tasks")
 
     runtime = str(int((time.time() - starttime) * 1000))
     trace = {
