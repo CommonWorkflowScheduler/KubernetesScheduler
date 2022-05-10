@@ -206,8 +206,6 @@ def loadConfig(configFilePath):
     with open(configFilePath, 'r') as configFile:
         config = json.load(configFile)
 
-    log.info(str(config))
-
     os.makedirs(config["syncDir"], exist_ok=True)
     return config
 
