@@ -210,6 +210,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 final List<String> collect = new LinkedList<>();
 
                 final NodeLocation location = (NodeLocation) entry.getKey();
+                long size = 0;
                 for (FilePath filePath : entry.getValue().getAlignment()) {
                     if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey(filePath.getPath()) ) {
                         //Node copies currently from somewhere else!
@@ -234,18 +235,19 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                         );
                         collect.add(filePath.getPath());
                         filesForCurrentNode.put(filePath.getPath(), new Tuple<>( alignment.task, location  ) );
-                        if (traceEnabled) {
-                            filesNotOnNode++;
-                            filesNotOnNodeByte += filePath.getLocationWrapper().getSizeInBytes();
-                        }
+                        final long sizeInBytes = filePath.getLocationWrapper().getSizeInBytes();
+                        size += sizeInBytes;
+                        filesNotOnNode++;
                     }
                 }
+                filesNotOnNodeByte += size;
                 if( !collect.isEmpty() ) {
-                    inputs.data.add(new InputEntry(getDaemonOnNode(entry.getKey().getIdentifier()), entry.getKey().getIdentifier(), collect));
+                    inputs.data.add(new InputEntry(getDaemonOnNode(entry.getKey().getIdentifier()), entry.getKey().getIdentifier(), collect, size));
                 }
             }
             inputs.waitForTask( waitForTask );
             inputs.symlinks.addAll(alignment.fileAlignment.symlinks);
+            inputs.sortData();
 
             if (traceEnabled) {
                 traceRecord.setSchedulerFilesNode(filesOnNode);

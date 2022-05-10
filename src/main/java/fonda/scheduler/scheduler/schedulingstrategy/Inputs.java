@@ -3,6 +3,7 @@ package fonda.scheduler.scheduler.schedulingstrategy;
 import fonda.scheduler.model.Task;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,10 @@ public class Inputs {
             final List<String> listOfPaths = waitForFilesOfTask.computeIfAbsent( taskHash, k -> new LinkedList<>() );
             listOfPaths.add( e.getKey() );
         }
+    }
+
+    public void sortData(){
+        Collections.sort(data, Collections.reverseOrder());
     }
 
 }
