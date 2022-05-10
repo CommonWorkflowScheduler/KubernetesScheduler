@@ -105,7 +105,13 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
         syncFile.write("S-" + filename + '\n')
         clearLocatation(filename)
         Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
+        start = time.time()
         ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write, 102400)
+        end = time.time()
+        sizeInMB = os.path.getsize(filename) / 1_000_000
+        delta = (end - start)
+        log.info("Speed: %.3f Mbit/s", sizeInMB / delta )
+        return sizeInMB, delta
     except ftplib.error_perm as err:
         errors += 1
         if str(err) == "550 Failed to open file.":
@@ -120,30 +126,36 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
     except EOFError:
         errors += 1
         log.warning("It seems the connection was lost! Try again...")
-        return False
+        return None
     except BaseException:
         errors += 1
         log.exception(UNEXPECTED_ERROR)
-        return False
-    return True
+        return None
+    return 0, 0
 
 
 def download(node, currentIP, files, dns, syncFile):
     ftp = None
     size = len(files)
     global CLOSE
+    sizeInMB = 0
+    downloadTime = 0
     while not CLOSE and len(files) > 0:
         if ftp is None:
             ftp = getFTP(node, currentIP, dns, syncFile)
             currentIP = None
         filename = files[0]
         index = size - len(files) + 1
-        if not downloadFile(ftp, filename, size, index, node, syncFile):
+        result = downloadFile(ftp, filename, size, index, node, syncFile)
+        if result is None:
             ftp = None
             continue
+        sizeInMB += result[0]
+        downloadTime += result[1]
         files.pop(0)
         syncFile.write("F-" + filename + '\n')
     closeFTP(ftp)
+    return node, sizeInMB / downloadTime
 
 
 def waitForFiles(syncFilePath, files, startTime):
@@ -220,6 +232,8 @@ def generateSymlinks(symlinks):
 
 
 def downloadAllData(data, dns, syncFile):
+    global trace
+    throughput = []
     with ThreadPoolExecutor(max_workers=max(10, len(data))) as executor:
         futures = []
         for d in data:
@@ -233,8 +247,10 @@ def downloadAllData(data, dns, syncFile):
                 log.info("Wait for %d threads to finish", len(futures))
             for f in futures[:]:
                 if f.done():
+                    throughput.append(f.result())
                     futures.remove(f)
             sleep(0.1)
+    trace["scheduler_init_throughput"] = "\"" + ",".join( "{}:{:.3f}".format(*x) for x in throughput) + "\""
 
 
 def waitForDependingTasks(waitForFilesOfTask, startTime, syncDir):
