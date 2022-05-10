@@ -54,11 +54,15 @@ def clearLocatation(path):
             os.remove(path)
 
 
-def getFTP(node, dns, syncFile):
+def getFTP(node, currentIP, dns, syncFile):
     connectionProblem = 0
     while connectionProblem < 8:
         try:
-            ip = getIP(node, dns)
+            if currentIP is None:
+                log.info("Request ip for node: %s", node)
+                ip = getIP(node, dns)
+            else:
+                ip = currentIP
             log.info("Try to connect to %s", ip)
             ftp = ftplib.FTP(ip)
             ftp.login("ftp", "pythonclient")
@@ -110,13 +114,14 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
     return True
 
 
-def download(node, files, dns, syncFile):
+def download(node, currentIP, files, dns, syncFile):
     ftp = None
     size = len(files)
     global CLOSE
     while not CLOSE and len(files) > 0:
         if ftp is None:
-            ftp = getFTP(node, dns, syncFile)
+            ftp = getFTP(node, currentIP, dns, syncFile)
+            currentIP = None
         filename = files[0]
         index = size - len(files) + 1
         if not downloadFile(ftp, filename, size, index, node, syncFile):
@@ -206,7 +211,8 @@ def downloadAllData(data, dns, syncFile):
         for d in data:
             files = d["files"]
             node = d["node"]
-            futures.append(executor.submit(download, node, files, dns, syncFile))
+            currentIP = d["currentIP"]
+            futures.append(executor.submit(download, node, currentIP, files, dns, syncFile))
         trial = 0
         while len(futures) > 0:
             if trial % 5 == 0:
