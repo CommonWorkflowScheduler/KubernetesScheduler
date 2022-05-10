@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 import ftplib
-import time
-import os
 import json
+import logging as log
+import os
+import shutil
+import signal
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import shutil
-import signal
-import logging as log
+from time import sleep
 
 exitIfFileWasNotFound = False
 CLOSE = False
