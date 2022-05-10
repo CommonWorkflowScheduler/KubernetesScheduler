@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
 
-exitIfFileWasNotFound = False
+exitIfFileWasNotFound = True
 CLOSE = False
 UNEXPECTED_ERROR = "Unexpected error"
 EXIT = 0
