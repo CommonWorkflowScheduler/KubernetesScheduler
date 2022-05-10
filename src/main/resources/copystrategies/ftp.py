@@ -16,6 +16,9 @@ CLOSE = False
 UNEXPECTED_ERROR = "Unexpected error"
 EXIT = 0
 log.basicConfig(format='%(levelname)s: %(message)s', level=log.DEBUG)
+trace = {}
+traceFilePath = ".command.scheduler.trace"
+errors = 0
 
 
 def myExit(code):
@@ -23,6 +26,7 @@ def myExit(code):
     EXIT = code
     global CLOSE
     CLOSE = True
+    writeTrace(trace)
     exit(EXIT)
 
 
@@ -55,6 +59,7 @@ def clearLocatation(path):
 
 
 def getFTP(node, currentIP, dns, syncFile):
+    global errors
     connectionProblem = 0
     while connectionProblem < 8:
         try:
@@ -71,8 +76,10 @@ def getFTP(node, currentIP, dns, syncFile):
             log.info("Connection established")
             return ftp
         except ConnectionRefusedError:
+            errors += 1
             log.warning("Connection refused! Try again...")
         except BaseException:
+            errors += 1
             log.exception(UNEXPECTED_ERROR)
         connectionProblem += 1
         time.sleep(2 ** connectionProblem)
@@ -80,16 +87,19 @@ def getFTP(node, currentIP, dns, syncFile):
 
 
 def closeFTP(ftp):
+    global errors
     if ftp is None:
         return
     try:
         ftp.quit()
         ftp.close()
     except BaseException:
+        errors += 1
         log.exception(UNEXPECTED_ERROR)
 
 
 def downloadFile(ftp, filename, size, index, node, syncFile):
+    global errors
     log.info("Download %s [%s/%s] - %s", node, str(index).rjust(len(str(size))), str(size), filename)
     try:
         syncFile.write("S-" + filename + '\n')
@@ -97,18 +107,22 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
         Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
         ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write, 102400)
     except ftplib.error_perm as err:
+        errors += 1
         if str(err) == "550 Failed to open file.":
             log.warning("File not found node: %s file: %s", node, filename)
         if exitIfFileWasNotFound:
             closeWithWarning(40, syncFile)
     except FileNotFoundError:
+        errors += 1
         log.warning("File not found node: %s file: %s", node, filename)
         if exitIfFileWasNotFound:
             closeWithWarning(41, syncFile)
     except EOFError:
+        errors += 1
         log.warning("It seems the connection was lost! Try again...")
         return False
     except BaseException:
+        errors += 1
         log.exception(UNEXPECTED_ERROR)
         return False
     return True
@@ -132,10 +146,10 @@ def download(node, currentIP, files, dns, syncFile):
     closeFTP(ftp)
 
 
-def waitForFiles(syncFilePath, files, starttime):
+def waitForFiles(syncFilePath, files, startTime):
     # wait max. 10 seconds
     while True:
-        if starttime + 10 < time.time():
+        if startTime + 10 < time.time():
             return False
         if os.path.isfile(syncFilePath):
             break
@@ -223,23 +237,28 @@ def downloadAllData(data, dns, syncFile):
             sleep(0.1)
 
 
-def waitForDependingTasks(waitForFilesOfTask, starttime, syncDir):
+def waitForDependingTasks(waitForFilesOfTask, startTime, syncDir):
     # Now check for files of other tasks
     for waitForTask in waitForFilesOfTask:
         waitForFilesSet = set(waitForFilesOfTask[waitForTask])
-        if not waitForFiles(syncDir + waitForTask, waitForFilesSet, starttime):
+        if not waitForFiles(syncDir + waitForTask, waitForFilesSet, startTime):
             log.error(syncDir + waitForTask + " was not successful")
             myExit(200)
 
 
-def writeTrace(traceFilePath, dataMap):
+def writeTrace(dataMap):
+    global errors
+    if len(dataMap) == 0 or errors > 0:
+        return
     with open(traceFilePath, "a") as traceFile:
         for d in dataMap:
-            traceFile.write(d + "=" + str(dataMap[d]))
+            traceFile.write(d + "=" + str(dataMap[d]) + "\n")
+        traceFile.write("scheduler_init_errors=" + str(errors) + "\n")
 
 
 def run():
-    starttime = time.time()
+    global trace
+    startTime = time.time()
     log.info("Start to setup the environment")
     config = loadConfig(".command.inputs.json")
 
@@ -251,10 +270,14 @@ def run():
         registerSignal(syncFile)
         syncFile.write('##STARTED##\n')
         syncFile.flush()
+        startTimeSymlinks = time.time()
         generateSymlinks(symlinks)
+        trace["scheduler_init_symlinks_runtime"] = int((time.time() - startTimeSymlinks) * 1000)
         syncFile.write('##SYMLINKS##\n')
         syncFile.flush()
+        startTimeDownload = time.time()
         downloadAllData(data, dns, syncFile)
+        trace["scheduler_init_download_runtime"] = int((time.time() - startTimeDownload) * 1000)
         if CLOSE:
             log.debug("Closed with code %s", str(EXIT))
             exit(EXIT)
@@ -262,14 +285,14 @@ def run():
         syncFile.write('##FINISHED##\n')
         registerSignal2()
 
-    waitForDependingTasks(config["waitForFilesOfTask"], starttime, config["syncDir"])
+    startTimeDependingTasks = time.time()
+    waitForDependingTasks(config["waitForFilesOfTask"], startTime, config["syncDir"])
+    trace["scheduler_init_depending_tasks_runtime"] = int((time.time() - startTimeDependingTasks) * 1000)
     log.info("Waited for all tasks")
 
-    runtime = str(int((time.time() - starttime) * 1000))
-    trace = {
-        "scheduler_init_runtime": runtime
-    }
-    writeTrace(".command.scheduler.trace", trace)
+    runtime = int((time.time() - startTime) * 1000)
+    trace["scheduler_init_runtime"] = runtime
+    writeTrace(trace)
 
 
 if __name__ == '__main__':
