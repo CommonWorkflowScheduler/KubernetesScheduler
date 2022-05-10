@@ -4,6 +4,7 @@ import time
 import os
 import json
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import shutil
 import signal
@@ -84,7 +85,7 @@ def closeFTP(ftp):
 
 
 def downloadFile(ftp, filename, size, index, node, syncFile):
-    log.info("Download [%s/%s] - %s", str(index).rjust(len(str(size))), str(size), filename)
+    log.info("Download %s [%s/%s] - %s", node, str(index).rjust(len(str(size))), str(size), filename)
     try:
         syncFile.write("S-" + filename + '\n')
         clearLocatation(filename)
@@ -199,9 +200,20 @@ def generateSymlinks(symlinks):
 
 
 def downloadAllData(data, dns, syncFile):
-    for d in data:
-        files = d["files"]
-        download(d["node"], files, dns, syncFile)
+    with ThreadPoolExecutor(max_workers=max(10, len(data))) as executor:
+        futures = []
+        for d in data:
+            files = d["files"]
+            node = d["node"]
+            futures.append(executor.submit(download, node, files, dns, syncFile))
+        trial = 0
+        while len(futures) > 0:
+            if trial % 5 == 0:
+                log.info("Wait for %d threads to finish", len(futures))
+            for f in futures[:]:
+                if f.done():
+                    futures.remove(f)
+            sleep(0.1)
 
 
 def waitForDependingTasks(waitForFilesOfTask, starttime, syncDir):
