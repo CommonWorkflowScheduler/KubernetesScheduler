@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.ftp.FTPClient;
@@ -48,6 +49,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long,LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     private final String localWorkDir;
+
+    @Getter(AccessLevel.PACKAGE)
+    private final Map< NodeLocation, Map< String, Tuple<Task,Location>> > copyingToNode = new HashMap<>();
 
     SchedulerWithDaemonSet(String execution, KubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
@@ -145,10 +149,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return 0;
     }
 
-    private final Map< NodeLocation, Map< String, Tuple<Task,Location>> > copyingToNode = new HashMap<>();
-
     private void addToCopyingToNode(  NodeLocation nodeLocation, Map< String, Tuple<Task,Location> > toAdd ){
         if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
+        if ( toAdd.isEmpty() ) return;
         if ( copyingToNode.containsKey( nodeLocation ) ){
             final Map<String, Tuple<Task, Location>> stringTupleHashMap = copyingToNode.get( nodeLocation );
             stringTupleHashMap.putAll( toAdd );
@@ -159,7 +162,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     private void removeFromCopyingToNode(NodeLocation nodeLocation, Map< String, Tuple<Task,Location>> toRemove ){
         if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
-        copyingToNode.get( nodeLocation ).keySet().removeAll( toRemove.keySet() );
+        final Map<String, Tuple<Task, Location>> pathTasks = copyingToNode.get(nodeLocation);
+        if( pathTasks == null || toRemove == null || toRemove.isEmpty() ) return;
+        pathTasks.keySet().removeAll( toRemove.keySet() );
     }
 
     /**
