@@ -24,6 +24,7 @@ public interface InputAlignment {
                                      @NotNull TaskInputs inputsOfTask,
                                      @NotNull NodeWithAlloc node,
                                      Map<String, Tuple<Task, Location>> currentlyCopying,
+                                     Map<String, Tuple<Task, Location>> currentlyPlanedToCopy,
                                      double maxCost );
 
     /**
@@ -36,8 +37,10 @@ public interface InputAlignment {
     default FileAlignment getInputAlignment( @NotNull Task task,
                                              @NotNull TaskInputs inputsOfTask,
                                              @NotNull NodeWithAlloc node,
-                                             Map<String, Tuple<Task, Location>> currentlyCopying ){
-        return getInputAlignment( task, inputsOfTask, node, currentlyCopying, Double.MAX_VALUE );
+                                             Map<String, Tuple<Task, Location>> currentlyCopying,
+                                             Map<String, Tuple<Task, Location>> currentlyPlanedToCopy
+    ){
+        return getInputAlignment( task, inputsOfTask, node, currentlyCopying, currentlyPlanedToCopy, Double.MAX_VALUE );
     }
 
 }

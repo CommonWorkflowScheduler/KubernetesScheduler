@@ -26,6 +26,7 @@ public class RandomAlignment implements InputAlignment {
                                            @NotNull TaskInputs inputsOfTask,
                                            @NotNull NodeWithAlloc node,
                                            Map<String, Tuple<Task, Location>> currentlyCopying,
+                                           Map<String, Tuple<Task, Location>> currentlyPlanedToCopy,
                                            double maxCost) {
         final HashMap<Location, AlignmentWrapper> map = new HashMap<>();
         for (PathFileLocationTriple pathFileLocationTriple : inputsOfTask.getFiles()) {
@@ -39,7 +40,7 @@ public class RandomAlignment implements InputAlignment {
             ));
             final Location location = locationWrapper.getLocation();
             final AlignmentWrapper alignmentWrapper = map.computeIfAbsent(location, k -> new AlignmentWrapper() );
-            alignmentWrapper.addAlignment( new FilePath( pathFileLocationTriple, locationWrapper ), 0 );
+            alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, locationWrapper ), 0 );
         }
         return new FileAlignment( map, inputsOfTask.getSymlinks(), 0);
     }

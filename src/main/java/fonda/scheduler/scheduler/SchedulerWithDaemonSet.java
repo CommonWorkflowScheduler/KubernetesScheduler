@@ -167,6 +167,17 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         pathTasks.keySet().removeAll( toRemove.keySet() );
     }
 
+    private void traceForCurrentNode( AlignmentWrapper alignmentWrapper, NodeLocation node, TraceRecord record ) {
+        final List<FilePath> all = alignmentWrapper.getAll();
+        record.setSchedulerFilesNode(all.size());
+        record.setSchedulerFilesNodeBytes(
+                all
+                .parallelStream()
+                .mapToLong(x -> x.getFile().getLocationWrapper(node).getSizeInBytes())
+                .sum()
+        );
+    }
+
     /**
      *
      * @param alignment
@@ -192,23 +203,14 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
             final TraceRecord traceRecord = alignment.task.getTraceRecord();
 
-            int filesOnNode = 0;
             int filesOnNodeOtherTask = 0;
             int filesNotOnNode = 0;
-            long filesOnNodeByte = 0;
             long filesOnNodeOtherTaskByte = 0;
             long filesNotOnNodeByte = 0;
 
             for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
                 if( entry.getKey() == alignment.node.getNodeLocation() ) {
-                    if (traceEnabled) {
-                        final List<FilePath> alignment1 = entry.getValue().getAlignment();
-                        filesOnNode = alignment1.size();
-                        filesOnNodeByte = alignment1
-                                .parallelStream()
-                                .mapToLong(x -> x.getFile().getLocationWrapper(currentNode).getSizeInBytes())
-                                .sum();
-                    }
+                    if (traceEnabled) traceForCurrentNode( entry.getValue(), currentNode, traceRecord );
                     continue;
                 }
 
@@ -216,7 +218,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
                 final NodeLocation location = (NodeLocation) entry.getKey();
                 long size = 0;
-                for (FilePath filePath : entry.getValue().getAlignment()) {
+                for (FilePath filePath : entry.getValue().getAll()) {
                     if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey(filePath.getPath()) ) {
                         //Node copies currently from somewhere else!
                         final Tuple<Task, Location> taskLocationTuple = filesOnCurrentNode.get(filePath.getPath());
@@ -255,14 +257,14 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             inputs.sortData();
 
             if (traceEnabled) {
-                traceRecord.setSchedulerFilesNode(filesOnNode);
-                traceRecord.setSchedulerFilesNodeBytes(filesOnNodeByte);
                 traceRecord.setSchedulerFilesNodeOtherTask(filesOnNodeOtherTask);
                 traceRecord.setSchedulerFilesNodeOtherTaskBytes(filesOnNodeOtherTaskByte);
-                traceRecord.setSchedulerFiles(filesOnNode + filesOnNodeOtherTask + filesNotOnNode);
-                traceRecord.setSchedulerFilesBytes(filesOnNodeByte + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
+                final int schedulerFilesNode = traceRecord.getSchedulerFilesNode() == null ? 0 : traceRecord.getSchedulerFilesNode();
+                traceRecord.setSchedulerFiles(schedulerFilesNode + filesOnNodeOtherTask + filesNotOnNode);
+                final long schedulerFilesNodeBytes = traceRecord.getSchedulerFilesNodeBytes() == null ? 0 : traceRecord.getSchedulerFilesNodeBytes();
+                traceRecord.setSchedulerFilesBytes(schedulerFilesNodeBytes + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
                 traceRecord.setSchedulerDependingTask( (int) waitForTask.values().stream().distinct().count() );
-                traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.nodeFileAlignment.size() - (filesOnNode > 0 ? 1 : 0) );
+                traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.nodeFileAlignment.size() - (schedulerFilesNode > 0 ? 1 : 0) );
             }
 
             new ObjectMapper().writeValue( config, inputs );

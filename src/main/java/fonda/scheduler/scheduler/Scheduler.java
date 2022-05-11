@@ -95,18 +95,28 @@ public abstract class Scheduler {
         }
 
         int failure = 0;
+        int scheduled = 0;
         for (NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment) {
             try {
                 if (isClose()) return -1;
                 if ( !assignTaskToNode( nodeTaskAlignment ) ){
+                    if ( scheduleObject.isStopSubmitIfOneFails() ) {
+                        return taskNodeAlignment.size() - scheduled;
+                    }
                     failure++;
                     continue;
                 }
             } catch ( Exception e ){
+                log.info( "Could not schedule task: {} undo all", nodeTaskAlignment.task.getConfig().getHash() );
+                e.printStackTrace();
                 undoTaskScheduling( nodeTaskAlignment.task );
+                if ( scheduleObject.isStopSubmitIfOneFails() ) {
+                    return taskNodeAlignment.size() - scheduled;
+                }
                 continue;
             }
             taskWasScheduled(nodeTaskAlignment.task);
+            scheduled++;
         }
         return unscheduledTasks.size() - taskNodeAlignment.size() + failure;
     }

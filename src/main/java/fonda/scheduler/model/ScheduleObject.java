@@ -12,6 +12,7 @@ public class ScheduleObject {
 
     private final List<NodeTaskAlignment> taskAlignments;
     private boolean checkStillPossible = false;
+    private boolean stopSubmitIfOneFails = false;
 
     public ScheduleObject( List<NodeTaskAlignment> taskAlignments ) {
         this.taskAlignments = taskAlignments;

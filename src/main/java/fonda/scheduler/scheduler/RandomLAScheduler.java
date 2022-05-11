@@ -41,17 +41,19 @@ public class RandomLAScheduler extends LocationAwareScheduler {
     @Override
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            final Set<NodeWithAlloc> matchingNodesForTask
-    ){
+            final Set<NodeWithAlloc> matchingNodesForTask,
+            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy){
         final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(matchingNodesForTask, taskData.getTask());
         if (nodeWithAlloc.isEmpty()) return null;
         final NodeWithAlloc node = nodeWithAlloc.get();
         final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(node.getNodeLocation());
+        final Map<String, Tuple<Task, Location>> currentlyPlanetToCopy = planedToCopy.get(node.getNodeLocation());
         final FileAlignment fileAlignment = getInputAlignment().getInputAlignment(
                 taskData.getTask(),
                 taskData.getMatchingFilesAndNodes().getInputsOfTask(),
                 node,
-                currentlyCopying
+                currentlyCopying,
+                currentlyPlanetToCopy
         );
         return new Tuple<>( node, fileAlignment );
     }

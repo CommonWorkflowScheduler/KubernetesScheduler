@@ -9,10 +9,7 @@ import fonda.scheduler.scheduler.data.NodeDataTuple;
 import fonda.scheduler.scheduler.data.TaskData;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
-import fonda.scheduler.util.FileAlignment;
-import fonda.scheduler.util.NodeTaskAlignment;
-import fonda.scheduler.util.NodeTaskFilesAlignment;
-import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -39,21 +36,24 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
 
     /**
      * Find the best alignment for one task
+     *
      * @param taskData
      * @param availableByNode
+     * @param planedToCopy
      * @param index
      * @return the alignment containing the node and the file alignments
      */
     private NodeTaskFilesAlignment createNodeAlignment (
             final TaskData taskData,
             final Map<NodeWithAlloc, Requirements> availableByNode,
+            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
             int index
     ) {
         long startTime = System.nanoTime();
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
         final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask( availableByNode, taskData.getTask());
         if ( matchingNodesForTask.isEmpty() ) return null;
-        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, matchingNodesForTask);
+        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, matchingNodesForTask, planedToCopy);
         if ( result == null ) return null;
         final Task task = taskData.getTask();
         availableByNode.get(result.getA()).subFromThis(task.getPod().getRequest());
@@ -71,6 +71,22 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         return new NodeTaskFilesAlignment(result.getA(), task, result.getB());
     }
 
+    private void addAlignmentToPlanned (
+            Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy,
+            final Map<Location, AlignmentWrapper> nodeFileAlignment,
+            Task task,
+            NodeWithAlloc node
+    ) {
+        for (Map.Entry<Location, AlignmentWrapper> entry : nodeFileAlignment.entrySet()) {
+            final Map<String, Tuple<Task, Location>> map = planedToCopy.computeIfAbsent(node.getNodeLocation(), k -> new HashMap<>());
+            for (FilePath filePath : entry.getValue().getFilesToCopy()) {
+                if ( entry.getKey() != node.getNodeLocation() ) {
+                    map.put(filePath.getPath(), new Tuple<>(task, entry.getKey()));
+                }
+            }
+        }
+    }
+
     /**
      * Align all tasks to the best node
      * @param unscheduledTasksSorted
@@ -83,9 +99,13 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     ){
         int index = 0;
         final List<NodeTaskAlignment> alignment = new LinkedList<>();
+        final Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy = new HashMap<>();
         for ( TaskData taskData : unscheduledTasksSorted ){
-            final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, index);
-            if ( nodeAlignment != null ) alignment.add( nodeAlignment );
+            final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, planedToCopy, index);
+            if ( nodeAlignment != null ) {
+                alignment.add(nodeAlignment);
+                addAlignmentToPlanned( planedToCopy, nodeAlignment.fileAlignment.nodeFileAlignment, taskData.getTask(), nodeAlignment.node );
+            }
         }
         return alignment;
     }
@@ -106,18 +126,17 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 .filter(Objects::nonNull)
                 .sorted(Comparator.reverseOrder())
                 .collect(Collectors.toList());
-
-
         final List<NodeTaskAlignment> alignment = createAlignment(unscheduledTasksSorted, availableByNode);
         final ScheduleObject scheduleObject = new ScheduleObject(alignment);
         scheduleObject.setCheckStillPossible( true );
+        scheduleObject.setStopSubmitIfOneFails( true );
         return scheduleObject;
     }
 
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            final Set<NodeWithAlloc> matchingNodesForTask
-    ){
+            final Set<NodeWithAlloc> matchingNodesForTask,
+            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy){
         FileAlignment bestAlignment = null;
         NodeWithAlloc bestNode = null;
         //Remove all nodes which do not fit anymore
@@ -131,6 +150,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             final NodeWithAlloc currentNode = nodeDataTuple.getNode();
             if ( !matchingNodesForTask.contains(currentNode) ) continue;
             final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(currentNode.getNodeLocation());
+            final Map<String, Tuple<Task, Location>> currentlyPlanedToCopy = planedToCopy.get(currentNode.getNodeLocation());
             FileAlignment fileAlignment = null;
             try {
                 fileAlignment = inputAlignment.getInputAlignment(
@@ -138,6 +158,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                         taskData.getMatchingFilesAndNodes().getInputsOfTask(),
                         currentNode,
                         currentlyCopying,
+                        currentlyPlanedToCopy,
                         bestAlignment == null ? Double.MAX_VALUE : bestAlignment.cost
                 );
                 if ( fileAlignment == null ){

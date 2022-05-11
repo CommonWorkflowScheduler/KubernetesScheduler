@@ -30,7 +30,7 @@ public class FileAlignment {
                 .parallelStream()
                 .flatMap( l -> l
                         .getValue()
-                        .getAlignment()
+                        .getAll()
                         .parallelStream()
                         .map(FilePath::getLocationWrapper)
                 )
