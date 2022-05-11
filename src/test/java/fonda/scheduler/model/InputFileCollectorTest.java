@@ -95,7 +95,7 @@ public class InputFileCollectorTest {
         fileInputs.add( b );
         final Task task = new Task(taskConfig, dag);
 
-        final Set expected = new HashSet( List.of( file1, file2, file3 ) );
+        final Set<PathFileLocationTriple> expected = new HashSet<>(List.of(file1, file2, file3));
 
         TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(task, Integer.MAX_VALUE);
         List<PathFileLocationTriple> inputsOfTaskFiles = inputsOfTask.getFiles();

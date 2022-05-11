@@ -36,7 +36,7 @@ public class Inputs {
     }
 
     public void sortData(){
-        Collections.sort(data, Collections.reverseOrder());
+        data.sort(Collections.reverseOrder());
     }
 
 }

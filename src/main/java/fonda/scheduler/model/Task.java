@@ -35,7 +35,6 @@ public class Task {
     private List< TaskInputFileLocationWrapper > copiedFiles;
 
     @Getter
-    @Setter
     private PodWithAge pod = null;
 
     @Getter

@@ -37,9 +37,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     public void removeLocation( LocationWrapper location ){
         if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
         synchronized ( this ){
-            for (int i = 0; i < locations.length; i++) {
-                if ( location.getLocation().equals( locations[i].getLocation() ) ) {
-                    locations[i].deactivate();
+            for ( LocationWrapper locationWrapper : locations ) {
+                if ( location.getLocation().equals( locationWrapper.getLocation() ) ) {
+                    locationWrapper.deactivate();
                 }
             }
         }
@@ -49,15 +49,15 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
         if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
         synchronized ( this ){
             LocationWrapper locationWrapperToUpdate = null;
-            for (int i = 0; i < locations.length; i++) {
-                if ( location.getLocation().equals( locations[i].getLocation() ) ) {
-                    locationWrapperToUpdate = locations[i];
-                    if ( overwrite || location.getTimestamp() > locations[i].getTimestamp() ) {
+            for (LocationWrapper locationWrapper : locations) {
+                if ( location.getLocation().equals( locationWrapper.getLocation() ) ) {
+                    locationWrapperToUpdate = locationWrapper;
+                    if ( overwrite || location.getTimestamp() > locationWrapper.getTimestamp() ) {
                         locationWrapperToUpdate.update( location );
                     }
                     if ( !overwrite ) return locationWrapperToUpdate;
                 } else if ( overwrite ){
-                    locations[i].deactivate();
+                    locationWrapper.deactivate();
                 }
             }
             if ( overwrite && locationWrapperToUpdate != null ) return locationWrapperToUpdate;
