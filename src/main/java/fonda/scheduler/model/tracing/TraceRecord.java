@@ -78,6 +78,10 @@ public class TraceRecord {
     @Setter
     private Integer schedulerTimeToSchedule = null;
 
+    @Getter
+    @Setter
+    private Integer schedulerNoAlignmentFound = null;
+
     public void writeRecord( String tracePath ) throws IOException {
 
         try ( BufferedWriter bw = new BufferedWriter( new FileWriter( tracePath ) ) ) {
@@ -99,6 +103,7 @@ public class TraceRecord {
             writeValue("scheduler_tried_to_schedule", schedulerTriedToSchedule, bw);
             writeValue("scheduler_nodes_to_copy_from", schedulerNodesToCopyFrom, bw);
             writeValue("scheduler_time_to_schedule", schedulerTimeToSchedule, bw);
+            writeValue("scheduler_no_alignment_found", schedulerNoAlignmentFound, bw);
         }
 
     }

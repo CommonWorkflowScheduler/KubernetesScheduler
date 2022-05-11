@@ -2,11 +2,13 @@ package fonda.scheduler.scheduler;
 
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.scheduler.data.NodeDataTuple;
 import fonda.scheduler.scheduler.data.TaskData;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
+import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.NodeTaskAlignment;
 import fonda.scheduler.util.NodeTaskFilesAlignment;
@@ -99,25 +101,33 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         //Remove all nodes which do not fit anymore
         final List<NodeDataTuple> nodeDataTuples = taskData.getNodeDataTuples();
         int triedNodes = 0;
+        int noAlignmentFound = 0;
         int couldStopFetching = 0;
         final List<Double> costs = traceEnabled ? new LinkedList<>() : null;
         for (NodeDataTuple nodeDataTuple : nodeDataTuples) {
             
             final NodeWithAlloc currentNode = nodeDataTuple.getNode();
             if ( !matchingNodesForTask.contains(currentNode) ) continue;
-
-            final FileAlignment fileAlignment = inputAlignment.getInputAlignment(
-                    taskData.getTask(),
-                    taskData.getMatchingFilesAndNodes().getInputsOfTask(),
-                    currentNode,
-                    bestAlignment == null ? Double.MAX_VALUE : bestAlignment.cost
-            );
-            if ( fileAlignment == null ){
-                couldStopFetching++;
-            } else if ( bestAlignment == null || bestAlignment.cost > fileAlignment.cost ){
-                bestAlignment = fileAlignment;
-                bestNode = currentNode;
-                log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.cost );
+            final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(currentNode.getNodeLocation());
+            FileAlignment fileAlignment = null;
+            try {
+                fileAlignment = inputAlignment.getInputAlignment(
+                        taskData.getTask(),
+                        taskData.getMatchingFilesAndNodes().getInputsOfTask(),
+                        currentNode,
+                        currentlyCopying,
+                        bestAlignment == null ? Double.MAX_VALUE : bestAlignment.cost
+                );
+                if ( fileAlignment == null ){
+                    couldStopFetching++;
+                } else if ( bestAlignment == null || bestAlignment.cost > fileAlignment.cost ){
+                    bestAlignment = fileAlignment;
+                    bestNode = currentNode;
+                    log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.cost );
+                }
+            } catch ( NoAligmentPossibleException e ){
+                noAlignmentFound++;
+                log.info( "Task: {} - {}", taskData.getTask().getConfig().getName() , e.getMessage() );
             }
             if ( traceEnabled ) {
                 triedNodes++;
@@ -134,17 +144,19 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 triedNodes,
                 costs,
                 couldStopFetching,
-                bestAlignment.cost
+                bestAlignment.cost,
+                noAlignmentFound
         );
         return new Tuple<>( bestNode, bestAlignment );
     }
 
-    private void storeTraceData( final TraceRecord traceRecord, int triedNodes, List<Double> costs, int couldStopFetching, double bestCost ){
+    private void storeTraceData(final TraceRecord traceRecord, int triedNodes, List<Double> costs, int couldStopFetching, double bestCost, int noAlignmentFound){
         if ( !traceEnabled ) return;
         traceRecord.setSchedulerNodesTried( triedNodes );
         traceRecord.setSchedulerNodesCost( costs );
         traceRecord.setSchedulerCouldStopFetching( couldStopFetching );
         traceRecord.setSchedulerBestCost( bestCost );
+        traceRecord.setSchedulerNoAlignmentFound( noAlignmentFound );
     }
 
 

@@ -2,9 +2,13 @@ package fonda.scheduler.scheduler.filealignment;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Task;
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.util.FileAlignment;
+import fonda.scheduler.util.Tuple;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
 
 public interface InputAlignment {
 
@@ -16,7 +20,11 @@ public interface InputAlignment {
      * @param maxCost
      * @return null if no or no better than maxCost alignment is found
      */
-    FileAlignment getInputAlignment( @NotNull Task task, @NotNull TaskInputs inputsOfTask, @NotNull NodeWithAlloc node, double maxCost );
+    FileAlignment getInputAlignment( @NotNull Task task,
+                                     @NotNull TaskInputs inputsOfTask,
+                                     @NotNull NodeWithAlloc node,
+                                     Map<String, Tuple<Task, Location>> currentlyCopying,
+                                     double maxCost );
 
     /**
      * Calculate a alignment for the input data
@@ -25,8 +33,11 @@ public interface InputAlignment {
      * @param node
      * @return null if no alignment is found
      */
-    default FileAlignment getInputAlignment( @NotNull Task task, @NotNull TaskInputs inputsOfTask, @NotNull NodeWithAlloc node ){
-        return getInputAlignment( task, inputsOfTask, node, Double.MAX_VALUE );
+    default FileAlignment getInputAlignment( @NotNull Task task,
+                                             @NotNull TaskInputs inputsOfTask,
+                                             @NotNull NodeWithAlloc node,
+                                             Map<String, Tuple<Task, Location>> currentlyCopying ){
+        return getInputAlignment( task, inputsOfTask, node, currentlyCopying, Double.MAX_VALUE );
     }
 
 }

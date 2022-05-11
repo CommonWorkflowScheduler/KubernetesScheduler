@@ -5,6 +5,7 @@ import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;
 import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.model.Task;
+import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.scheduler.data.NodeDataTuple;
 import fonda.scheduler.scheduler.data.TaskData;
@@ -45,10 +46,12 @@ public class RandomLAScheduler extends LocationAwareScheduler {
         final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(matchingNodesForTask, taskData.getTask());
         if (nodeWithAlloc.isEmpty()) return null;
         final NodeWithAlloc node = nodeWithAlloc.get();
+        final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(node.getNodeLocation());
         final FileAlignment fileAlignment = getInputAlignment().getInputAlignment(
                 taskData.getTask(),
                 taskData.getMatchingFilesAndNodes().getInputsOfTask(),
-                node
+                node,
+                currentlyCopying
         );
         return new Tuple<>( node, fileAlignment );
     }
