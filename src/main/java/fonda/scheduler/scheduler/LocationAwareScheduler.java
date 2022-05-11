@@ -18,7 +18,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,15 +37,20 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     }
 
 
-
+    /**
+     * Find the best alignment for one task
+     * @param taskData
+     * @param availableByNode
+     * @param index
+     * @return the alignment containing the node and the file alignments
+     */
     private NodeTaskFilesAlignment createNodeAlignment (
             final TaskData taskData,
             final Map<NodeWithAlloc, Requirements> availableByNode,
-            AtomicInteger index
+            int index
     ) {
         long startTime = System.nanoTime();
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
-        final int currentIndex = index.incrementAndGet();
         final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask( availableByNode, taskData.getTask());
         if ( matchingNodesForTask.isEmpty() ) return null;
         final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, matchingNodesForTask);
@@ -56,7 +60,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         taskData.addNs( System.nanoTime()- startTime );
         if ( traceEnabled ){
             task.getTraceRecord().setSchedulerTimeToSchedule((int) (taskData.getTimeInNs() / 1_000_000));
-            task.getTraceRecord().setSchedulerPlaceInQueue( currentIndex );
+            task.getTraceRecord().setSchedulerPlaceInQueue( index );
             task.getTraceRecord().setSchedulerLocationCount(
                     taskData.getMatchingFilesAndNodes().getInputsOfTask().getFiles()
                             .parallelStream()
@@ -67,26 +71,44 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         return new NodeTaskFilesAlignment(result.getA(), task, result.getB());
     }
 
+    /**
+     * Align all tasks to the best node
+     * @param unscheduledTasksSorted
+     * @param availableByNode
+     * @return a list with alignments
+     */
+    List<NodeTaskAlignment> createAlignment(
+            final List<TaskData> unscheduledTasksSorted,
+            final Map<NodeWithAlloc, Requirements> availableByNode
+    ){
+        int index = 0;
+        final List<NodeTaskAlignment> alignment = new LinkedList<>();
+        for ( TaskData taskData : unscheduledTasksSorted ){
+            final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, index);
+            if ( nodeAlignment != null ) alignment.add( nodeAlignment );
+        }
+        return alignment;
+    }
+
     @Override
     public ScheduleObject getTaskNodeAlignment(
             final List<Task> unscheduledTasks,
             final Map<NodeWithAlloc, Requirements> availableByNode
     ){
-        AtomicInteger index = new AtomicInteger( 0 );
-        final List<NodeTaskAlignment> alignment = unscheduledTasks
+        final List<TaskData> unscheduledTasksSorted = unscheduledTasks
                 .parallelStream()
-                .map( task -> {
+                .map(task -> {
                     long startTime = System.nanoTime();
                     final TaskData taskData = calculateTaskData(task, availableByNode);
-                    if ( taskData != null ) taskData.addNs( System.nanoTime() - startTime );
+                    if (taskData != null) taskData.addNs(System.nanoTime() - startTime);
                     return taskData;
-                } )
+                })
                 .filter(Objects::nonNull)
                 .sorted(Comparator.reverseOrder())
-                .sequential()
-                .map( taskData -> createNodeAlignment( taskData, availableByNode, index ) )
-                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+
+        final List<NodeTaskAlignment> alignment = createAlignment(unscheduledTasksSorted, availableByNode);
         final ScheduleObject scheduleObject = new ScheduleObject(alignment);
         scheduleObject.setCheckStillPossible( true );
         return scheduleObject;
