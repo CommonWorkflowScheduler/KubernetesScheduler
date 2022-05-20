@@ -101,7 +101,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         final List<NodeTaskAlignment> alignment = new LinkedList<>();
         final Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy = new HashMap<>();
         for ( TaskData taskData : unscheduledTasksSorted ){
-            final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, planedToCopy, index);
+            final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, planedToCopy, ++index);
             if ( nodeAlignment != null ) {
                 alignment.add(nodeAlignment);
                 addAlignmentToPlanned( planedToCopy, nodeAlignment.fileAlignment.nodeFileAlignment, taskData.getTask(), nodeAlignment.node );
