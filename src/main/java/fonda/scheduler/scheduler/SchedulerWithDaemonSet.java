@@ -257,6 +257,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             inputs.sortData();
 
             if (traceEnabled) {
+                if (traceRecord.getSchedulerFilesNode() == null) traceRecord.setSchedulerFilesNode(0);
+                if (traceRecord.getSchedulerFilesNodeBytes() == null) traceRecord.setSchedulerFilesNodeBytes(0l);
                 traceRecord.setSchedulerFilesNodeOtherTask(filesOnNodeOtherTask);
                 traceRecord.setSchedulerFilesNodeOtherTaskBytes(filesOnNodeOtherTaskByte);
                 final int schedulerFilesNode = traceRecord.getSchedulerFilesNode() == null ? 0 : traceRecord.getSchedulerFilesNode();
