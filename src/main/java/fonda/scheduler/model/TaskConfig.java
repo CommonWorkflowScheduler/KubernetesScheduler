@@ -19,6 +19,8 @@ public class TaskConfig {
     private final float cpus;
     private final long memoryInBytes;
 
+    private final String workDir;
+
     private TaskConfig() {
         this( null );
     }
@@ -35,6 +37,7 @@ public class TaskConfig {
         this.hash = null;
         this.cpus = 0;
         this.memoryInBytes = 0;
+        this.workDir = null;
     }
 
     @Getter
