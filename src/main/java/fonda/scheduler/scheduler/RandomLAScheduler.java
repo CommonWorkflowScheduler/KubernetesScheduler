@@ -32,18 +32,18 @@ public class RandomLAScheduler extends LocationAwareScheduler {
         super(name, client, namespace, config, inputAlignment);
     }
 
-    private Optional<NodeWithAlloc> selectNode( Set<NodeWithAlloc> matchingNodes, Task task ){
-        return matchingNodes.isEmpty()
-                ? Optional.empty()
-                : Optional.of( new LinkedList<>(matchingNodes).get(random.nextInt(matchingNodes.size())));
+    private Optional<NodeWithAlloc> selectNode( List<NodeDataTuple> matchingNodes, Task task ){
+        if (matchingNodes.isEmpty()) return Optional.empty();
+        else {
+            return Optional.of( new LinkedList<>(matchingNodes).get(random.nextInt(matchingNodes.size())).getNode());
+        }
     }
 
     @Override
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            final Set<NodeWithAlloc> matchingNodesForTask,
             Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy){
-        final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(matchingNodesForTask, taskData.getTask());
+        final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(taskData.getNodeDataTuples(), taskData.getTask());
         if (nodeWithAlloc.isEmpty()) return null;
         final NodeWithAlloc node = nodeWithAlloc.get();
         final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(node.getNodeLocation());
@@ -70,7 +70,7 @@ public class RandomLAScheduler extends LocationAwareScheduler {
                 .parallelStream()
                 .map(node -> new NodeDataTuple(node, 0 ) )
                 .collect(Collectors.toList());
-        return new TaskData( 0, task, nodeDataTuples, matchingFilesAndNodes );
+        return new TaskData( 0, task, nodeDataTuples, matchingFilesAndNodes, 0);
     }
 
 
