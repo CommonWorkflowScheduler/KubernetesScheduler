@@ -5,6 +5,7 @@ import logging as log
 import os
 import shutil
 import signal
+import sys
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -261,13 +262,14 @@ def waitForDependingTasks(waitForFilesOfTask, startTime, syncDir):
 
 
 def writeTrace(dataMap):
-    global errors
-    if len(dataMap) == 0 or errors > 0:
-        return
-    with open(traceFilePath, "a") as traceFile:
-        for d in dataMap:
-            traceFile.write(d + "=" + str(dataMap[d]) + "\n")
-        traceFile.write("scheduler_init_errors=" + str(errors) + "\n")
+    if sys.argv[1] == 'true':
+        global errors
+        if len(dataMap) == 0 or errors > 0:
+            return
+        with open(traceFilePath, "a") as traceFile:
+            for d in dataMap:
+                traceFile.write(d + "=" + str(dataMap[d]) + "\n")
+            traceFile.write("scheduler_init_errors=" + str(errors) + "\n")
 
 
 def run():
