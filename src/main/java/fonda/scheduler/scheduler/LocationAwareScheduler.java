@@ -51,6 +51,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     ) {
         long startTime = System.nanoTime();
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
+        taskData.removeAllNodesWhichHaveNotEnoughResources( availableByNode );
         final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy);
         if ( result == null ) return null;
         final Task task = taskData.getTask();

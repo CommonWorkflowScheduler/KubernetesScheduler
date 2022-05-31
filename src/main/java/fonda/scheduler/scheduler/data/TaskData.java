@@ -55,14 +55,25 @@ public class TaskData implements Comparable<TaskData> {
      */
     public boolean calculate( Map<NodeWithAlloc, Requirements> availableByNode ) {
         final Iterator<NodeDataTuple> iterator = nodeDataTuples.iterator();
+        boolean changed = false;
         while (iterator.hasNext()) {
             if ( !availableByNode.get( iterator.next().getNode() ).higherOrEquals( task.getPod().getRequest() ) ) {
                 iterator.remove();
-                calc();
-                return true;
+                changed = true;
+            } else {
+                break;
             }
         }
-        return false;
+        calc();
+        return changed;
+    }
+
+    public void removeAllNodesWhichHaveNotEnoughResources( Map<NodeWithAlloc, Requirements> availableByNode ) {
+        final Iterator<NodeDataTuple> iterator = nodeDataTuples.iterator();
+        while (iterator.hasNext()) {
+            if ( !availableByNode.get( iterator.next().getNode() ).higherOrEquals( task.getPod().getRequest() ) )
+                iterator.remove();
+        }
     }
 
     private void calc() {
