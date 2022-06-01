@@ -32,7 +32,7 @@ pipeline {
                     junit 'target/surefire-reports/TEST-*.xml'
                     jacoco classPattern: 'target/classes,target/test-classes', execPattern: 'target/coverage-reports/*.exec', inclusionPattern: '**/*.class', sourcePattern: 'src/main/java,src/test/java'
                     archiveArtifacts 'target/surefire-reports/TEST-*.xml'
-                    archiveArtifacts 'target/coverage-reports/*.exec'
+                    archiveArtifacts 'target/*.exec'
                 }
             }
         }
@@ -58,8 +58,7 @@ pipeline {
                             mvn sonar:sonar -B -V -Dsonar.projectKey=workflow_k8s_scheduler \
                                 -Dsonar.branch.name=$BRANCH_NAME -Dsonar.sources=src/main/java -Dsonar.tests=src/test/java \
                                 -Dsonar.inclusions="**/*.java" -Dsonar.test.inclusions="src/test/java/**/*.java" \
-                                -Dsonar.junit.reportPaths=target/surefire-reports \
-                                -Dsonar.jacoco.reportPaths=$(find target/coverage-reports -name '*.exec' | paste -s -d , -)
+                                -Dsonar.junit.reportPaths=target/surefire-reports
                         '''
                     }
                 }
