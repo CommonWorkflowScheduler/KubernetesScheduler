@@ -139,9 +139,6 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.7</version>
                 <configuration>
-                    <destFile>${project.build.directory}/coverage-reports/jacoco-unit.exec</destFile>
-                    <dataFile>${project.build.directory}/coverage-reports/jacoco-unit.exec</dataFile>
-                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-report</outputDirectory>
                     <propertyName>surefireArgLine</propertyName>
                 </configuration>
                 <executions>
