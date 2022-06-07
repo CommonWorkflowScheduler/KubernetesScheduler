@@ -5,27 +5,28 @@ import lombok.Getter;
 import java.util.LinkedList;
 import java.util.List;
 
+@Getter
 public class AlignmentWrapper {
 
-    @Getter
     private final List<FilePath> filesToCopy = new LinkedList<>();
-
+    private long toCopySize = 0;
     private final List<FilePathWithTask> waitFor = new LinkedList<>();
-
-    @Getter
+    private long toWaitSize = 0;
     private double cost = 0;
 
-    public void addAlignmentToCopy( FilePath filePath, double cost ) {
+    public void addAlignmentToCopy( FilePath filePath, double cost, long size ) {
         filesToCopy.add( filePath );
+        toCopySize += size;
         this.cost = cost;
     }
 
-    public void addAlignmentToWaitFor( FilePathWithTask filePath, double cost ) {
-        waitFor.add( filePath );
+    public void addAlignmentToWaitFor( FilePathWithTask filePath, double cost, long size ) {
+        addAlignmentToWaitFor( filePath, size );
         this.cost = cost;
     }
 
-    public void addAlignmentToWaitFor( FilePathWithTask filePath ) {
+    public void addAlignmentToWaitFor( FilePathWithTask filePath, long size ) {
+        toWaitSize += size;
         waitFor.add( filePath );
     }
 

@@ -92,6 +92,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
         final WriteConfigResult writeConfigResult = writeInitConfig(nodeTaskFilesAlignment);
         if ( writeConfigResult == null ) return false;
+        if ( traceEnabled ) traceAlignment( nodeTaskFilesAlignment, writeConfigResult );
         alignment.task.setCopiedFiles( writeConfigResult.getInputFiles() );
         addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
         alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
@@ -167,15 +168,35 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         pathTasks.keySet().removeAll( toRemove.keySet() );
     }
 
-    private void traceForCurrentNode( AlignmentWrapper alignmentWrapper, NodeLocation node, TraceRecord record ) {
-        final List<FilePath> all = alignmentWrapper.getAll();
-        record.setSchedulerFilesNode(all.size());
-        record.setSchedulerFilesNodeBytes(
-                all
-                .parallelStream()
-                .mapToLong(x -> x.getFile().getLocationWrapper(node).getSizeInBytes())
-                .sum()
-        );
+    private void traceAlignment( NodeTaskFilesAlignment alignment, WriteConfigResult writeConfigResult ) {
+        final TraceRecord traceRecord = alignment.task.getTraceRecord();
+
+        int filesOnNodeOtherTask = 0;
+        int filesNotOnNode = 0;
+        long filesOnNodeOtherTaskByte = 0;
+        long filesNotOnNodeByte = 0;
+
+        final NodeLocation currentNode = alignment.node.getNodeLocation();
+        for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
+            final AlignmentWrapper alignmentWrapper = entry.getValue();
+            if( entry.getKey() == currentNode) {
+                traceRecord.setSchedulerFilesNode( alignmentWrapper.getFilesToCopy().size() + alignmentWrapper.getWaitFor().size() );
+                traceRecord.setSchedulerFilesNodeBytes( alignmentWrapper.getToCopySize() + alignmentWrapper.getToWaitSize() );
+            } else {
+                filesOnNodeOtherTask += alignmentWrapper.getWaitFor().size() + alignmentWrapper.getFilesToCopy().size();
+                filesOnNodeOtherTaskByte += alignmentWrapper.getToWaitSize() + alignmentWrapper.getToCopySize();
+            }
+        }
+        if (traceRecord.getSchedulerFilesNode() == null) traceRecord.setSchedulerFilesNode(0);
+        if (traceRecord.getSchedulerFilesNodeBytes() == null) traceRecord.setSchedulerFilesNodeBytes(0l);
+        traceRecord.setSchedulerFilesNodeOtherTask(filesOnNodeOtherTask);
+        traceRecord.setSchedulerFilesNodeOtherTaskBytes(filesOnNodeOtherTaskByte);
+        final int schedulerFilesNode = traceRecord.getSchedulerFilesNode() == null ? 0 : traceRecord.getSchedulerFilesNode();
+        traceRecord.setSchedulerFiles(schedulerFilesNode + filesOnNodeOtherTask + filesNotOnNode);
+        final long schedulerFilesNodeBytes = traceRecord.getSchedulerFilesNodeBytes() == null ? 0 : traceRecord.getSchedulerFilesNodeBytes();
+        traceRecord.setSchedulerFilesBytes(schedulerFilesNodeBytes + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
+        traceRecord.setSchedulerDependingTask( (int) writeConfigResult.getWaitForTask().values().stream().distinct().count() );
+        traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.nodeFileAlignment.size() - (schedulerFilesNode > 0 ? 1 : 0) );
     }
 
     /**
@@ -186,9 +207,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     WriteConfigResult writeInitConfig( NodeTaskFilesAlignment alignment ) {
 
         final File config = new File(alignment.task.getWorkingDir() + '/' + ".command.inputs.json");
-
         LinkedList< TaskInputFileLocationWrapper > inputFiles = new LinkedList<>();
         Map<String, Task> waitForTask = new HashMap<>();
+        final HashMap<String, Tuple<Task, Location>> filesForCurrentNode = new HashMap<>();
+        final NodeLocation currentNode = alignment.node.getNodeLocation();
 
         try {
             final Inputs inputs = new Inputs(
@@ -197,83 +219,47 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     alignment.task.getConfig().getHash()
             );
 
-            final HashMap<String, Tuple<Task, Location>> filesForCurrentNode = new HashMap<>();
-            final NodeLocation currentNode = alignment.node.getNodeLocation();
-            final Map<String, Tuple<Task, Location>> filesOnCurrentNode = copyingToNode.get(currentNode);
-
-            final TraceRecord traceRecord = alignment.task.getTraceRecord();
-
-            int filesOnNodeOtherTask = 0;
-            int filesNotOnNode = 0;
-            long filesOnNodeOtherTaskByte = 0;
-            long filesNotOnNodeByte = 0;
-
             for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
-                if( entry.getKey() == alignment.node.getNodeLocation() ) {
-                    if (traceEnabled) traceForCurrentNode( entry.getValue(), currentNode, traceRecord );
+                if( entry.getKey() == currentNode ) {
                     continue;
                 }
 
-                final List<String> collect = new LinkedList<>();
-
                 final NodeLocation location = (NodeLocation) entry.getKey();
-                long size = 0;
-                for (FilePath filePath : entry.getValue().getAll()) {
-                    if ( filesOnCurrentNode != null && filesOnCurrentNode.containsKey(filePath.getPath()) ) {
-                        //Node copies currently from somewhere else!
-                        final Tuple<Task, Location> taskLocationTuple = filesOnCurrentNode.get(filePath.getPath());
-                        if ( taskLocationTuple.getB() != location ) return null;
-                        else {
-                            //May be problematic if the task depending on fails/is stopped before all files are downloaded
-                            waitForTask.put(filePath.getPath(), taskLocationTuple.getA() );
-                            if (traceEnabled) {
-                                filesOnNodeOtherTask++;
-                                filesOnNodeOtherTaskByte += filePath.getLocationWrapper().getSizeInBytes();
-                            }
-                        }
-                    } else {
-                        final LocationWrapper locationWrapper = filePath.getFile().getLocationWrapper(location);
-                        inputFiles.add(
-                                new TaskInputFileLocationWrapper(
-                                        filePath.getPath(),
-                                        filePath.getFile(),
-                                        locationWrapper.getCopyOf( currentNode )
-                                )
-                        );
-                        collect.add(filePath.getPath());
-                        filesForCurrentNode.put(filePath.getPath(), new Tuple<>( alignment.task, location  ) );
-                        final long sizeInBytes = filePath.getLocationWrapper().getSizeInBytes();
-                        size += sizeInBytes;
-                        filesNotOnNode++;
-                    }
+                final AlignmentWrapper alignmentWrapper = entry.getValue();
+                for (FilePathWithTask filePath : alignmentWrapper.getWaitFor()) {
+                    //Node copies currently from somewhere else!
+                    //May be problematic if the task depending on fails/is stopped before all files are downloaded
+                    waitForTask.put( filePath.getPath(), filePath.getTask() );
                 }
-                filesNotOnNodeByte += size;
+
+                final List<String> collect = new LinkedList<>();
+                for (FilePath filePath : alignmentWrapper.getFilesToCopy()) {
+                    final LocationWrapper locationWrapper = filePath.getFile().getLocationWrapper(location);
+                    inputFiles.add(
+                            new TaskInputFileLocationWrapper(
+                                    filePath.getPath(),
+                                    filePath.getFile(),
+                                    locationWrapper.getCopyOf( currentNode )
+                            )
+                    );
+                    collect.add(filePath.getPath());
+                    filesForCurrentNode.put( filePath.getPath(), new Tuple<>( alignment.task, location  ) );
+                }
                 if( !collect.isEmpty() ) {
-                    inputs.data.add(new InputEntry(getDaemonOnNode(entry.getKey().getIdentifier()), entry.getKey().getIdentifier(), collect, size));
+                    inputs.data.add(new InputEntry(getDaemonOnNode(entry.getKey().getIdentifier()), entry.getKey().getIdentifier(), collect, alignmentWrapper.getToCopySize()));
                 }
             }
+
             inputs.waitForTask( waitForTask );
             inputs.symlinks.addAll(alignment.fileAlignment.symlinks);
             inputs.sortData();
-
-            if (traceEnabled) {
-                if (traceRecord.getSchedulerFilesNode() == null) traceRecord.setSchedulerFilesNode(0);
-                if (traceRecord.getSchedulerFilesNodeBytes() == null) traceRecord.setSchedulerFilesNodeBytes(0l);
-                traceRecord.setSchedulerFilesNodeOtherTask(filesOnNodeOtherTask);
-                traceRecord.setSchedulerFilesNodeOtherTaskBytes(filesOnNodeOtherTaskByte);
-                final int schedulerFilesNode = traceRecord.getSchedulerFilesNode() == null ? 0 : traceRecord.getSchedulerFilesNode();
-                traceRecord.setSchedulerFiles(schedulerFilesNode + filesOnNodeOtherTask + filesNotOnNode);
-                final long schedulerFilesNodeBytes = traceRecord.getSchedulerFilesNodeBytes() == null ? 0 : traceRecord.getSchedulerFilesNodeBytes();
-                traceRecord.setSchedulerFilesBytes(schedulerFilesNodeBytes + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
-                traceRecord.setSchedulerDependingTask( (int) waitForTask.values().stream().distinct().count() );
-                traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.nodeFileAlignment.size() - (schedulerFilesNode > 0 ? 1 : 0) );
-            }
-
             new ObjectMapper().writeValue( config, inputs );
             return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode );
+
         } catch (IOException e) {
             log.error( "Cannot write " + config, e);
         }
+        
         return null;
     }
 

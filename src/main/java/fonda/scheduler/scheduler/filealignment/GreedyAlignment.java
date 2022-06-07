@@ -51,7 +51,7 @@ public class GreedyAlignment extends InputAlignmentClass {
             }
         }
         final AlignmentWrapper alignmentWrapper = map.computeIfAbsent(bestLoc, k -> new AlignmentWrapper() );
-        alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, bestLocationWrapper ), minCost );
+        alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, bestLocationWrapper ), minCost, bestLocationWrapper.getSizeInBytes() );
         return minCost;
     }
 

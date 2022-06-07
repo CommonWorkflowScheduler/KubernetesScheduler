@@ -27,7 +27,7 @@ public class RandomAlignment extends InputAlignmentClass {
         ));
         final Location location = locationWrapper.getLocation();
         final AlignmentWrapper alignmentWrapper = map.computeIfAbsent(location, k -> new AlignmentWrapper() );
-        alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, locationWrapper ), 0 );
+        alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, locationWrapper ), 0, locationWrapper.getSizeInBytes() );
         return 0;
     }
 
