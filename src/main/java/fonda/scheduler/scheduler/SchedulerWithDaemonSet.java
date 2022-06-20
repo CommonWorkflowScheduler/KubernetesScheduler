@@ -49,6 +49,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long,LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     private final String localWorkDir;
+    protected final OutLabelHolder outLabelHolder = new OutLabelHolderMaxTasks() ;
 
     @Getter(AccessLevel.PACKAGE)
     private final Map< NodeLocation, Map< String, Tuple<Task,Location>> > copyingToNode = new HashMap<>();
@@ -177,7 +178,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         long filesNotOnNodeByte = 0;
 
         final NodeLocation currentNode = alignment.node.getNodeLocation();
-        for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
+        for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.getNodeFileAlignment().entrySet()) {
             final AlignmentWrapper alignmentWrapper = entry.getValue();
             if( entry.getKey() == currentNode) {
                 traceRecord.setSchedulerFilesNode( alignmentWrapper.getFilesToCopy().size() + alignmentWrapper.getWaitFor().size() );
@@ -196,7 +197,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final long schedulerFilesNodeBytes = traceRecord.getSchedulerFilesNodeBytes() == null ? 0 : traceRecord.getSchedulerFilesNodeBytes();
         traceRecord.setSchedulerFilesBytes(schedulerFilesNodeBytes + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
         traceRecord.setSchedulerDependingTask( (int) writeConfigResult.getWaitForTask().values().stream().distinct().count() );
-        traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.nodeFileAlignment.size() - (schedulerFilesNode > 0 ? 1 : 0) );
+        traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.getNodeFileAlignment().size() - (schedulerFilesNode > 0 ? 1 : 0) );
     }
 
     /**
@@ -219,7 +220,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     alignment.task.getConfig().getHash()
             );
 
-            for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.nodeFileAlignment.entrySet()) {
+            for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.getNodeFileAlignment().entrySet()) {
                 if( entry.getKey() == currentNode ) {
                     continue;
                 }
@@ -251,7 +252,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             }
 
             inputs.waitForTask( waitForTask );
-            inputs.symlinks.addAll(alignment.fileAlignment.symlinks);
+            inputs.symlinks.addAll(alignment.fileAlignment.getSymlinks());
             inputs.sortData();
             new ObjectMapper().writeValue( config, inputs );
             return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode );

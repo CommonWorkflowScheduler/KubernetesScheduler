@@ -86,6 +86,11 @@ public class Task {
         traceRecord.setSchedulerTimeInQueue( System.currentTimeMillis() - timeAddedToQueue );
     }
 
+    public String getOutLabel(){
+        final OutLabel outLabel = config.getOutLabel();
+        return outLabel == null ? null : outLabel.getLabel();
+    }
+
     @Override
     public String toString() {
         return "Task{" +

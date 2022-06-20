@@ -3,14 +3,17 @@ package fonda.scheduler.scheduler.data;
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;
 import fonda.scheduler.model.Task;
+import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.scheduler.MatchingFilesAndNodes;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 @Getter
@@ -34,18 +37,62 @@ public class TaskData implements Comparable<TaskData> {
 
     private double value = 0;
 
+    private boolean weightWasSet;
+
+    @Setter
+    private NodeLocation outLabelNode = null;
+
+    @Setter
+    private double weight = 1.0;
+
     public TaskData(
             double size,
             Task task,
             List<NodeDataTuple> nodeDataTuples,
             MatchingFilesAndNodes matchingFilesAndNodes,
-            double antiStarvingFactor) {
+            double antiStarvingFactor,
+            boolean weightWasSet ) {
         this.size = size;
         this.task = task;
         this.nodeDataTuples = nodeDataTuples;
         this.matchingFilesAndNodes = matchingFilesAndNodes;
         this.antiStarvingFactor = antiStarvingFactor;
+        this.weightWasSet = weightWasSet;
         calc();
+    }
+
+
+    /**
+     * After a location for a label was found, adjust the nodes.
+     * @param nodeForLabel
+     * @param weight
+     */
+    public void setNodeAndWeight(NodeLocation nodeForLabel, double weight ) {
+        this.outLabelNode = nodeForLabel;
+        this.weight = weight;
+        final Iterator<NodeDataTuple> iterator = nodeDataTuples.iterator();
+        NodeDataTuple onOutLabelNode = null;
+        while ( iterator.hasNext() ) {
+            final NodeDataTuple next = iterator.next();
+            if  (next.getNode().getNodeLocation() != nodeForLabel ) {
+                next.setWeight( weight );
+            } else {
+                onOutLabelNode = next;
+                iterator.remove();
+            }
+        }
+        //Insert the one element manuel. Sorting would be too expensive.
+        if ( onOutLabelNode != null ) {
+            final ListIterator<NodeDataTuple> listIterator = nodeDataTuples.listIterator();
+            while ( listIterator.hasNext() ) {
+                if ( listIterator.next().getWorth() <= onOutLabelNode.getWorth() ) {
+                    listIterator.previous();
+                    listIterator.add( onOutLabelNode );
+                    break;
+                }
+            }
+        }
+        weightWasSet = true;
     }
 
     /**

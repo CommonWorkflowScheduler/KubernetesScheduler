@@ -3,6 +3,7 @@ package fonda.scheduler.scheduler;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.location.Location;
+import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.scheduler.data.NodeDataTuple;
@@ -52,7 +53,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         long startTime = System.nanoTime();
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
         taskData.removeAllNodesWhichHaveNotEnoughResources( availableByNode );
-        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy);
+        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy,availableByNode);
         if ( result == null ) return null;
         final Task task = taskData.getTask();
         availableByNode.get(result.getA()).subFromThis(task.getPod().getRequest());
@@ -101,7 +102,17 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         final Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy = new HashMap<>();
         while( !unscheduledTasksSorted.isEmpty() ){
             TaskData taskData = unscheduledTasksSorted.poll();
-            if ( taskData.calculate( availableByNode ) ){
+            boolean changed = false;
+            log.info( "TaskData: {}", taskData.getTask().getPod().getName() );
+            if ( !taskData.isWeightWasSet() ) {
+                log.info( "TaskData: {} weight was not set", taskData.getTask().getPod().getName() );
+                final NodeLocation nodeForLabel = outLabelHolder.getNodeForLabel(taskData.getTask().getOutLabel());
+                if ( nodeForLabel != null ) {
+                    changed = true;
+                    taskData.setNodeAndWeight( nodeForLabel, taskData.getTask().getConfig().getOutLabel().getWeight() );
+                }
+            }
+            if ( taskData.calculate( availableByNode ) || changed ){
                 if ( !taskData.getNodeDataTuples().isEmpty() ) {
                     unscheduledTasksSorted.add(taskData);
                 }
@@ -111,7 +122,8 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, planedToCopy, ++index);
             if ( nodeAlignment != null ) {
                 alignment.add(nodeAlignment);
-                addAlignmentToPlanned( planedToCopy, nodeAlignment.fileAlignment.nodeFileAlignment, taskData.getTask(), nodeAlignment.node );
+                outLabelHolder.scheduleTaskOnNode( taskData.getTask(), nodeAlignment.node.getNodeLocation() );
+                addAlignmentToPlanned( planedToCopy, nodeAlignment.fileAlignment.getNodeFileAlignment(), taskData.getTask(), nodeAlignment.node );
             }
         }
         return alignment;
@@ -139,9 +151,34 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         return scheduleObject;
     }
 
+    /**
+     * Performs a stalemate between two possible alignments.
+     * @return True if the new alignment is better
+     */
+    protected boolean stalemate(
+            NodeWithAlloc oldNode,
+            NodeWithAlloc newNode,
+            Map<NodeWithAlloc, Requirements> availableByNode)
+    {
+        final Requirements availableNodeA = availableByNode.get( oldNode );
+        final Requirements availableNodeB = availableByNode.get( newNode );
+
+        //nodeA has less available CPU than nodeB
+        if( availableNodeA.getCpu().compareTo(availableNodeB.getCpu()) < 0 ) {
+            return true;
+        } else if ( availableNodeA.getCpu().compareTo(availableNodeB.getCpu()) == 0 ) {
+            if( availableNodeA.getRam().compareTo(availableNodeB.getRam() ) < 0 ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy){
+            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
+            Map<NodeWithAlloc, Requirements> availableByNode)
+    {
         FileAlignment bestAlignment = null;
         NodeWithAlloc bestNode = null;
         final List<NodeDataTuple> nodeDataTuples = taskData.getNodeDataTuples();
@@ -162,14 +199,32 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                         currentNode,
                         currentlyCopying,
                         currentlyPlanedToCopy,
-                        bestAlignment == null ? Double.MAX_VALUE : bestAlignment.cost
+                        bestAlignment == null ? Double.MAX_VALUE : bestAlignment.getCost()
                 );
+
                 if ( fileAlignment == null ){
                     couldStopFetching++;
-                } else if ( bestAlignment == null || bestAlignment.cost > fileAlignment.cost ){
-                    bestAlignment = fileAlignment;
-                    bestNode = currentNode;
-                    log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.cost );
+                } else {
+                    final boolean isOnOutLabelNode = nodeDataTuple.getNode().getNodeLocation() == taskData.getOutLabelNode();
+                    if ( isOnOutLabelNode ) {
+                        fileAlignment.setWeight( taskData.getWeight() );
+                    }
+                    log.info( "Task: {}, outLabelNode: {}, currentNode: {}, bestWeight: {}, currentWeight: {}",
+                            taskData.getTask().getConfig().getName(),
+                            taskData.getOutLabelNode(),
+                            nodeDataTuple.getNode().getNodeLocation(),
+                            bestAlignment == null ? null : bestAlignment.getWorth(),
+                            fileAlignment.getWorth()
+                    );
+                    if (bestAlignment == null || bestAlignment.getWorth() > fileAlignment.getWorth() ||
+                            //Alignment is comparable
+                           ( bestAlignment.getWorth() + 1e8 > fileAlignment.getWorth() &&
+                                    ( isOnOutLabelNode || stalemate( bestNode, currentNode, availableByNode )  ) )
+                    ) {
+                        bestAlignment = fileAlignment;
+                        bestNode = currentNode;
+                        log.info("Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.getCost());
+                    }
                 }
             } catch ( NoAligmentPossibleException e ){
                 noAlignmentFound++;
@@ -179,7 +234,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 triedNodes++;
                 final Double thisRoundCost = fileAlignment == null
                         ? null
-                        : fileAlignment.cost;
+                        : fileAlignment.getCost();
                 costs.add( thisRoundCost );
             }
         }
@@ -190,7 +245,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 triedNodes,
                 costs,
                 couldStopFetching,
-                bestAlignment.cost,
+                bestAlignment.getCost(),
                 noAlignmentFound
         );
         return new Tuple<>( bestNode, bestAlignment );
@@ -219,15 +274,26 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         final MatchingFilesAndNodes matchingFilesAndNodes = getMatchingFilesAndNodes(task, availableByNode);
         if ( matchingFilesAndNodes == null || matchingFilesAndNodes.getNodes().isEmpty() ) return null;
         final TaskInputs inputsOfTask = matchingFilesAndNodes.getInputsOfTask();
-        long size = inputsOfTask.calculateAvgSize();
+        final long size = inputsOfTask.calculateAvgSize();
+        final OutLabel outLabel = task.getConfig().getOutLabel();
+        final NodeLocation nodeForLabel = outLabel == null ? null : outLabelHolder.getNodeForLabel(outLabel.getLabel());
+        final boolean weightWasSet = outLabel == null || nodeForLabel != null;
+        final boolean nodeForLabelNotNull = nodeForLabel != null;
+        final double outWeight = outLabel != null ? outLabel.getWeight() : 1.0;
         final List<NodeDataTuple> nodeDataTuples = matchingFilesAndNodes
                 .getNodes()
                 .parallelStream()
-                .map(node -> new NodeDataTuple(node, inputsOfTask.calculateDataOnNode( node.getNodeLocation() ) ) )
+                .map(node -> {
+                    double weight = (nodeForLabelNotNull && node.getNodeLocation() != nodeForLabel) ? outWeight : 1.0;
+                    return new NodeDataTuple(node, inputsOfTask.calculateDataOnNode(node.getNodeLocation()), weight );
+                } )
                 .sorted(Comparator.reverseOrder())
                 .collect(Collectors.toList());
         final double antiStarvingFactor = 0;
-        return new TaskData( size, task, nodeDataTuples, matchingFilesAndNodes, antiStarvingFactor );
+        final TaskData taskData = new TaskData(size, task, nodeDataTuples, matchingFilesAndNodes, antiStarvingFactor, weightWasSet);
+        taskData.setOutLabelNode( nodeForLabel );
+        taskData.setWeight( outWeight );
+        return taskData;
     }
 
 }

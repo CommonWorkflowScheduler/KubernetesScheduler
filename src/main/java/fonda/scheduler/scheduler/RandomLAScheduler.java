@@ -42,7 +42,9 @@ public class RandomLAScheduler extends LocationAwareScheduler {
     @Override
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy){
+            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
+            Map<NodeWithAlloc, Requirements> availableByNode
+    ){
         final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(taskData.getNodeDataTuples(), taskData.getTask());
         if (nodeWithAlloc.isEmpty()) return null;
         final NodeWithAlloc node = nodeWithAlloc.get();
@@ -70,7 +72,8 @@ public class RandomLAScheduler extends LocationAwareScheduler {
                 .parallelStream()
                 .map(node -> new NodeDataTuple(node, 0 ) )
                 .collect(Collectors.toList());
-        return new TaskData( 0, task, nodeDataTuples, matchingFilesAndNodes, 0);
+        //Do not set any weights, as it is randomly scheduled
+        return new TaskData( 0, task, nodeDataTuples, matchingFilesAndNodes, 0, true );
     }
 
 
