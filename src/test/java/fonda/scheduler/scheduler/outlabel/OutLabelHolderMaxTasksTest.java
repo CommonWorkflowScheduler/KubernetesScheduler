@@ -9,11 +9,10 @@ import fonda.scheduler.model.TaskConfig;
 import fonda.scheduler.model.location.NodeLocation;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
 
 class OutLabelHolderMaxTasksTest {
 
@@ -31,7 +30,7 @@ class OutLabelHolderMaxTasksTest {
 
     @Test
     void determineBestNode() {
-        final OutLabelHolderMaxTasks outLabelHolderMaxTasks = new OutLabelHolderMaxTasks();
+        final HolderMaxTasks outLabelHolderMaxTasks = new HolderMaxTasks();
         DAG dag = new DAG();
         List<Vertex> vertexList = new LinkedList<>();
         vertexList.add(new Process("processA", 1));
@@ -44,7 +43,6 @@ class OutLabelHolderMaxTasksTest {
         outLabelHolderMaxTasks.scheduleTaskOnNode( new Task( taskConfig, dag ), nodeB);
         outLabelHolderMaxTasks.scheduleTaskOnNode( new Task( taskConfig, dag ), nodeB);
         assertEquals( nodeB, outLabelHolderMaxTasks.getNodeForLabel( "a" ) );
-
     }
 
 }

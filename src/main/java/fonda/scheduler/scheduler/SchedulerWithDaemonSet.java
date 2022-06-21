@@ -18,7 +18,7 @@ import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
 import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
 import fonda.scheduler.scheduler.outlabel.OutLabelHolder;
-import fonda.scheduler.scheduler.outlabel.OutLabelHolderMaxTasks;
+import fonda.scheduler.scheduler.outlabel.HolderMaxTasks;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.*;
@@ -51,7 +51,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long,LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     private final String localWorkDir;
-    protected final OutLabelHolder outLabelHolder = new OutLabelHolderMaxTasks() ;
+    protected final OutLabelHolder outLabelHolder = new HolderMaxTasks() ;
 
     @Getter(AccessLevel.PACKAGE)
     private final Map< NodeLocation, Map< String, Tuple<Task,Location>> > copyingToNode = new HashMap<>();
