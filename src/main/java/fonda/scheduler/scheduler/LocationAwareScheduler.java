@@ -181,6 +181,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     {
         FileAlignment bestAlignment = null;
         NodeWithAlloc bestNode = null;
+        boolean bestNodeHasOutLabel = false;
         final List<NodeDataTuple> nodeDataTuples = taskData.getNodeDataTuples();
         int triedNodes = 0;
         int noAlignmentFound = 0;
@@ -216,11 +217,24 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                             bestAlignment == null ? null : bestAlignment.getWorth(),
                             fileAlignment.getWorth()
                     );
-                    if (bestAlignment == null || bestAlignment.getWorth() > fileAlignment.getWorth() ||
+
+                    if (    //Not set
+                            bestAlignment == null
+                            ||
+                            // better
+                            bestAlignment.getWorth() > fileAlignment.getWorth()
+                            ||
                             //Alignment is comparable
-                           ( bestAlignment.getWorth() + 1e8 > fileAlignment.getWorth() &&
-                                    ( isOnOutLabelNode || stalemate( bestNode, currentNode, availableByNode )  ) )
+                            ( bestAlignment.getWorth() + 1e8 > fileAlignment.getWorth()
+                                    &&
+                                    //This is the outLabel node
+                                    ( isOnOutLabelNode
+                                    ||
+                                    //Previous node was not the out label node and this alignment wins in stalemate
+                                    ( !bestNodeHasOutLabel && stalemate( bestNode, currentNode, availableByNode ) ) )
+                            )
                     ) {
+                        bestNodeHasOutLabel = isOnOutLabelNode;
                         bestAlignment = fileAlignment;
                         bestNode = currentNode;
                         log.info("Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.getCost());
