@@ -1,4 +1,4 @@
-package fonda.scheduler.scheduler;
+package fonda.scheduler.scheduler.outlabel;
 
 import fonda.scheduler.model.Task;
 import fonda.scheduler.model.location.NodeLocation;
