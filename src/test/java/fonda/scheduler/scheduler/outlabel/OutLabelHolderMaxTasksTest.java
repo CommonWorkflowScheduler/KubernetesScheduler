@@ -1,4 +1,4 @@
-package fonda.scheduler.scheduler;
+package fonda.scheduler.scheduler.outlabel;
 
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.dag.Process;

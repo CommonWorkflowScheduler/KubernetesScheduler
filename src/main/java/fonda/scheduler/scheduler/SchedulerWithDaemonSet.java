@@ -17,6 +17,8 @@ import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.copystrategy.CopyStrategy;
 import fonda.scheduler.scheduler.copystrategy.FTPstrategy;
+import fonda.scheduler.scheduler.outlabel.OutLabelHolder;
+import fonda.scheduler.scheduler.outlabel.OutLabelHolderMaxTasks;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.*;

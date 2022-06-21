@@ -34,7 +34,6 @@ public abstract class OutLabelHolder {
     abstract protected NodeLocation determineBestNode( Set<Map.Entry<NodeLocation, Set<Task>>> set );
 
     private class InternalHolder {
-
         private final OutLabelHolder outLabelHolder;
         private final Map<NodeLocation, Set<Task>> tasksByNode = new HashMap<>();
 
