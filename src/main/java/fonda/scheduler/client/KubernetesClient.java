@@ -108,7 +108,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                             change = true;
                         }
                     }
-                    if ( change ) kubernetesClient.informAllSchedulersNewNode( processedNode );
+                    if ( change ) {
+                        kubernetesClient.informAllSchedulersNewNode( processedNode );
+                    }
                     break;
                 case DELETED:
                     log.info("Node {} was deleted", node.getMetadata().getName());
@@ -118,7 +120,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                             change = true;
                         }
                     }
-                    if ( change ) kubernetesClient.informAllSchedulersRemovedNode( processedNode );
+                    if ( change ) {
+                        kubernetesClient.informAllSchedulersRemovedNode( processedNode );
+                    }
                     break;
                 case ERROR:
                     log.info("Node {} has an error", node.getMetadata().getName());

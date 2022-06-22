@@ -60,7 +60,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         super(execution, client, namespace, config);
         this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
         this.inputFileCollector = new InputFileCollector( hierarchyWrapper );
-        if ( config.copyStrategy == null ) throw new IllegalArgumentException( "Copy strategy is null" );
+        if ( config.copyStrategy == null ) {
+            throw new IllegalArgumentException( "Copy strategy is null" );
+        }
         switch ( config.copyStrategy ){
             case "ftp":
             case "copy":
@@ -94,8 +96,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     boolean assignTaskToNode( NodeTaskAlignment alignment ) {
         final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
         final WriteConfigResult writeConfigResult = writeInitConfig(nodeTaskFilesAlignment);
-        if ( writeConfigResult == null ) return false;
-        if ( traceEnabled ) traceAlignment( nodeTaskFilesAlignment, writeConfigResult );
+        if ( writeConfigResult == null ) {
+            return false;
+        }
+        if ( traceEnabled ) {
+            traceAlignment( nodeTaskFilesAlignment, writeConfigResult );
+        }
         alignment.task.setCopiedFiles( writeConfigResult.getInputFiles() );
         addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
         alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
@@ -154,8 +160,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     private void addToCopyingToNode(  NodeLocation nodeLocation, Map< String, Tuple<Task,Location> > toAdd ){
-        if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
-        if ( toAdd.isEmpty() ) return;
+        if ( nodeLocation == null ) {
+            throw new IllegalArgumentException( "NodeLocation cannot be null" );
+        }
+        if ( toAdd.isEmpty() ) {
+            return;
+        }
         if ( copyingToNode.containsKey( nodeLocation ) ){
             final Map<String, Tuple<Task, Location>> stringTupleHashMap = copyingToNode.get( nodeLocation );
             stringTupleHashMap.putAll( toAdd );
@@ -165,9 +175,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     private void removeFromCopyingToNode(NodeLocation nodeLocation, Map< String, Tuple<Task,Location>> toRemove ){
-        if ( nodeLocation == null ) throw new IllegalArgumentException( "NodeLocation cannot be null" );
+        if ( nodeLocation == null ) {
+            throw new IllegalArgumentException( "NodeLocation cannot be null" );
+        }
         final Map<String, Tuple<Task, Location>> pathTasks = copyingToNode.get(nodeLocation);
-        if( pathTasks == null || toRemove == null || toRemove.isEmpty() ) return;
+        if( pathTasks == null || toRemove == null || toRemove.isEmpty() ) {
+            return;
+        }
         pathTasks.keySet().removeAll( toRemove.keySet() );
     }
 
@@ -190,8 +204,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 filesOnNodeOtherTaskByte += alignmentWrapper.getToWaitSize() + alignmentWrapper.getToCopySize();
             }
         }
-        if (traceRecord.getSchedulerFilesNode() == null) traceRecord.setSchedulerFilesNode(0);
-        if (traceRecord.getSchedulerFilesNodeBytes() == null) traceRecord.setSchedulerFilesNodeBytes(0l);
+        if (traceRecord.getSchedulerFilesNode() == null) {
+            traceRecord.setSchedulerFilesNode(0);
+        }
+        if (traceRecord.getSchedulerFilesNodeBytes() == null) {
+            traceRecord.setSchedulerFilesNodeBytes(0l);
+        }
         traceRecord.setSchedulerFilesNodeOtherTask(filesOnNodeOtherTask);
         traceRecord.setSchedulerFilesNodeOtherTaskBytes(filesOnNodeOtherTaskByte);
         final int schedulerFilesNode = traceRecord.getSchedulerFilesNode() == null ? 0 : traceRecord.getSchedulerFilesNode();
@@ -292,7 +310,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         }
         final RealHierarchyFile file = (RealHierarchyFile) currentFile;
         final LocationWrapper lastUpdate = file.getLastUpdate(LocationType.NODE);
-        if( lastUpdate == null ) return null;
+        if( lastUpdate == null ) {
+            return null;
+        }
         requestedLocations.put( lastUpdate.getId(), lastUpdate );
         String node = lastUpdate.getLocation().getIdentifier();
         return new FileResponse( currentPath.toString(), node, getDaemonOnNode(node), node.equals(workflowEngineNode), symlinks, lastUpdate.getId() );
@@ -380,7 +400,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 f.enterLocalPassiveMode();
                 return f;
             } catch ( IOException e ) {
-                if ( trial > 5 ) throw new RuntimeException(e);
+                if ( trial > 5 ) {
+                    throw new RuntimeException(e);
+                }
                 log.error("Cannot create FTP client: {}", daemon);
                 try {
                     Thread.sleep((long) Math.pow(2, trial++));

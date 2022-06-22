@@ -45,9 +45,15 @@ public class PodWithAge extends Pod {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof PodWithAge)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof PodWithAge)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         PodWithAge that = (PodWithAge) o;
 

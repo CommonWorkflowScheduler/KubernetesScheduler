@@ -81,7 +81,9 @@ public abstract class Scheduler {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
-        if( traceEnabled ) unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule() );
+        if( traceEnabled ) {
+            unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule() );
+        }
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
 
@@ -98,7 +100,9 @@ public abstract class Scheduler {
         int scheduled = 0;
         for (NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment) {
             try {
-                if (isClose()) return -1;
+                if (isClose()) {
+                    return -1;
+                }
                 if ( !assignTaskToNode( nodeTaskAlignment ) ){
                     if ( scheduleObject.isStopSubmitIfOneFails() ) {
                         return taskNodeAlignment.size() - scheduled;
@@ -132,11 +136,15 @@ public abstract class Scheduler {
         Map< NodeWithAlloc, Requirements> availableByNode = getAvailableByNode();
         for ( NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment ) {
             final Requirements requirements = availableByNode.get(nodeTaskAlignment.node);
-            if ( requirements == null ) return false;
+            if ( requirements == null ) {
+                return false;
+            }
             requirements.subFromThis(nodeTaskAlignment.task.getPod().getRequest());
         }
         for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
-            if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) return false;
+            if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) {
+                return false;
+            }
         }
         return true;
     }
@@ -161,7 +169,9 @@ public abstract class Scheduler {
         Task t = changeStateOfTask( pod, State.PROCESSING_FINISHED );
 
         //If null, task was already changed
-        if( t == null ) return;
+        if( t == null ) {
+            return;
+        }
         t.setPod( pod );
 
         synchronized (unfinishedTasks){
@@ -180,7 +190,9 @@ public abstract class Scheduler {
     public void schedulePod(PodWithAge pod ) {
         Task task = changeStateOfTask( pod, State.UNSCHEDULED );
         //If null, task was already unscheduled
-        if ( task == null ) return;
+        if ( task == null ) {
+            return;
+        }
         task.setPod( pod );
         if ( task.getBatch() == null ){
             synchronized (unscheduledTasks){
@@ -291,9 +303,13 @@ public abstract class Scheduler {
     boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
         final Map<String, String> podsNodeSelector = pod.getSpec().getNodeSelector();
         final Map<String, String> nodesLabels = node.getMetadata().getLabels();
-        if ( podsNodeSelector == null || podsNodeSelector.isEmpty() ) return true;
+        if ( podsNodeSelector == null || podsNodeSelector.isEmpty() ) {
+            return true;
+        }
         //cannot be fulfilled if podsNodeSelector is not empty
-        if ( nodesLabels == null || nodesLabels.isEmpty() ) return false;
+        if ( nodesLabels == null || nodesLabels.isEmpty() ) {
+            return false;
+        }
 
         return nodesLabels.entrySet().containsAll( podsNodeSelector.entrySet() );
     }
@@ -357,7 +373,9 @@ public abstract class Scheduler {
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
 
         alignment.task.submitted();
-        if( traceEnabled ) alignment.task.writeTrace();
+        if( traceEnabled ) {
+            alignment.task.writeTrace();
+        }
 
         return true;
     }
@@ -426,7 +444,9 @@ public abstract class Scheduler {
         List<String> logInfo = new LinkedList<>();
         logInfo.add("------------------------------------");
         for (NodeWithAlloc item : getNodeList()) {
-            if ( !item.isReady() ) continue;
+            if ( !item.isReady() ) {
+                continue;
+            }
             final Requirements availableResources = item.getAvailableResources();
             availableByNode.put(item, availableResources);
             logInfo.add("Node: " + item.getName() + " " + availableResources);
@@ -478,7 +498,9 @@ public abstract class Scheduler {
 
             scheduler.podEventReceived(action, pod);
 
-            if (!scheduler.name.equals(pod.getSpec().getSchedulerName())) return;
+            if (!scheduler.name.equals(pod.getSpec().getSchedulerName())) {
+                return;
+            }
 
             PodWithAge pwa = new PodWithAge(pod);
             if (pod.getMetadata().getLabels() != null) {

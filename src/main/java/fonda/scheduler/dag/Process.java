@@ -38,10 +38,14 @@ public class Process extends Vertex {
         final Vertex from = e.getFrom();
         final Set<Process> fromAncestors = from.getAncestors();
 
-        if ( from.getType() == Type.PROCESS ) fromAncestors.add((Process) from);
+        if ( from.getType() == Type.PROCESS ) {
+            fromAncestors.add((Process) from);
+        }
 
         this.ancestors.addAll(fromAncestors);
-        if ( from.getType() == Type.PROCESS ) ((Process) from).descendants.add( this );
+        if ( from.getType() == Type.PROCESS ) {
+            ((Process) from).descendants.add( this );
+        }
 
         final Set<Process> descendantsCopy = this.getDescendants();
         fromAncestors.forEach( v -> {
@@ -55,10 +59,14 @@ public class Process extends Vertex {
         final Vertex to = e.getTo();
         final Set<Process> toDescendants = to.getDescendants();
 
-        if ( to.getType() == Type.PROCESS ) toDescendants.add((Process) to);
+        if ( to.getType() == Type.PROCESS ) {
+            toDescendants.add((Process) to);
+        }
 
         this.descendants.addAll(toDescendants);
-        if ( to.getType() == Type.PROCESS ) ((Process)to).ancestors.add( this );
+        if ( to.getType() == Type.PROCESS ) {
+            ((Process)to).ancestors.add( this );
+        }
 
         final Set<Process> ancestorsCopy = this.getAncestors();
         toDescendants.forEach( v -> {

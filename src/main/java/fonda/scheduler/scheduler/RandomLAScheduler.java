@@ -46,7 +46,9 @@ public class RandomLAScheduler extends LocationAwareScheduler {
             Map<NodeWithAlloc, Requirements> availableByNode
     ){
         final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(taskData.getNodeDataTuples(), taskData.getTask());
-        if (nodeWithAlloc.isEmpty()) return null;
+        if (nodeWithAlloc.isEmpty()) {
+            return null;
+        }
         final NodeWithAlloc node = nodeWithAlloc.get();
         final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(node.getNodeLocation());
         final Map<String, Tuple<Task, Location>> currentlyPlanetToCopy = planedToCopy.get(node.getNodeLocation());
@@ -66,7 +68,9 @@ public class RandomLAScheduler extends LocationAwareScheduler {
             final Map<NodeWithAlloc, Requirements> availableByNode
     ) {
         final MatchingFilesAndNodes matchingFilesAndNodes = getMatchingFilesAndNodes(task, availableByNode);
-        if ( matchingFilesAndNodes == null || matchingFilesAndNodes.getNodes().isEmpty() ) return null;
+        if ( matchingFilesAndNodes == null || matchingFilesAndNodes.getNodes().isEmpty() ) {
+            return null;
+        }
         final List<NodeDataTuple> nodeDataTuples = matchingFilesAndNodes
                 .getNodes()
                 .parallelStream()

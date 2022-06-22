@@ -108,9 +108,15 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof NodeWithAlloc)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof NodeWithAlloc)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
         NodeWithAlloc that = (NodeWithAlloc) o;
         return getMetadata().getName() != null ? getMetadata().getName().equals(that.getMetadata().getName()) : that.getMetadata().getName() == null;
     }

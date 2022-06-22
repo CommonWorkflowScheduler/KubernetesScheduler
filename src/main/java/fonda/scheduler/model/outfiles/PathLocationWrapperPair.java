@@ -27,9 +27,15 @@ public class PathLocationWrapperPair extends OutputFile {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof PathLocationWrapperPair)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof PathLocationWrapperPair)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
         PathLocationWrapperPair that = (PathLocationWrapperPair) o;
         return Objects.equals(getLocationWrapper(), that.getLocationWrapper());
     }

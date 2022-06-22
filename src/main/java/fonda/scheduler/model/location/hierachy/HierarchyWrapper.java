@@ -17,7 +17,9 @@ public class HierarchyWrapper {
     private final ConcurrentMap<String, Folder> workDirs = new ConcurrentHashMap<>(2);
 
     public HierarchyWrapper( String workdir ) {
-        if ( workdir == null ) throw new IllegalArgumentException( "Workdir is not defined" );
+        if ( workdir == null ) {
+            throw new IllegalArgumentException( "Workdir is not defined" );
+        }
         this.workdir = Paths.get( workdir ).normalize();
     }
 
@@ -26,9 +28,13 @@ public class HierarchyWrapper {
     }
 
     private Folder getWorkdir( Iterator<Path> iterator, boolean create ){
-        if(!iterator.hasNext()) return null;
+        if(!iterator.hasNext()) {
+            return null;
+        }
         final String hash1 = iterator.next().toString();
-        if(!iterator.hasNext()) return null;
+        if(!iterator.hasNext()) {
+            return null;
+        }
         final String hash2 = iterator.next().toString();
         final String key = hash1 + hash2;
         final Folder folder = workDirs.get( key );
@@ -48,7 +54,9 @@ public class HierarchyWrapper {
         final Path relativePath = relativize( path );
         Iterator<Path> iterator = relativePath.iterator();
         HierarchyFile current = getWorkdir( iterator, false );
-        if( current == null ) return null;
+        if( current == null ) {
+            return null;
+        }
         while(iterator.hasNext()){
             Path p = iterator.next();
             if ( current != null && current.isDirectory() ){
@@ -57,10 +65,11 @@ public class HierarchyWrapper {
                 return null;
             }
         }
-        if( current.isDirectory() )
+        if( current.isDirectory() ) {
             return ((Folder) current).getAllChildren( path.normalize() );
-        else
+        } else {
             return null;
+        }
     }
 
     /**
@@ -77,8 +86,11 @@ public class HierarchyWrapper {
 
         final Folder folderToInsert = findFolderToInsert(path);
 
-        if( folderToInsert == null ) return null;
-        else return folderToInsert.addOrUpdateFile( path.getFileName().toString(), overwrite, location );
+        if( folderToInsert == null ) {
+            return null;
+        } else {
+            return folderToInsert.addOrUpdateFile( path.getFileName().toString(), overwrite, location );
+        }
 
     }
 
@@ -86,8 +98,11 @@ public class HierarchyWrapper {
 
         final Folder folderToInsert = findFolderToInsert( src );
 
-        if( folderToInsert == null ) return false;
-        else return folderToInsert.addSymlink( src.getFileName().toString(), dst );
+        if( folderToInsert == null ) {
+            return false;
+        } else {
+            return folderToInsert.addSymlink( src.getFileName().toString(), dst );
+        }
 
     }
 
@@ -98,7 +113,9 @@ public class HierarchyWrapper {
         }
         Iterator<Path> iterator = relativePath.iterator();
         Folder current = getWorkdir( iterator, true );
-        if( current == null ) return null;
+        if( current == null ) {
+            return null;
+        }
         while(iterator.hasNext()) {
             Path p = iterator.next();
             if( iterator.hasNext() ){
@@ -125,8 +142,12 @@ public class HierarchyWrapper {
         }
         Iterator<Path> iterator = relativePath.iterator();
         Folder current = getWorkdir( iterator, false );
-        if( current == null ) return null;
-        if( !iterator.hasNext() ) return current;
+        if( current == null ) {
+            return null;
+        }
+        if( !iterator.hasNext() ) {
+            return current;
+        }
         while( iterator.hasNext() ) {
             Path p = iterator.next();
             final HierarchyFile file = current.get( p.toString() );
@@ -135,8 +156,9 @@ public class HierarchyWrapper {
                 current = (Folder) file;
             } else if ( !iterator.hasNext() ) {
                 return file;
-            } else
+            } else {
                 break;
+            }
         }
         return null;
     }

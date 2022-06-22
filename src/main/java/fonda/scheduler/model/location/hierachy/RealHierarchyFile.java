@@ -20,7 +20,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     static final String LOCATION_IS_NULL = "location is null";
 
     public RealHierarchyFile(LocationWrapper location ) {
-        if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
+        if ( location == null ) {
+            throw new IllegalArgumentException( LOCATION_IS_NULL );
+        }
         this.locations = new LocationWrapper[]{ location };
     }
 
@@ -35,7 +37,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     }
 
     public void removeLocation( LocationWrapper location ){
-        if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
+        if ( location == null ) {
+            throw new IllegalArgumentException( LOCATION_IS_NULL );
+        }
         synchronized ( this ){
             for ( LocationWrapper locationWrapper : locations ) {
                 if ( location.getLocation().equals( locationWrapper.getLocation() ) ) {
@@ -46,7 +50,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     }
 
     public LocationWrapper addOrUpdateLocation( boolean overwrite, LocationWrapper location ){
-        if ( location == null ) throw new IllegalArgumentException( LOCATION_IS_NULL );
+        if ( location == null ) {
+            throw new IllegalArgumentException( LOCATION_IS_NULL );
+        }
         synchronized ( this ){
             LocationWrapper locationWrapperToUpdate = null;
             for (LocationWrapper locationWrapper : locations) {
@@ -55,12 +61,16 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
                     if ( overwrite || location.getTimestamp() > locationWrapper.getTimestamp() ) {
                         locationWrapperToUpdate.update( location );
                     }
-                    if ( !overwrite ) return locationWrapperToUpdate;
+                    if ( !overwrite ) {
+                        return locationWrapperToUpdate;
+                    }
                 } else if ( overwrite ){
                     locationWrapper.deactivate();
                 }
             }
-            if ( overwrite && locationWrapperToUpdate != null ) return locationWrapperToUpdate;
+            if ( overwrite && locationWrapperToUpdate != null ) {
+                return locationWrapperToUpdate;
+            }
             final LocationWrapper[] newLocation = Arrays.copyOf(locations, locations.length + 1);
             newLocation[ locations.length ] = location;
             locations = newLocation;
@@ -94,7 +104,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
             result = initial;
         }
         addAllLaterLocationsToResult( current, result, time );
-        if( current == null ) addAllLaterLocationsToResult( ancestors, result, time );
+        if( current == null ) {
+            addAllLaterLocationsToResult( ancestors, result, time );
+        }
         addAllLaterLocationsToResult( unrelated, result, time );
         addAllLaterLocationsToResult( descendants, result, time );
         return result;
@@ -107,18 +119,29 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
             LinkedList<LocationWrapper> unrelated
     ) {
         LinkedList<LocationWrapper> result = null;
-        if ( current != null ) result = current;
+        if ( current != null ) {
+            result = current;
+        }
         if ( ancestors != null ) {
-            if (current == null ) result = ancestors;
-            else result.addAll( ancestors );
+            if (current == null ) {
+                result = ancestors;
+            } else {
+                result.addAll( ancestors );
+            }
         }
         if ( unrelated != null ) {
-            if ( result == null ) result = unrelated;
-            else result.addAll( unrelated );
+            if ( result == null ) {
+                result = unrelated;
+            } else {
+                result.addAll( unrelated );
+            }
         }
         if ( descendants != null ) {
-            if ( result == null ) result = descendants;
-            else result.addAll( descendants );
+            if ( result == null ) {
+                result = descendants;
+            } else {
+                result.addAll( descendants );
+            }
         }
         return result;
     }
@@ -133,7 +156,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
             if (locationProcess == currentProcess) {
                 break;
             } else {
-                if( locationAncestors == null ) locationAncestors = locationProcess.getAncestors();
+                if( locationAncestors == null ) {
+                    locationAncestors = locationProcess.getAncestors();
+                }
                 if ( locationAncestors.contains(currentProcess) ) {
                     iterator.remove();
                 } else if (locationProcess.getDescendants().contains(currentProcess)) {
@@ -145,7 +170,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     }
 
     private LinkedList<LocationWrapper> addAndCreateList(LinkedList<LocationWrapper> list, LocationWrapper toAdd ){
-        if ( list == null ) list = new LinkedList<>();
+        if ( list == null ) {
+            list = new LinkedList<>();
+        }
         list.add( toAdd );
         return list;
     }
@@ -168,11 +195,15 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
         for ( LocationWrapper location : locationsRef ) {
 
             if( location.isInUse() ) {
-                if ( inUse == null ) inUse = new HashSet<>();
+                if ( inUse == null ) {
+                    inUse = new HashSet<>();
+                }
                 inUse.add(location.getLocation());
             }
 
-            if ( !location.isActive() ) continue;
+            if ( !location.isActive() ) {
+                continue;
+            }
 
             //File was modified by an operator (no relation known)
             if ( location.getCreatedByTask() == null ) {
@@ -183,8 +214,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
             final Process locationProcess = location.getCreatedByTask().getProcess();
             if ( locationProcess == taskProcess)
                 //Location was created by the same process == does definitely fit.
+            {
                 current = addAndCreateList( current, location );
-            else if ( taskAncestors.contains(locationProcess) ) {
+            } else if ( taskAncestors.contains(locationProcess) ) {
                 // location is a direct ancestor
                 if ( ancestors == null ) {
                     ancestors = new LinkedList<>();
@@ -195,24 +227,31 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
             }
             else if ( taskDescendants.contains(locationProcess) )
                 // location is a direct descendant
+            {
                 descendants = addAndCreateList( descendants, location );
-            else
+            } else
                 // location was possibly generated in parallel
+            {
                 unrelated = addAndCreateList( unrelated, location );
+            }
         }
 
         final List<LocationWrapper> matchingLocations = ( initial == null )
              ? combineResultsEmptyInitial( current, ancestors, descendants, unrelated )
             : combineResultsWithInitial( current, ancestors, descendants, unrelated, initial );
 
-        if ( matchingLocations == null ) throw new NoAlignmentFoundException();
+        if ( matchingLocations == null ) {
+            throw new NoAlignmentFoundException();
+        }
         removeMatchingLocations( matchingLocations, inUse );
 
         return new MatchingLocationsPair( matchingLocations, inUse );
     }
 
     private void removeMatchingLocations( List<LocationWrapper> matchingLocations, Set<Location> locations ){
-        if ( locations == null || matchingLocations == null ) return;
+        if ( locations == null || matchingLocations == null ) {
+            return;
+        }
         for ( LocationWrapper matchingLocation : matchingLocations ) {
             if( matchingLocation.isInUse() ) {
                 locations.remove(matchingLocation.getLocation());
@@ -236,7 +275,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     private void addAllLaterLocationsToResult( List<LocationWrapper> list, List<LocationWrapper> result, long time ){
         if( list != null ) {
             for ( LocationWrapper l : list ) {
-                if( l.getCreateTime() >= time ) result.add( l );
+                if( l.getCreateTime() >= time ) {
+                    result.add( l );
+                }
             }
         }
     }
@@ -253,7 +294,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
 
     public LocationWrapper getLocationWrapper( Location location ){
         for (LocationWrapper locationWrapper : locations) {
-            if ( locationWrapper.isActive() && locationWrapper.getLocation() == location ) return locationWrapper;
+            if ( locationWrapper.isActive() && locationWrapper.getLocation() == location ) {
+                return locationWrapper;
+            }
         }
         throw new RuntimeException( "Not found: " + location.getIdentifier() );
     }

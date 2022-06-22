@@ -19,7 +19,9 @@ public class Operator extends NotProcess {
         if ( !in.isEmpty() ){
             for ( Edge edge : in ) {
                 final Vertex from = edge.getFrom();
-                if ( from.getType() == Type.PROCESS ) results.add((Process) from);
+                if ( from.getType() == Type.PROCESS ) {
+                    results.add((Process) from);
+                }
                 results.addAll( from.getAncestors() );
             }
         }
@@ -30,7 +32,9 @@ public class Operator extends NotProcess {
         in.add( e );
         final Vertex from = e.getFrom();
         final Set<Process> ancestors = from.getAncestors();
-        if ( from.getType() == Type.PROCESS ) ancestors.add((Process) from);
+        if ( from.getType() == Type.PROCESS ) {
+            ancestors.add((Process) from);
+        }
         final Set<Process> descendants = this.getDescendants();
         ancestors.forEach( v -> v.descendants.addAll( descendants ));
     }

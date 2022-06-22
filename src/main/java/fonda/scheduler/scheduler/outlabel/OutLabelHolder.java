@@ -24,7 +24,9 @@ public abstract class OutLabelHolder {
 
     public void scheduleTaskOnNode(Task task, NodeLocation node ){
         final String outLabel;
-        if ( (outLabel = task.getOutLabel()) == null ) return;
+        if ( (outLabel = task.getOutLabel()) == null ) {
+            return;
+        }
         internalHolder.computeIfAbsent( outLabel, key -> create() ).addTask( task, node );
     }
 

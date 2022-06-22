@@ -24,7 +24,9 @@ public class NodeLocation extends Location {
     }
 
     public static NodeLocation getLocation( String node ){
-        if ( node == null ) throw new IllegalArgumentException("Node cannot be null");
+        if ( node == null ) {
+            throw new IllegalArgumentException("Node cannot be null");
+        }
         final NodeLocation nodeLocation = locationHolder.get(node);
         if ( nodeLocation == null ){
             locationHolder.putIfAbsent( node, new NodeLocation( node ) );
@@ -45,9 +47,15 @@ public class NodeLocation extends Location {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof NodeLocation)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof NodeLocation)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         NodeLocation that = (NodeLocation) o;
 

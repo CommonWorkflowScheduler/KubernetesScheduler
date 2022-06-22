@@ -59,7 +59,9 @@ public class SchedulerRestController {
     public void close() throws InterruptedException {
         if ( autoClose && schedulerHolder.isEmpty() && closedLastScheduler != -1 ) {
             Thread.sleep( System.currentTimeMillis() - closedLastScheduler + 5000 );
-            if ( schedulerHolder.isEmpty() ) SpringApplication.exit(appContext, () -> 0);
+            if ( schedulerHolder.isEmpty() ) {
+                SpringApplication.exit(appContext, () -> 0);
+            }
         }
     }
 
@@ -106,9 +108,12 @@ public class SchedulerRestController {
                         : new RandomScheduler( execution, client, namespace, config );
                 break;
             case "lav1" :
-                if ( !config.locationAware )
+                if ( !config.locationAware ) {
                     return new ResponseEntity<>( "LA scheduler only work if location aware", HttpStatus.BAD_REQUEST );
-                if ( costFunction == null ) costFunction = new MinSizeCost( 0 );
+                }
+                if ( costFunction == null ) {
+                    costFunction = new MinSizeCost( 0 );
+                }
                 scheduler = new LASchedulerV1( execution, client, namespace, config, new GreedyAlignment(costFunction) );
                 break;
             default:

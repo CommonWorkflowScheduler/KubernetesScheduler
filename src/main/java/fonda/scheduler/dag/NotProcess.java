@@ -14,7 +14,9 @@ public abstract class NotProcess extends Vertex {
         if ( !out.isEmpty() ) {
             for ( Edge edge : out ) {
                 final Vertex to = edge.getTo();
-                if ( to.getType() == Type.PROCESS ) results.add((Process) to);
+                if ( to.getType() == Type.PROCESS ) {
+                    results.add((Process) to);
+                }
                 results.addAll( to.getDescendants() );
             }
         }
@@ -25,7 +27,9 @@ public abstract class NotProcess extends Vertex {
         out.add( e );
         final Vertex to = e.getTo();
         final Set<Process> descendants = to.getDescendants();
-        if ( to.getType() == Type.PROCESS ) descendants.add((Process) to);
+        if ( to.getType() == Type.PROCESS ) {
+            descendants.add((Process) to);
+        }
         final Set<Process> ancestors = this.getAncestors();
         descendants.forEach( v -> v.ancestors.addAll( ancestors ) );
     }

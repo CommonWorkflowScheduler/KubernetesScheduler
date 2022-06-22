@@ -77,8 +77,12 @@ abstract class InputAlignmentClass implements InputAlignment {
                     ! canUseFileFromOtherTask( currentlyPlanedToCopy, pathFileLocationTriple, map, "currentSchedule" )
             ) {
                 final double newCost = findAlignmentForFile( pathFileLocationTriple, node.getNodeLocation(), map );
-                if ( newCost > maxCost ) return null;
-                if ( newCost > cost ) cost = newCost;
+                if ( newCost > maxCost ) {
+                    return null;
+                }
+                if ( newCost > cost ) {
+                    cost = newCost;
+                }
             }
         }
         return new FileAlignment( map, inputsOfTask.getSymlinks(), cost);

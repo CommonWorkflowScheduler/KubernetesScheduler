@@ -18,9 +18,15 @@ public class SymlinkOutput extends OutputFile {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SymlinkOutput)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SymlinkOutput)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
         SymlinkOutput that = (SymlinkOutput) o;
         return Objects.equals(dst, that.dst);
     }

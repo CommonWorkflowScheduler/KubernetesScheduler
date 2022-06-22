@@ -11,7 +11,9 @@ public class DAG {
 
     private Vertex getByUid( int uid ){
         final Vertex vertex = vertices.get(uid);
-        if ( vertex == null ) throw new IllegalStateException( "Cannot find vertex with id " + uid );
+        if ( vertex == null ) {
+            throw new IllegalStateException( "Cannot find vertex with id " + uid );
+        }
         return vertex;
     }
 

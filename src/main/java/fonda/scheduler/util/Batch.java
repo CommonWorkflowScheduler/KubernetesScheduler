@@ -43,7 +43,9 @@ public class Batch {
     public void informScheduable( Task task ){
         synchronized ( unready ){
             final boolean remove = unready.remove(task);
-            if ( remove ) ready.add( task );
+            if ( remove ) {
+                ready.add( task );
+            }
         }
     }
 
@@ -52,7 +54,9 @@ public class Batch {
     }
 
     public List<Task> getTasksToScheduleAndDestroy(){
-        if ( !closed ) throw new IllegalStateException("Batch was not yet closed!");
+        if ( !closed ) {
+            throw new IllegalStateException("Batch was not yet closed!");
+        }
         final List<Task> readyList = this.ready;
         this.ready = null;
         this.unready = null;

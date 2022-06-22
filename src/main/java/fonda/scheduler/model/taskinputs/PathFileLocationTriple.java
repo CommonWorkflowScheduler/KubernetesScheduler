@@ -25,7 +25,9 @@ public class PathFileLocationTriple implements Input {
     }
 
     public long getSizeInBytes() {
-        if ( this.size != -1 ) return this.size;
+        if ( this.size != -1 ) {
+            return this.size;
+        }
         long currentSize = 0;
         for (LocationWrapper location : locations) {
             currentSize += location.getSizeInBytes();
@@ -36,7 +38,9 @@ public class PathFileLocationTriple implements Input {
 
     public boolean locatedOnLocation(Location loc){
         for (LocationWrapper location : locations) {
-            if ( location.getLocation() == loc ) return true;
+            if ( location.getLocation() == loc ) {
+                return true;
+            }
         }
         return false;
     }

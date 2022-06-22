@@ -62,8 +62,9 @@ public class Folder extends HierarchyFile {
 
     public LocationWrapper addOrUpdateFile(final String name, boolean overwrite, final LocationWrapper location ) {
         final RealHierarchyFile file = (RealHierarchyFile) children.compute( name, (k, v) -> {
-            if (v == null || v.isDirectory() || v.isSymlink() )
+            if (v == null || v.isDirectory() || v.isSymlink() ) {
                 return new RealHierarchyFile( location );
+            }
             return v;
         } );
         return file.addOrUpdateLocation( overwrite, location );
@@ -71,8 +72,9 @@ public class Folder extends HierarchyFile {
 
     public boolean addSymlink( final String name, final Path dst ){
         children.compute( name, (k,v) -> {
-            if ( v == null || !v.isSymlink() || !((LinkHierarchyFile) v).getDst().equals(dst) )
+            if ( v == null || !v.isSymlink() || !((LinkHierarchyFile) v).getDst().equals(dst) ) {
                 return new LinkHierarchyFile( dst );
+            }
             return v;
         } );
         return true;

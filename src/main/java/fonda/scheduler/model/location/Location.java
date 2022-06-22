@@ -11,8 +11,12 @@ public abstract class Location implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Location)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Location)) {
+            return false;
+        }
         Location that = (Location) o;
         return ( getType() == that.getType() ) && ( getIdentifier().equals( that.getIdentifier() ));
     }

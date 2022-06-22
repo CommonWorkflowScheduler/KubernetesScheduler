@@ -54,7 +54,9 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
         taskData.removeAllNodesWhichHaveNotEnoughResources( availableByNode );
         final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy,availableByNode);
-        if ( result == null ) return null;
+        if ( result == null ) {
+            return null;
+        }
         final Task task = taskData.getTask();
         availableByNode.get(result.getA()).subFromThis(task.getPod().getRequest());
         taskData.addNs( System.nanoTime()- startTime );
@@ -139,7 +141,9 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 .map(task -> {
                     long startTime = System.nanoTime();
                     final TaskData taskData = calculateTaskData(task, availableByNode);
-                    if (taskData != null) taskData.addNs(System.nanoTime() - startTime);
+                    if (taskData != null) {
+                        taskData.addNs(System.nanoTime() - startTime);
+                    }
                     return taskData;
                 })
                 .filter(Objects::nonNull)
@@ -253,7 +257,9 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             }
         }
 
-        if ( bestAlignment == null ) return null;
+        if ( bestAlignment == null ) {
+            return null;
+        }
         storeTraceData(
                 taskData.getTask().getTraceRecord(),
                 triedNodes,
@@ -266,7 +272,9 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     }
 
     private void storeTraceData(final TraceRecord traceRecord, int triedNodes, List<Double> costs, int couldStopFetching, double bestCost, int noAlignmentFound){
-        if ( !traceEnabled ) return;
+        if ( !traceEnabled ) {
+            return;
+        }
         traceRecord.setSchedulerNodesTried( triedNodes );
         traceRecord.setSchedulerNodesCost( costs );
         traceRecord.setSchedulerCouldStopFetching( couldStopFetching );
@@ -286,7 +294,9 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             final Map<NodeWithAlloc, Requirements> availableByNode
     ) {
         final MatchingFilesAndNodes matchingFilesAndNodes = getMatchingFilesAndNodes(task, availableByNode);
-        if ( matchingFilesAndNodes == null || matchingFilesAndNodes.getNodes().isEmpty() ) return null;
+        if ( matchingFilesAndNodes == null || matchingFilesAndNodes.getNodes().isEmpty() ) {
+            return null;
+        }
         final TaskInputs inputsOfTask = matchingFilesAndNodes.getInputsOfTask();
         final long size = inputsOfTask.calculateAvgSize();
         final OutLabel outLabel = task.getConfig().getOutLabel();

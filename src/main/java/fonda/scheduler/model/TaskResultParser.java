@@ -30,7 +30,9 @@ public class TaskResultParser {
 
     private String getRootDir( File file ){
         try ( Scanner sc  = new Scanner( file ) ) {
-            if( sc.hasNext() ) return sc.next().split(";")[0];
+            if( sc.hasNext() ) {
+                return sc.next().split(";")[0];
+            }
         } catch (FileNotFoundException e) {
             log.error( "Cannot read " + file, e);
         }
@@ -41,7 +43,9 @@ public class TaskResultParser {
         in.skip( 1 )
                 .forEach( line -> {
                     String[] data = line.split(";");
-                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
+                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) {
+                        return;
+                    }
                     String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ].substring( taskRootDir.length() + 1 ) : data[ REAL_PATH ];
                     String modificationDate = data[ MODIFICATION_DATE ];
                     inputdata.put( path , modificationDate );
@@ -60,11 +64,15 @@ public class TaskResultParser {
         out.skip( 1 )
                 .forEach( line -> {
                     String[] data = line.split(";");
-                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) return;
+                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) {
+                        return;
+                    }
                     boolean realFile = data[ REAL_PATH ].equals("");
                     String path = realFile ? data[ VIRTUAL_PATH ] : data[ REAL_PATH ];
                     String modificationDate = data[ MODIFICATION_DATE ];
-                    if ( "directory".equals(data[ FILE_TYPE ]) ) return;
+                    if ( "directory".equals(data[ FILE_TYPE ]) ) {
+                        return;
+                    }
                     String lockupPath = realFile ? path.substring( outputRootDir.length() + 1 ) : path;
                     if ( ( !inputdata.containsKey(lockupPath) && !onlyUpdated )
                             ||
@@ -105,13 +113,16 @@ public class TaskResultParser {
 
         final String taskRootDir = getRootDir( infile.toFile() );
         if( taskRootDir == null
-                && (finishedTask.getInputFiles() == null || finishedTask.getInputFiles().isEmpty()) )
+                && (finishedTask.getInputFiles() == null || finishedTask.getInputFiles().isEmpty()) ) {
             throw new IllegalStateException("taskRootDir is null");
+        }
 
 
         final String outputRootDir = getRootDir( outfile.toFile() );
         //No outputs defined / found
-        if( outputRootDir == null ) return new HashSet<>();
+        if( outputRootDir == null ) {
+            return new HashSet<>();
+        }
 
         final Map<String, String> inputdata = new HashMap<>();
 

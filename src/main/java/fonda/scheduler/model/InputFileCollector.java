@@ -29,7 +29,9 @@ public class InputFileCollector {
     ) throws NoAlignmentFoundException {
         final Tuple<HierarchyFile, Path> tuple = toProcess.removeLast();
         final HierarchyFile file = tuple.getA();
-        if( file == null ) return;
+        if( file == null ) {
+            return;
+        }
         final Path path = tuple.getB();
         if ( file.isSymlink() ){
             final Path linkTo = ((LinkHierarchyFile) file).getDst();
@@ -68,7 +70,9 @@ public class InputFileCollector {
             processNext( toProcess, symlinks, files, excludedLocations, task );
         }
 
-        if( excludedLocations.size() == numberNode ) return null;
+        if( excludedLocations.size() == numberNode ) {
+            return null;
+        }
 
         return new TaskInputs( symlinks, files, excludedLocations );
 

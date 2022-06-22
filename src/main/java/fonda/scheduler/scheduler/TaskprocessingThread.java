@@ -29,7 +29,9 @@ public class TaskprocessingThread extends Thread {
                         if (unscheduled == unprocessedTasks.size()) {
                             unprocessedTasks.wait( 10000 );
                         }
-                        if( Thread.interrupted() ) return;
+                        if( Thread.interrupted() ) {
+                            return;
+                        }
                     } while ( unprocessedTasks.isEmpty() );
                     tasks = new LinkedList<>(unprocessedTasks);
                 }
