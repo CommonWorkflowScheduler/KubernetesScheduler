@@ -7,4 +7,7 @@ RUN mkdir -p /var/run/vsftpd/empty
 
 COPY vsftpd.conf /etc/vsftpd.conf
 
+USER root
+RUN echo 'root:password' | chpasswd
+
 ENTRYPOINT ["sh","-c","/usr/sbin/vsftpd /etc/vsftpd.conf"]

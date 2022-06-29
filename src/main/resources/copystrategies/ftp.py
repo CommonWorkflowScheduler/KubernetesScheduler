@@ -71,7 +71,7 @@ def getFTP(node, currentIP, dns, syncFile):
                 ip = currentIP
             log.info("Try to connect to %s", ip)
             ftp = ftplib.FTP(ip)
-            ftp.login("ftp", "pythonclient")
+            ftp.login("root", "password")
             ftp.set_pasv(True)
             ftp.encoding = 'utf-8'
             log.info("Connection established")
