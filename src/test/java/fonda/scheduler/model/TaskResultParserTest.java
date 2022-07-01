@@ -13,13 +13,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -68,14 +66,15 @@ public class TaskResultParserTest {
     public void test1(){
 
         String[] infiles = {
-                "/tmp/nxf.3iuGDWr6Id;0;;4096;directory;-;2021-11-10 12:58:11.210414589 +0000;2021-11-10 12:58:11.222414603 +0000",
-                "/tmp/nxf.3iuGDWr6Id/file.txt;1;/pvcdata/testfile.txt;6;regular file;-;2021-11-10 12:58:07.485035700 +0000;2021-11-10 12:58:07.219065500 +0000",
-                "/tmp/nxf.3iuGDWr6Id/.command.err;1;;0;regular empty file;-;2021-11-10 12:58:11.222414603 +0000;2021-11-10 12:58:11.222414603 +0000",
-                "/tmp/nxf.3iuGDWr6Id/.command.out;1;;0;regular empty file;-;2021-11-10 12:58:11.222414603 +0000;2021-11-10 12:58:11.222414603 +0000"
+                "2021-11-10 12:58:11.222414603 +0000",
+                "/tmp/nxf.3iuGDWr6Id;1;;4096;directory",
+                "/tmp/nxf.3iuGDWr6Id/file.txt;1;/pvcdata/testfile.txt;6;regular file",
+                "/tmp/nxf.3iuGDWr6Id/.command.err;1;;0;regular empty file",
+                "/tmp/nxf.3iuGDWr6Id/.command.out;1;;0;regular empty file"
         };
 
         String[] outfiles = {
-                "/localdata/localwork/1e/249602b469f33100bb4a65203cb650;0;;4096;directory;-;2021-11-10 12:58:11.278414667 +0000;2021-11-10 12:58:11.278414667 +0000",
+                "/localdata/localwork/1e/249602b469f33100bb4a65203cb650;1;;4096;directory;-;2021-11-10 12:58:11.278414667 +0000;2021-11-10 12:58:11.278414667 +0000",
                 "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file.txt;1;/pvcdata/testfile.txt;13;regular file;-;2021-11-10 12:58:11.230039000 +0000;2021-11-10 12:58:11.230039000 +0000",
                 "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file1.txt;1;/pvcdata/testfile.txt;13;regular file;-;2021-11-10 12:58:11.230039000 +0000;2021-11-10 12:58:11.230039000 +0000"
         };
@@ -102,10 +101,11 @@ public class TaskResultParserTest {
     public void test2(){
 
         String[] infiles = {
-                "/tmp/nxf.IANFIlM3Kv;0;;4096;directory;-;2021-11-12 12:42:42.155614026 +0000;2021-11-12 12:42:42.171614019 +0000",
-                "/tmp/nxf.IANFIlM3Kv/file.txt;1;/pvcdata/testfile.txt;0;regular empty file;-;2021-11-12 12:42:29.000000000 +0000;2021-11-12 12:42:29.000000000 +0000",
-                "/tmp/nxf.IANFIlM3Kv/.command.err;1;;0;regular empty file;-;2021-11-12 12:42:42.171614019 +0000;2021-11-12 12:42:42.171614019 +0000",
-                "/tmp/nxf.IANFIlM3Kv/.command.out;1;;0;regular empty file;-;2021-11-12 12:42:42.171614019 +0000;2021-11-12 12:42:42.171614019 +0000"
+                "2021-11-12 12:42:42.171614019 +0000",
+                "/tmp/nxf.IANFIlM3Kv;1;;4096;directory",
+                "/tmp/nxf.IANFIlM3Kv/file.txt;1;/pvcdata/testfile.txt;0;regular empty file",
+                "/tmp/nxf.IANFIlM3Kv/.command.err;1;;0;regular empty file",
+                "/tmp/nxf.IANFIlM3Kv/.command.out;1;;0;regular empty file"
         };
 
         String[] outfiles = {
@@ -139,16 +139,23 @@ public class TaskResultParserTest {
     @Test
     public void test3(){
 
+        final TaskResultParser taskResultParser = new TaskResultParser();
+
         String[] infiles = {
-            "/tmp/nxf.9J6Y5mcXRD;0;;4096;directory;-;2021-11-12 14:42:20.941053482 +0000;2021-11-12 14:42:20.937053480 +0000",
-            "/tmp/nxf.9J6Y5mcXRD/t;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t;4096;directory;-;2021-11-12 14:42:17.009050211 +0000;2021-11-12 14:42:16.973050180 +0000",
-            "/tmp/nxf.9J6Y5mcXRD/t/filenew.txt;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/filenew.txt;0;regular empty file;-;2021-11-12 14:42:16.969050176 +0000;2021-11-12 14:42:16.969050176 +0000",
-            "/tmp/nxf.9J6Y5mcXRD/t/b.txt;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/b.txt;2;regular file;-;2021-11-12 14:42:16.973050180 +0000;2021-11-12 14:42:16.973050180 +0000",
-            "/tmp/nxf.9J6Y5mcXRD/t/c.txt;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/c.txt;2;regular file;-;2021-11-12 14:42:16.973050180 +0000;2021-11-12 14:42:16.973050180 +0000",
-            "/tmp/nxf.9J6Y5mcXRD/t/a.txt;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt;2;regular file;-;2021-11-12 14:42:16.973050180 +0000;2021-11-12 14:42:16.973050180 +0000",
-            "/tmp/nxf.9J6Y5mcXRD/.command.err;1;;0;regular empty file;-;2021-11-12 14:42:20.937053480 +0000;2021-11-12 14:42:20.937053480 +0000",
-            "/tmp/nxf.9J6Y5mcXRD/.command.out;1;;0;regular empty file;-;2021-11-12 14:42:20.937053480 +0000;2021-11-12 14:42:20.937053480 +0000"
+            "2021-11-12 14:42:20.941053482 +0000",
+            "/tmp/nxf.9J6Y5mcXRD;1;;4096;directory",
+            "/tmp/nxf.9J6Y5mcXRD/t;1;/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t;4096;directory",
+            "/tmp/nxf.9J6Y5mcXRD/t/filenew.txt;1;;0;regular empty file",
+            "/tmp/nxf.9J6Y5mcXRD/t/b.txt;1;;2;regular file",
+            "/tmp/nxf.9J6Y5mcXRD/t/c.txt;1;;2;regular file",
+            "/tmp/nxf.9J6Y5mcXRD/t/a.txt;1;;2;regular file",
+            "/tmp/nxf.9J6Y5mcXRD/.command.err;1;;0;regular empty file",
+            "/tmp/nxf.9J6Y5mcXRD/.command.out;1;;0;regular empty file"
         };
+
+        Set<String> inputData = new HashSet();
+        taskResultParser.processInput(Arrays.stream(infiles),inputData,"/tmp/nxf.9J6Y5mcXRD");
+        log.info("INPUTS: {}", inputData);
 
         String[] outfiles = {
             "/localdata/localwork/a2/f105825376b35dd6918824136adbf6;0;;4096;directory;-;2021-11-12 14:42:21.005053535 +0000;2021-11-12 14:42:21.009053539 +0000",
@@ -161,7 +168,6 @@ public class TaskResultParserTest {
 
         final Path path = storeData(infiles, outfiles);
 
-        final TaskResultParser taskResultParser = new TaskResultParser();
         final NodeLocation node1 = NodeLocation.getLocation("Node1");
         final Task task = new Task( new TaskConfig("P1"), dag );
         final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(path, node1, false, task);
@@ -177,6 +183,23 @@ public class TaskResultParserTest {
 
         assertEquals( expected, newAndUpdatedFiles );
 
+    }
+
+    @Test
+    public void test4(){
+
+        String[] infiles = {
+                "---",
+                "---",
+                "/localdata/localwork/scratch/nxf.ZENnNNr9nq/wvdb;1;/input/FORCE2NXF-Rangeland/inputdata/wvdb;0;directory",
+                "/localdata/localwork/scratch/nxf.ZENnNNr9nq/wvdb/WVP_2020-12-16.txt;1;;420379;regular file",
+        };
+
+        final TaskResultParser taskResultParser = new TaskResultParser();
+        Set<String> inputData = new HashSet();
+        taskResultParser.processInput(Arrays.stream(infiles),inputData,"/localdata/localwork/scratch/nxf.ZENnNNr9nq/");
+        final HashSet<String> expected = new HashSet<>();
+        log.info("{}", inputData);
     }
 
 }

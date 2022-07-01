@@ -28,10 +28,14 @@ public class TaskResultParser {
     static final int ACCESS_DATE = 6;
     static final int MODIFICATION_DATE = 7;
 
-    private String getRootDir( File file ){
+    public String getIndex( File file, int index ){
         try ( Scanner sc  = new Scanner( file ) ) {
-            if( sc.hasNext() ) {
-                return sc.next().split(";")[0];
+            int i = 0;
+            while( sc.hasNext() && i++ < index ) {
+                sc.nextLine();
+            }
+            if ( sc.hasNext() ) {
+                return sc.nextLine();
             }
         } catch (FileNotFoundException e) {
             log.error( "Cannot read " + file, e);
@@ -39,26 +43,64 @@ public class TaskResultParser {
         return null;
     }
 
-    private void processInput( Stream<String> in, final Map<String, String> inputdata, final String taskRootDir ){
-        in.skip( 1 )
+    private String getRootDir( File file, int index ){
+        String data = getIndex( file, index );
+        if ( data == null ) {
+            return null;
+        }
+        return data.split(";")[0];
+    }
+
+    private Long getDateDir(File file ){
+        String data = getIndex( file, 0 );
+        if ( data == null ) {
+            return null;
+        }
+        return DateParser.millisFromString( data );
+    }
+
+    public void processInput( Stream<String> in, final Set<String> inputdata, final String taskRootDir ){
+        Map<Path,Path> sourceTarget = new HashMap<>();
+        in.skip( 2 )
                 .forEach( line -> {
                     String[] data = line.split(";");
-                    if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) {
+                    if( data[ FILE_EXISTS ].equals("0") ) {
                         return;
                     }
+                    if ( data[ FILE_TYPE ].equals("directory") ) {
+                        if ( !data[ VIRTUAL_PATH ].equals("") ) {
+                            sourceTarget.put(Paths.get(data[VIRTUAL_PATH].substring(taskRootDir.length() + 1)), Paths.get(data[REAL_PATH]));
+                        }
+                       return;
+                    }
                     String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ].substring( taskRootDir.length() + 1 ) : data[ REAL_PATH ];
-                    String modificationDate = data[ MODIFICATION_DATE ];
-                    inputdata.put( path , modificationDate );
+                    if ( !path.startsWith("/") ){
+                        //Relative path
+                        Path intialPath = Paths.get(path);
+                        Path pathTmp = intialPath;
+                        while ( (pathTmp = pathTmp.getParent()) != null ) {
+                            if ( !sourceTarget.containsKey( pathTmp ) ){
+                            } else {
+                                Path suffix = pathTmp.relativize( intialPath );
+                                path = sourceTarget.get( pathTmp ).resolve( suffix ).toString();
+                                //Fix to run tests on Windows
+                                path = path.replace("\\","/");
+                                break;
+                            }
+                        }
+                    }
+                    inputdata.add( path );
                 });
     }
 
     private Set<OutputFile> processOutput(
             final Stream<String> out,
-            final Map<String, String> inputdata,
+            final Set<String> inputdata,
             final Location location,
             final boolean onlyUpdated,
             final Task finishedTask,
-            final String outputRootDir
+            final String outputRootDir,
+            final long initailDate
             ){
         final Set<OutputFile> newOrUpdated = new HashSet<>();
         out.skip( 1 )
@@ -74,9 +116,10 @@ public class TaskResultParser {
                         return;
                     }
                     String lockupPath = realFile ? path.substring( outputRootDir.length() + 1 ) : path;
-                    if ( ( !inputdata.containsKey(lockupPath) && !onlyUpdated )
+                    log.info( "lockupPath " + lockupPath + " contains: " + inputdata.contains( lockupPath ) + " Date: " + (DateParser.millisFromString(modificationDate) > initailDate) );
+                    if ( ( !inputdata.contains(lockupPath) && !onlyUpdated )
                             ||
-                            !modificationDate.equals( inputdata.get( lockupPath ) ))
+                            DateParser.millisFromString(modificationDate) > initailDate )
                     {
                         final LocationWrapper locationWrapper = new LocationWrapper(
                                 location,
@@ -111,20 +154,20 @@ public class TaskResultParser {
         final Path infile = workdir.resolve(".command.infiles");
         final Path outfile = workdir.resolve(".command.outfiles");
 
-        final String taskRootDir = getRootDir( infile.toFile() );
+        final String taskRootDir = getRootDir( infile.toFile(), 1 );
         if( taskRootDir == null
                 && (finishedTask.getInputFiles() == null || finishedTask.getInputFiles().isEmpty()) ) {
             throw new IllegalStateException("taskRootDir is null");
         }
 
 
-        final String outputRootDir = getRootDir( outfile.toFile() );
+        final String outputRootDir = getRootDir( outfile.toFile(), 0 );
         //No outputs defined / found
         if( outputRootDir == null ) {
             return new HashSet<>();
         }
 
-        final Map<String, String> inputdata = new HashMap<>();
+        final Set<String> inputdata = new HashSet<>();
 
 
         try (
@@ -134,7 +177,8 @@ public class TaskResultParser {
 
             processInput( in, inputdata, taskRootDir );
             log.trace( "{}", inputdata );
-            return processOutput( out, inputdata, location, onlyUpdated, finishedTask, outputRootDir );
+            final Long initialDate = getDateDir( infile.toFile() );
+            return processOutput( out, inputdata, location, onlyUpdated, finishedTask, outputRootDir, initialDate );
 
         } catch (IOException e) {
             log.error( "Cannot read in/outfile in workdir: " + workdir, e);
