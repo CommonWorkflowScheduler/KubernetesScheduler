@@ -105,7 +105,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         while( !unscheduledTasksSorted.isEmpty() ){
             TaskData taskData = unscheduledTasksSorted.poll();
             boolean changed = false;
-            log.info( "TaskData: {}", taskData.getTask().getPod().getName() );
+            log.trace( "TaskData: {}", taskData.getTask().getPod().getName() );
             if ( !taskData.isWeightWasSet() ) {
                 log.info( "TaskData: {} weight was not set", taskData.getTask().getPod().getName() );
                 final NodeLocation nodeForLabel = outLabelHolder.getNodeForLabel(taskData.getTask().getOutLabel());
@@ -280,6 +280,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         traceRecord.setSchedulerCouldStopFetching( couldStopFetching );
         traceRecord.setSchedulerBestCost( bestCost );
         traceRecord.setSchedulerNoAlignmentFound( noAlignmentFound );
+        traceRecord.foundAlignment();
     }
 
 

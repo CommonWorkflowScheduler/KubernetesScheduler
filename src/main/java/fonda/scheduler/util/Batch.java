@@ -1,6 +1,7 @@
 package fonda.scheduler.util;
 
 import fonda.scheduler.model.Task;
+import fonda.scheduler.model.tracing.TraceRecord;
 import lombok.Getter;
 
 import java.util.HashSet;
@@ -18,6 +19,10 @@ public class Batch {
     private Set<Task> unready = new HashSet<>();
     private int tasksInBatch = -1;
 
+    private long createTime = System.currentTimeMillis();
+
+    private long closeTime;
+
     public Batch(int id) {
         this.id = id;
     }
@@ -25,6 +30,7 @@ public class Batch {
     public void close( int tasksInBatch ){
         this.closed = true;
         this.tasksInBatch = tasksInBatch;
+        closeTime = System.currentTimeMillis();
     }
 
     public void registerTask( Task task ){
@@ -38,6 +44,10 @@ public class Batch {
             unready.add( task );
         }
         task.setBatch( this );
+        final TraceRecord traceRecord = task.getTraceRecord();
+        traceRecord.setSchedulerBatchId( id );
+        traceRecord.setSchedulerDeltaBatchStartSubmitted((int) (System.currentTimeMillis() - createTime));
+
     }
 
     public void informScheduable( Task task ){
@@ -47,6 +57,7 @@ public class Batch {
                 ready.add( task );
             }
         }
+        task.getTraceRecord().setSchedulerDeltaBatchStartReceived((int) (System.currentTimeMillis() - createTime));
     }
 
     public boolean canSchedule(){
@@ -58,6 +69,13 @@ public class Batch {
             throw new IllegalStateException("Batch was not yet closed!");
         }
         final List<Task> readyList = this.ready;
+        long start = System.currentTimeMillis();
+        int deltaCloseEnd = (int) (start - closeTime);
+        readyList.parallelStream().forEach( task -> {
+            final TraceRecord traceRecord = task.getTraceRecord();
+            traceRecord.setSchedulerDeltaSubmittedBatchEnd((int) (start - createTime - traceRecord.getSchedulerDeltaBatchStartSubmitted()));
+            traceRecord.setSchedulerDeltaBatchClosedBatchEnd( deltaCloseEnd );
+        });
         this.ready = null;
         this.unready = null;
         return readyList;

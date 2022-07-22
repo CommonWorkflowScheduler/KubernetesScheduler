@@ -81,8 +81,9 @@ public abstract class Scheduler {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
+        long startSchedule = System.currentTimeMillis();
         if( traceEnabled ) {
-            unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule() );
+            unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
@@ -374,6 +375,7 @@ public abstract class Scheduler {
 
         alignment.task.submitted();
         if( traceEnabled ) {
+            alignment.task.getTraceRecord().submitted();
             alignment.task.writeTrace();
         }
 

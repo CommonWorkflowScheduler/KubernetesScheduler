@@ -14,14 +14,17 @@ public class TraceRecord {
 
     @Getter
     @Setter
+    /*Filesize required for task*/
     private Long schedulerFilesBytes = null;
 
     @Getter
     @Setter
+    /*Filesize required for task and already on node*/
     private Long schedulerFilesNodeBytes = null;
 
     @Getter
     @Setter
+    /*Filesize required for task and already copied by other task*/
     private Long schedulerFilesNodeOtherTaskBytes = null;
 
     @Getter
@@ -82,6 +85,35 @@ public class TraceRecord {
     @Setter
     private Integer schedulerNoAlignmentFound = null;
 
+    private Integer schedulerDeltaScheduleSubmitted = null;
+
+    private Integer schedulerDeltaScheduleAlignment = null;
+
+    @Getter
+    @Setter
+    /*ID of the batch*/
+    private Integer schedulerBatchId = null;
+
+    @Getter
+    @Setter
+    /*Time delta between a batch was started and the scheduler received this task from the workflow engine*/
+    private Integer schedulerDeltaBatchStartSubmitted = null;
+
+    @Getter
+    @Setter
+    /*Time delta between a batch was started and the scheduler received the pod from the k8s API*/
+    private Integer schedulerDeltaBatchStartReceived = null;
+
+    @Getter
+    @Setter
+    /*Time delta between a batch was closed by the workflow engine and the scheduler received the pod from the k8s API*/
+    private Integer schedulerDeltaBatchClosedBatchEnd = null;
+
+    @Getter
+    @Setter
+    /*Time delta between a task was submitted and the batch became scheduable*/
+    private Integer schedulerDeltaSubmittedBatchEnd = null;
+
     public void writeRecord( String tracePath ) throws IOException {
 
         try ( BufferedWriter bw = new BufferedWriter( new FileWriter( tracePath ) ) ) {
@@ -104,6 +136,14 @@ public class TraceRecord {
             writeValue("scheduler_nodes_to_copy_from", schedulerNodesToCopyFrom, bw);
             writeValue("scheduler_time_to_schedule", schedulerTimeToSchedule, bw);
             writeValue("scheduler_no_alignment_found", schedulerNoAlignmentFound, bw);
+            writeValue("scheduler_delta_schedule_submitted", schedulerDeltaScheduleSubmitted, bw);
+            writeValue("scheduler_delta_schedule_alignment", schedulerDeltaScheduleAlignment, bw);
+            writeValue("scheduler_batch_id", schedulerBatchId, bw);
+            writeValue("scheduler_delta_batch_start_submitted", schedulerDeltaBatchStartSubmitted, bw);
+            writeValue("scheduler_delta_batch_start_received", schedulerDeltaBatchStartReceived, bw);
+            writeValue("scheduler_delta_batch_closed_batch_end", schedulerDeltaBatchClosedBatchEnd, bw);
+            writeValue("scheduler_delta_submitted_batch_end", schedulerDeltaSubmittedBatchEnd, bw);
+
         }
 
     }
@@ -123,7 +163,24 @@ public class TraceRecord {
         }
     }
 
-    public void tryToSchedule(){
+    private long startSchedule = 0;
+
+    /**
+     * The task was submitted to a node
+     */
+    public void submitted() {
+        schedulerDeltaScheduleSubmitted = (int) (System.currentTimeMillis() - startSchedule);
+    }
+
+    /**
+     * Created an alignment for the task
+     */
+    public void foundAlignment() {
+        schedulerDeltaScheduleAlignment = (int) (System.currentTimeMillis() - startSchedule);
+    }
+
+    public void tryToSchedule( long startSchedule ){
+        this.startSchedule = startSchedule;
         schedulerTriedToSchedule++;
     }
 
