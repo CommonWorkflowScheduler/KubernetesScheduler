@@ -331,7 +331,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     MatchingFilesAndNodes getMatchingFilesAndNodes( final Task task, final Map<NodeWithAlloc, Requirements> availableByNode ){
         final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask(availableByNode, task);
         if( matchingNodesForTask.isEmpty() ) {
-            log.info( "No node with enough resources for {}", task.getConfig().getHash() );
+            log.trace( "No node with enough resources for {}", task.getConfig().getHash() );
             return null;
         }
 

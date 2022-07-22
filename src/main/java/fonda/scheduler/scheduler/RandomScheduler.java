@@ -39,7 +39,7 @@ public class RandomScheduler extends Scheduler {
                 }
 
             } else {
-                log.info( "No node with enough resources for {}", pod.getName() );
+                log.trace( "No node with enough resources for {}", pod.getName() );
             }
 
         }
