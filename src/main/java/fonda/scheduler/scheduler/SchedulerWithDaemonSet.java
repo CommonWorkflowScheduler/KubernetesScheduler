@@ -208,8 +208,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 traceRecord.setSchedulerFilesNode( alignmentWrapper.getFilesToCopy().size() + alignmentWrapper.getWaitFor().size() );
                 traceRecord.setSchedulerFilesNodeBytes( alignmentWrapper.getToCopySize() + alignmentWrapper.getToWaitSize() );
             } else {
-                filesOnNodeOtherTask += alignmentWrapper.getWaitFor().size() + alignmentWrapper.getFilesToCopy().size();
-                filesOnNodeOtherTaskByte += alignmentWrapper.getToWaitSize() + alignmentWrapper.getToCopySize();
+                filesOnNodeOtherTask += alignmentWrapper.getWaitFor().size();
+                filesOnNodeOtherTaskByte += alignmentWrapper.getToWaitSize();
+                filesNotOnNodeByte += alignmentWrapper.getToCopySize();
+                filesNotOnNode += alignmentWrapper.getFilesToCopy().size();
             }
         }
         if (traceRecord.getSchedulerFilesNode() == null) {
