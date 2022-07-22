@@ -174,15 +174,23 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         }
     }
 
-    private void removeFromCopyingToNode(NodeLocation nodeLocation, Map< String, Tuple<Task,Location>> toRemove ){
-        if ( nodeLocation == null ) {
-            throw new IllegalArgumentException( "NodeLocation cannot be null" );
+    private void removeFromCopyingToNode(NodeLocation nodeLocation, Map< String, Tuple<Task,Location>> toRemove ) {
+        if (nodeLocation == null) {
+            throw new IllegalArgumentException("NodeLocation cannot be null");
         }
-        final Map<String, Tuple<Task, Location>> pathTasks = copyingToNode.get(nodeLocation);
-        if( pathTasks == null || toRemove == null || toRemove.isEmpty() ) {
+        if (toRemove == null || toRemove.isEmpty()) {
             return;
         }
-        pathTasks.keySet().removeAll( toRemove.keySet() );
+        final Map<String, Tuple<Task, Location>> pathTasks;
+        synchronized (copyingToNode) {
+            pathTasks = copyingToNode.get(nodeLocation);
+        }
+        if ( pathTasks == null ) {
+            return;
+        }
+        synchronized ( pathTasks ) {
+            pathTasks.keySet().removeAll(toRemove.keySet());
+        }
     }
 
     private void traceAlignment( NodeTaskFilesAlignment alignment, WriteConfigResult writeConfigResult ) {
