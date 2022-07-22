@@ -56,39 +56,20 @@ public class TaskResultParser {
         if ( data == null ) {
             return null;
         }
-        return DateParser.millisFromString( data );
+        return Long.parseLong( data );
     }
 
-    public void processInput( Stream<String> in, final Set<String> inputdata, final String taskRootDir ){
-        Map<Path,Path> sourceTarget = new HashMap<>();
+    public void processInput( Stream<String> in, final Set<String> inputdata ){
         in.skip( 2 )
                 .forEach( line -> {
                     String[] data = line.split(";");
                     if( data[ FILE_EXISTS ].equals("0") ) {
                         return;
                     }
-                    if ( data[ FILE_TYPE ].equals("directory") ) {
-                        if ( !data[ VIRTUAL_PATH ].equals("") ) {
-                            sourceTarget.put(Paths.get(data[VIRTUAL_PATH].substring(taskRootDir.length() + 1)), Paths.get(data[REAL_PATH]));
-                        }
+                    if ( data[ 3 ].equals("directory") ) {
                        return;
                     }
-                    String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ].substring( taskRootDir.length() + 1 ) : data[ REAL_PATH ];
-                    if ( !path.startsWith("/") ){
-                        //Relative path
-                        Path intialPath = Paths.get(path);
-                        Path pathTmp = intialPath;
-                        while ( (pathTmp = pathTmp.getParent()) != null ) {
-                            if ( !sourceTarget.containsKey( pathTmp ) ){
-                            } else {
-                                Path suffix = pathTmp.relativize( intialPath );
-                                path = sourceTarget.get( pathTmp ).resolve( suffix ).toString();
-                                //Fix to run tests on Windows
-                                path = path.replace("\\","/");
-                                break;
-                            }
-                        }
-                    }
+                    String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ]  : data[ REAL_PATH ];
                     inputdata.add( path );
                 });
     }
@@ -109,28 +90,28 @@ public class TaskResultParser {
                     if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) {
                         return;
                     }
-                    boolean realFile = data[ REAL_PATH ].equals("");
-                    String path = realFile ? data[ VIRTUAL_PATH ] : data[ REAL_PATH ];
+                    boolean isSymlink = !data[ REAL_PATH ].equals("");
+                    String path = isSymlink ? data[ REAL_PATH ] : data[ VIRTUAL_PATH ];
                     String modificationDate = data[ MODIFICATION_DATE ];
-                    if ( "directory".equals(data[ FILE_TYPE ]) ) {
+                    if ( "directory".equals( data[ FILE_TYPE ] ) ) {
                         return;
                     }
-                    String lockupPath = realFile ? path.substring( outputRootDir.length() + 1 ) : path;
-                    log.info( "lockupPath " + lockupPath + " contains: " + inputdata.contains( lockupPath ) + " Date: " + (DateParser.millisFromString(modificationDate) > initailDate) );
+                    String lockupPath = isSymlink ? path : path.substring( outputRootDir.length() );
+                    long modificationDateNano = Long.parseLong( modificationDate );
                     if ( ( !inputdata.contains(lockupPath) && !onlyUpdated )
                             ||
-                            DateParser.millisFromString(modificationDate) > initailDate )
+                            modificationDateNano > initailDate )
                     {
                         final LocationWrapper locationWrapper = new LocationWrapper(
                                 location,
-                                DateParser.millisFromString(modificationDate),
+                                modificationDateNano / (int) 1.0E6,
                                 Long.parseLong(data[ SIZE ]),
                                 finishedTask
                         );
                         newOrUpdated.add( new PathLocationWrapperPair( Paths.get(path), locationWrapper ) );
                     }
-                    if( !realFile ){
-                        newOrUpdated.add( new SymlinkOutput( data[ VIRTUAL_PATH ], data[ REAL_PATH ]));
+                    if( isSymlink ){
+                        newOrUpdated.add( new SymlinkOutput( data[ VIRTUAL_PATH ], path ));
                     }
                 });
         return newOrUpdated;
@@ -175,7 +156,7 @@ public class TaskResultParser {
                 Stream<String> out = Files.lines(outfile)
         ) {
 
-            processInput( in, inputdata, taskRootDir );
+            processInput( in, inputdata );
             log.trace( "{}", inputdata );
             final Long initialDate = getDateDir( infile.toFile() );
             return processOutput( out, inputdata, location, onlyUpdated, finishedTask, outputRootDir, initialDate );
