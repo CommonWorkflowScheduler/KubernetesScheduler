@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import ftplib
 import json
 import logging as log
@@ -109,7 +109,7 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
         start = time.time()
         ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write, 102400)
         end = time.time()
-        sizeInMB = os.path.getsize(filename) / 1_000_000
+        sizeInMB = os.path.getsize(filename) / 1000000
         delta = (end - start)
         log.info("Speed: %.3f Mbit/s", sizeInMB / delta )
         return sizeInMB, delta
@@ -160,9 +160,9 @@ def download(node, currentIP, files, dns, syncFile):
 
 
 def waitForFiles(syncFilePath, files, startTime):
-    # wait max. 10 seconds
+    # wait max. 60 seconds
     while True:
-        if startTime + 10 < time.time():
+        if startTime + 60 < time.time():
             return False
         if os.path.isfile(syncFilePath):
             break
