@@ -34,6 +34,7 @@ import org.apache.commons.net.ftp.FTPClient;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -132,23 +133,31 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         finishedTasks.parallelStream().forEach( finishedTask -> {
             try{
                 freeLocations( finishedTask.getInputFiles() );
-                final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
-                        Paths.get(finishedTask.getWorkingDir()),
-                        finishedTask.getNode(),
-                        !finishedTask.wasSuccessfullyExecuted(),
-                        finishedTask
-                );
-                for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
-                    if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
-                        hierarchyWrapper.addFile(
-                                newAndUpdatedFile.getPath(),
-                                ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
-                        );
-                    } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
-                        hierarchyWrapper.addSymlink(
-                                newAndUpdatedFile.getPath(),
-                                ((SymlinkOutput) newAndUpdatedFile).getDst()
-                        );
+                final Integer exitCode = finishedTask.getPod().getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode();
+                log.info( "Pod finished with exitCode: {}", exitCode );
+                //Init failure
+                final Path workdir = Paths.get(finishedTask.getWorkingDir());
+                if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
+                    log.info( "Task " + finishedTask.getConfig().getHash() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and outfiles" );
+                } else {
+                    final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
+                            workdir,
+                            finishedTask.getNode(),
+                            !finishedTask.wasSuccessfullyExecuted(),
+                            finishedTask
+                    );
+                    for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
+                        if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
+                            hierarchyWrapper.addFile(
+                                    newAndUpdatedFile.getPath(),
+                                    ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
+                            );
+                        } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
+                            hierarchyWrapper.addSymlink(
+                                    newAndUpdatedFile.getPath(),
+                                    ((SymlinkOutput) newAndUpdatedFile).getDst()
+                            );
+                        }
                     }
                 }
             } catch ( Exception e ){
