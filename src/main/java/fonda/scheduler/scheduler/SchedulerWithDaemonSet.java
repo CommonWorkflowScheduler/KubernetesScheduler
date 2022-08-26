@@ -106,7 +106,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         alignment.task.setCopiedFiles( writeConfigResult.getInputFiles() );
         addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
         alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
-        getCopyStrategy().generateCopyScript( alignment.task );
+        getCopyStrategy().generateCopyScript( alignment.task, writeConfigResult.isWroteConfig() );
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         alignment.task.setInputFiles( allLocationWrappers );
         useLocations( allLocationWrappers );
@@ -293,8 +293,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             inputs.waitForTask( waitForTask );
             inputs.symlinks.addAll(alignment.fileAlignment.getSymlinks());
             inputs.sortData();
-            new ObjectMapper().writeValue( config, inputs );
-            return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode );
+            final boolean allEmpty = inputs.data.isEmpty() && inputs.symlinks.isEmpty() && inputs.waitForFilesOfTask.isEmpty();
+            if ( !allEmpty ) {
+                new ObjectMapper().writeValue( config, inputs );
+            }
+            return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode, !allEmpty);
 
         } catch (IOException e) {
             log.error( "Cannot write " + config, e);
