@@ -75,7 +75,7 @@ def getFTP(node, currentIP, dns, syncFile):
             else:
                 ip = currentIP
             log.info("Try to connect to %s", ip)
-            ftp = ftplib.FTP(ip)
+            ftp = ftplib.FTP(ip, timeout=10)
             ftp.login("root", "password")
             ftp.set_pasv(True)
             ftp.encoding = 'utf-8'
@@ -116,7 +116,7 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
         end = time.time()
         sizeInMB = os.path.getsize(filename) / 1000000
         delta = (end - start)
-        log.info("Speed: %.3f Mbit/s", sizeInMB / delta )
+        log.info("Speed: %.3f Mbit/s", sizeInMB / delta)
         return sizeInMB, delta
     except ftplib.error_perm as err:
         errors += 1
@@ -258,7 +258,7 @@ def downloadAllData(data, dns, syncFile):
                     throughput.append(f.result())
                     futures.remove(f)
             sleep(0.1)
-    trace["scheduler_init_throughput"] = "\"" + ",".join( "{}:{:.3f}".format(*x) for x in throughput) + "\""
+    trace["scheduler_init_throughput"] = "\"" + ",".join("{}:{:.3f}".format(*x) for x in throughput) + "\""
 
 
 def waitForDependingTasks(waitForFilesOfTask, startTime, syncDir):
