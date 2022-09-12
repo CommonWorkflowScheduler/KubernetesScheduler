@@ -3,6 +3,7 @@ package fonda.scheduler.model;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.location.NodeLocation;
 import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
@@ -27,6 +28,15 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     @Getter
     private final NodeLocation nodeLocation;
+
+    public NodeWithAlloc( String name ) {
+        this.kubernetesClient = null;
+        this.maxResources = null;
+        this.assignedPods = null;
+        this.nodeLocation = null;
+        this.setMetadata( new ObjectMeta() );
+        this.getMetadata().setName( name );
+    }
 
     public NodeWithAlloc( Node node, KubernetesClient kubernetesClient ) {
 
@@ -55,6 +65,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     public void addPod( PodWithAge pod ){
         Requirements request = pod.getRequest();
+        log.info( "New Pod on node {} with request {}", this.getMetadata().getName(), request );
         synchronized (assignedPods) {
             assignedPods.put( pod.getMetadata().getUid(), request );
         }
@@ -64,6 +75,10 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         synchronized (assignedPods) {
             return assignedPods.remove( pod.getMetadata().getUid() ) != null;
         }
+    }
+
+    public int getRunningPods(){
+        return assignedPods.size();
     }
 
     /**

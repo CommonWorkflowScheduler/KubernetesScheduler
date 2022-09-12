@@ -47,18 +47,20 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     private NodeTaskFilesAlignment createNodeAlignment (
             final TaskData taskData,
             final Map<NodeWithAlloc, Requirements> availableByNode,
+            final Map<NodeWithAlloc, Integer> assignedPodsByNode,
             Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
             int index
     ) {
         long startTime = System.nanoTime();
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
         taskData.removeAllNodesWhichHaveNotEnoughResources( availableByNode );
-        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy,availableByNode);
+        final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy, availableByNode, assignedPodsByNode);
         if ( result == null ) {
             return null;
         }
         final Task task = taskData.getTask();
         availableByNode.get(result.getA()).subFromThis(task.getPod().getRequest());
+        assignedPodsByNode.put(result.getA(), assignedPodsByNode.getOrDefault(result.getA(),0) + 1);
         taskData.addNs( System.nanoTime()- startTime );
         if ( traceEnabled ){
             task.getTraceRecord().setSchedulerTimeToSchedule((int) (taskData.getTimeInNs() / 1_000_000));
@@ -102,6 +104,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         int index = 0;
         final List<NodeTaskAlignment> alignment = new LinkedList<>();
         final Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy = new HashMap<>();
+        final Map<NodeWithAlloc, Integer> assignedPodsByNode = new HashMap<>();
         while( !unscheduledTasksSorted.isEmpty() ){
             TaskData taskData = unscheduledTasksSorted.poll();
             boolean changed = false;
@@ -121,7 +124,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                 continue;
             }
 
-            final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, planedToCopy, ++index);
+            final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, assignedPodsByNode, planedToCopy, ++index);
             if ( nodeAlignment != null ) {
                 alignment.add(nodeAlignment);
                 outLabelHolder.scheduleTaskOnNode( taskData.getTask(), nodeAlignment.node.getNodeLocation() );
@@ -157,32 +160,80 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
 
     /**
      * Performs a stalemate between two possible alignments.
+     * First check for available cpu, then for the number of running tasks, than for the memory.
+     * Decide randomly if all three are equal.
      * @return True if the new alignment is better
      */
     protected boolean stalemate(
             NodeWithAlloc oldNode,
             NodeWithAlloc newNode,
-            Map<NodeWithAlloc, Requirements> availableByNode)
+            Map<NodeWithAlloc, Requirements> availableByNode,
+            Map<NodeWithAlloc, Integer> assignedPodsByNode,
+            Requirements taskRequest )
     {
-        final Requirements availableNodeA = availableByNode.get( oldNode );
-        final Requirements availableNodeB = availableByNode.get( newNode );
 
-        //nodeA has less available CPU than nodeB
-        if( availableNodeA.getCpu().compareTo(availableNodeB.getCpu()) < 0 ) {
+        //Resources if this node executes the task
+        final Requirements availableNodeOld = availableByNode.get( oldNode ).sub( taskRequest );
+        final Requirements availableNodeNew = availableByNode.get( newNode ).sub( taskRequest );
+
+        //Calculate percentage of resources that are available
+        final double availableCpuOld = availableNodeOld.getCpu().doubleValue() / oldNode.getMaxResources().getCpu().doubleValue();
+        final double availableCpuNew = availableNodeNew.getCpu().doubleValue() / newNode.getMaxResources().getCpu().doubleValue();
+
+        double threshold = 0.05;
+
+        if ( availableCpuOld + threshold < availableCpuNew  ) {
+            log.trace( "Node {} has less available CPU than node {}", oldNode.getNodeLocation(), newNode.getNodeLocation() );
             return true;
-        } else if ( availableNodeA.getCpu().compareTo(availableNodeB.getCpu()) == 0 ) {
-            if( availableNodeA.getRam().compareTo(availableNodeB.getRam() ) < 0 ) {
+        } else if ( availableCpuOld - threshold > availableCpuNew ) {
+            log.trace( "Node {} has more available CPU than node {}", oldNode.getNodeLocation(), newNode.getNodeLocation() );
+            return false;
+        } else {
+
+            //CPU load comparable, compare number of running tasks
+
+            final int podsOnNewNode = newNode.getRunningPods() + assignedPodsByNode.getOrDefault( newNode, 0 );
+            final int podsOnOldNode = oldNode.getRunningPods() + assignedPodsByNode.getOrDefault( oldNode, 0 );
+
+            if ( podsOnNewNode < podsOnOldNode ) {
+                log.trace( "Node {} has less running pods than node {}", newNode.getNodeLocation(), oldNode.getNodeLocation() );
                 return true;
+            } else if ( podsOnNewNode > podsOnOldNode ) {
+                log.trace( "Node {} has more running pods than node {}", newNode.getNodeLocation(), oldNode.getNodeLocation() );
+                return false;
+            } else {
+
+                //CPU and number of running tasks are comparable, compare memory
+
+                final double availableRamOld = availableNodeOld.getRam().doubleValue() / oldNode.getMaxResources().getRam().doubleValue();
+                final double availableRamNew = availableNodeNew.getRam().doubleValue() / newNode.getMaxResources().getRam().doubleValue();
+
+                if ( availableRamOld + threshold < availableRamNew ) {
+                    log.trace( "Node {} has less available RAM than node {}", oldNode.getNodeLocation(), newNode.getNodeLocation() );
+                    return true;
+                } else if ( availableRamOld - threshold > availableRamNew ) {
+                    log.trace( "Node {} has more available RAM than node {}", oldNode.getNodeLocation(), newNode.getNodeLocation() );
+                    return false;
+                } else {
+
+                    //Everything is comparable, decide randomly
+                    log.trace( "Node {} and node {} are equally comparable -> decide randomly", oldNode.getNodeLocation(), newNode.getNodeLocation() );
+                    return Math.random() > 0.5;
+
+                }
+
             }
+
         }
-        return false;
+
     }
 
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
             Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
-            Map<NodeWithAlloc, Requirements> availableByNode)
-    {
+            Map<NodeWithAlloc, Requirements> availableByNode,
+            Map<NodeWithAlloc, Integer> assignedPodsByNode
+    ) {
         FileAlignment bestAlignment = null;
         NodeWithAlloc bestNode = null;
         boolean bestNodeHasOutLabel = false;
@@ -235,7 +286,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                                     ( isOnOutLabelNode
                                     ||
                                     //Previous node was not the out label node and this alignment wins in stalemate
-                                    ( !bestNodeHasOutLabel && stalemate( bestNode, currentNode, availableByNode ) ) )
+                                    ( !bestNodeHasOutLabel && stalemate( bestNode, currentNode, availableByNode, assignedPodsByNode, taskData.getTask().getPod().getRequest() ) ) )
                             )
                     ) {
                         bestNodeHasOutLabel = isOnOutLabelNode;
