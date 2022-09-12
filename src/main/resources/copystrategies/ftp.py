@@ -248,10 +248,11 @@ def downloadAllData(data, dns, syncFile):
             node = d["node"]
             currentIP = d["currentIP"]
             futures.append(executor.submit(download, node, currentIP, files, dns, syncFile))
-        trial = 0
+        lastNum = -1
         while len(futures) > 0:
-            if trial % 5 == 0:
+            if lastNum != len(futures):
                 log.info("Wait for %d threads to finish", len(futures))
+                lastNum = len(futures)
             for f in futures[:]:
                 if f.done():
                     throughput.append(f.result())
