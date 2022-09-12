@@ -134,6 +134,10 @@ public class TaskResultParser {
 
         final Path infile = workdir.resolve(".command.infiles");
         final Path outfile = workdir.resolve(".command.outfiles");
+        if ( !outfile.toFile().exists() ) {
+            log.error( "Cannot find outfile " + infile );
+            return new HashSet<>();
+        }
 
         final String taskRootDir = getRootDir( infile.toFile(), 1 );
         if( taskRootDir == null
