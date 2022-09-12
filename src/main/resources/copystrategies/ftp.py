@@ -48,15 +48,20 @@ def getIP(node, dns):
     return str(ip.decode("utf-8"))
 
 
-def clearLocatation(path):
+# True if the file was deleted or did not exist
+def clearLocation(path, dst=None):
     if os.path.exists(path):
         log.debug("Delete %s", path)
         if os.path.islink(path):
-            os.unlink(path)
+            if dst is not None and os.readlink(path) == dst:
+                return False
+            else:
+                os.unlink(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
         else:
             os.remove(path)
+    return True
 
 
 def getFTP(node, currentIP, dns, syncFile):
@@ -104,7 +109,7 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
     log.info("Download %s [%s/%s] - %s", node, str(index).rjust(len(str(size))), str(size), filename)
     try:
         syncFile.write("S-" + filename + '\n')
-        clearLocatation(filename)
+        clearLocation(filename)
         Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
         start = time.time()
         ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write, 102400)
@@ -225,9 +230,12 @@ def generateSymlinks(symlinks):
     for s in symlinks:
         src = s["src"]
         dst = s["dst"]
-        clearLocatation(src)
-        Path(src[:src.rindex("/")]).mkdir(parents=True, exist_ok=True)
-        os.symlink(dst, src)
+        if clearLocation(src, dst):
+            Path(src[:src.rindex("/")]).mkdir(parents=True, exist_ok=True)
+            try:
+                os.symlink(dst, src)
+            except FileExistsError:
+                log.warning("File exists: %s -> %s", src, dst)
 
 
 def downloadAllData(data, dns, syncFile):
