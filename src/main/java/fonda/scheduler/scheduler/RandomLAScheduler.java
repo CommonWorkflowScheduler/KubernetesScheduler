@@ -43,7 +43,8 @@ public class RandomLAScheduler extends LocationAwareScheduler {
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
             Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
-            Map<NodeWithAlloc, Requirements> availableByNode
+            Map<NodeWithAlloc, Requirements> availableByNode,
+            Map<NodeWithAlloc, Integer> assignedPodsByNode
     ){
         final Optional<NodeWithAlloc> nodeWithAlloc = selectNode(taskData.getNodeDataTuples(), taskData.getTask());
         if (nodeWithAlloc.isEmpty()) {
