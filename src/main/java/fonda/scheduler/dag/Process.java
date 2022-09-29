@@ -1,13 +1,85 @@
 package fonda.scheduler.dag;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class Process extends Vertex {
 
 
-    final Set<Process> descendants;
-    final Set<Process> ancestors;
+    private final Set<Process> descendants;
+    private final Set<Process> ancestors;
+
+    void addDescendant( Process p ) {
+        synchronized (descendants) {
+            descendants.add( p );
+        }
+    }
+
+    void addDescendant( Collection<Process> p ) {
+        synchronized (descendants) {
+            descendants.addAll( p );
+        }
+    }
+
+    void removeDescendant( Edge e, Collection<Process> pp ) {
+        synchronized (descendants) {
+            LinkedList<Process> toRemove = new LinkedList<>();
+            for (Process p : pp) {
+                boolean found = false;
+                for (Edge edge : out) {
+                    if ( edge != e && (edge.getTo().getDescendants().contains( p ) || edge.getTo() == p )) {
+                        found = true;
+                        break;
+                    }
+                }
+                if ( !found ) {
+                    descendants.remove( p );
+                    toRemove.add( p );
+                }
+            }
+            if ( !toRemove.isEmpty() ) {
+                for (Edge edge : in) {
+                    edge.getFrom().removeDescendant( edge, toRemove );
+                }
+            }
+        }
+    }
+
+    void addAncestor( Process p ) {
+        synchronized (ancestors) {
+            ancestors.add( p );
+        }
+    }
+
+    void addAncestor( Collection<Process> p ) {
+        synchronized (ancestors) {
+            ancestors.addAll( p );
+        }
+    }
+
+    void removeAncestor( Edge e, Collection<Process> pp ) {
+        synchronized (ancestors) {
+            LinkedList<Process> toRemove = new LinkedList<>();
+            for (Process p : pp) {
+                boolean found = false;
+                for (Edge edge : in) {
+                    if ( edge != e && (edge.getFrom().getAncestors().contains( p ) || edge.getFrom() == p) ) {
+                        found = true;
+                        break;
+                    }
+                }
+                if ( !found ) {
+                    ancestors.remove( p );
+                    toRemove.add( p );
+                }
+            }
+            for (Edge edge : out) {
+                edge.getTo().removeAncestor( edge, toRemove );
+            }
+        }
+    }
 
     /**
      * Only public for tests
@@ -42,15 +114,15 @@ public class Process extends Vertex {
             fromAncestors.add((Process) from);
         }
 
-        this.ancestors.addAll(fromAncestors);
+        this.addAncestor(fromAncestors);
         if ( from.getType() == Type.PROCESS ) {
-            ((Process) from).descendants.add( this );
+            ((Process) from).addDescendant( this );
         }
 
         final Set<Process> descendantsCopy = this.getDescendants();
         fromAncestors.forEach( v -> {
-            v.descendants.addAll( descendantsCopy );
-            v.descendants.add( this );
+            v.addDescendant( descendantsCopy );
+            v.addDescendant( this );
         });
     }
 
@@ -63,15 +135,15 @@ public class Process extends Vertex {
             toDescendants.add((Process) to);
         }
 
-        this.descendants.addAll(toDescendants);
+        this.addDescendant(toDescendants);
         if ( to.getType() == Type.PROCESS ) {
-            ((Process)to).ancestors.add( this );
+            ((Process)to).addAncestor( this );
         }
 
         final Set<Process> ancestorsCopy = this.getAncestors();
         toDescendants.forEach( v -> {
-            v.ancestors.addAll( ancestorsCopy );
-            v.ancestors.add( this );
+            v.addAncestor( ancestorsCopy );
+            v.addAncestor( this );
         });
     }
 

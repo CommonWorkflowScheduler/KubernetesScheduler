@@ -144,7 +144,7 @@ public class InputFileCollectorTest {
         vertexList.add(new Process("processB", 2));
         vertexList.add(new Process("processC", 3));
         dag.registerVertices(vertexList);
-        dag.registerEdges( List.of( new InputEdge(1,2),new InputEdge(2,3) ) );
+        dag.registerEdges( List.of( new InputEdge(1,1,2),new InputEdge(2,2,3) ) );
 
         final TaskConfig taskConfigA = new TaskConfig("processA");
         final Task taskA = new Task(taskConfigA, dag);
@@ -195,7 +195,7 @@ public class InputFileCollectorTest {
         vertexList.add(new Process("processB", 2));
         vertexList.add(new Process("processC", 3));
         dag.registerVertices(vertexList);
-        dag.registerEdges( List.of( new InputEdge(1,2),new InputEdge(2,3) ) );
+        dag.registerEdges( List.of( new InputEdge(1,1,2),new InputEdge(2,2,3) ) );
 
         final TaskConfig taskConfigA = new TaskConfig("processA");
         final Task taskA = new Task(taskConfigA, dag);

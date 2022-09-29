@@ -36,7 +36,7 @@ public class Operator extends NotProcess {
             ancestors.add((Process) from);
         }
         final Set<Process> descendants = this.getDescendants();
-        ancestors.forEach( v -> v.descendants.addAll( descendants ));
+        ancestors.forEach( v -> v.addDescendant( descendants ) );
     }
 
 }

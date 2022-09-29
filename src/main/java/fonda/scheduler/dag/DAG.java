@@ -7,9 +7,15 @@ import java.util.Map;
 public class DAG {
 
     private final Map<Integer, Vertex> vertices = new HashMap<>();
+    private final Map<Integer, Edge> edges = new HashMap<>();
     private final Map<String, Process> processes = new HashMap<>();
 
-    private Vertex getByUid( int uid ){
+    /**
+     * not private for testing
+     * @param uid
+     * @return
+     */
+    Vertex getByUid( int uid ){
         final Vertex vertex = vertices.get(uid);
         if ( vertex == null ) {
             throw new IllegalStateException( "Cannot find vertex with id " + uid );
@@ -41,9 +47,48 @@ public class DAG {
     public void registerEdges( List<InputEdge> edges ){
         synchronized ( this.vertices ) {
             for (InputEdge edge : edges) {
-                final Edge edgeNew = new Edge(edge.getLabel(), getByUid(edge.getFrom()), getByUid(edge.getTo()));
+                final Edge edgeNew = new Edge( edge.getUid(), edge.getLabel(), getByUid(edge.getFrom()), getByUid(edge.getTo()));
+                synchronized ( this.edges ) {
+                    this.edges.put( edgeNew.getUid(), edgeNew );
+                }
                 edgeNew.getFrom().addOutbound(edgeNew);
                 edgeNew.getTo().addInbound(edgeNew);
+            }
+        }
+    }
+
+    /**
+     * This method removes vertices from the DAG plus the edges.
+     * @param verticesIds
+     */
+    public void removeVertices( int... verticesIds ){
+        synchronized ( this.vertices ) {
+            for ( int vertexId : verticesIds ) {
+                final Vertex remove = this.vertices.remove(vertexId);
+                if ( remove.getType() == Type.PROCESS ) {
+                    processes.remove(remove.getLabel());
+                }
+                remove.deleteItself();
+                synchronized ( this.edges ) {
+                    for (Edge edge : remove.getIn()) {
+                        this.edges.remove(edge.getUid());
+                    }
+                    for (Edge edge : remove.getOut()) {
+                        this.edges.remove(edge.getUid());
+                    }
+                }
+            }
+        }
+    }
+
+    public void removeEdges( int... edgesIds ){
+        synchronized ( this.vertices ) {
+            for ( int edgeId : edgesIds ) {
+                final Edge remove;
+                synchronized ( this.edges ) {
+                    remove = this.edges.remove( edgeId );
+                }
+                remove.getTo().removeInbound(remove);
             }
         }
     }

@@ -38,10 +38,10 @@ public class RealHierarchyFileTest {
         vertexList.add(new Process("processE", 5));
         dag.registerVertices(vertexList);
         List<InputEdge> edgeList = new LinkedList<>();
-        edgeList.add( new InputEdge(1,2) );
-        edgeList.add( new InputEdge(2,4) );
-        edgeList.add( new InputEdge(4,5) );
-        edgeList.add( new InputEdge(1,3) );
+        edgeList.add( new InputEdge(1,1,2) );
+        edgeList.add( new InputEdge(2,2,4) );
+        edgeList.add( new InputEdge(3,4,5) );
+        edgeList.add( new InputEdge(4,1,3) );
         dag.registerEdges(edgeList);
         processA = new Task( new TaskConfig("processA"), dag);
         processB = new Task( new TaskConfig("processB"), dag);

@@ -1,5 +1,6 @@
 package fonda.scheduler.dag;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,7 +16,7 @@ public abstract class NotProcess extends Vertex {
             for ( Edge edge : out ) {
                 final Vertex to = edge.getTo();
                 if ( to.getType() == Type.PROCESS ) {
-                    results.add((Process) to);
+                    results.add( (Process) to );
                 }
                 results.addAll( to.getDescendants() );
             }
@@ -28,10 +29,23 @@ public abstract class NotProcess extends Vertex {
         final Vertex to = e.getTo();
         final Set<Process> descendants = to.getDescendants();
         if ( to.getType() == Type.PROCESS ) {
-            descendants.add((Process) to);
+            descendants.add( (Process) to );
         }
         final Set<Process> ancestors = this.getAncestors();
-        descendants.forEach( v -> v.ancestors.addAll( ancestors ) );
+        descendants.forEach( v -> v.addAncestor( ancestors ) );
+    }
+
+    void removeDescendant( Edge e, Collection<Process> p ) {
+        for ( Edge edge : in ) {
+            edge.getFrom().removeDescendant( edge, p );
+        }
+    }
+
+
+    void removeAncestor( Edge e, Collection<Process> p ) {
+        for ( Edge edge : out ) {
+            edge.getTo().removeAncestor( edge, p );
+        }
     }
 
 }
