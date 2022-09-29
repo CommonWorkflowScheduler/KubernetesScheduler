@@ -52,7 +52,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             int index
     ) {
         long startTime = System.nanoTime();
-        log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getHash(), taskData.getValue() );
+        log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getRunName(), taskData.getValue() );
         taskData.removeAllNodesWhichHaveNotEnoughResources( availableByNode );
         final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy, availableByNode, assignedPodsByNode);
         if ( result == null ) {
@@ -292,7 +292,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                         bestNodeHasOutLabel = isOnOutLabelNode;
                         bestAlignment = fileAlignment;
                         bestNode = currentNode;
-                        log.info("Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getHash(), fileAlignment.getCost());
+                        log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getRunName(), fileAlignment.getCost() );
                     }
                 }
             } catch ( NoAligmentPossibleException e ){

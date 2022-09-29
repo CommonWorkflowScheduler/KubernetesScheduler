@@ -29,7 +29,7 @@ public class Inputs {
 
     public void waitForTask( Map<String, Task> waitForTask ){
         for (Map.Entry<String, Task> e : waitForTask.entrySet()) {
-            final String taskHash = e.getValue().getConfig().getHash();
+            final String taskHash = e.getValue().getConfig().getRunName();
             final List<String> listOfPaths = waitForFilesOfTask.computeIfAbsent( taskHash, k -> new LinkedList<>() );
             listOfPaths.add( e.getKey() );
         }

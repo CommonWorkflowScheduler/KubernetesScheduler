@@ -15,7 +15,10 @@ import io.fabric8.kubernetes.client.WatcherException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 @Slf4j
@@ -41,9 +44,10 @@ public abstract class Scheduler {
 
     final KubernetesClient client;
     private final Set<Task> upcomingTasks = new HashSet<>();
-    private final List<Task> unscheduledTasks = new ArrayList<>(100);
-    private final List<Task> unfinishedTasks = new ArrayList<>(100);
-    final Map<String, Task> tasksByHash = new HashMap<>();
+    private final List<Task> unscheduledTasks = new ArrayList<>( 100 );
+    private final List<Task> unfinishedTasks = new ArrayList<>( 100 );
+    final Map<String, Task> tasksByPodName = new HashMap<>();
+    final Map<Integer, Task> tasksById = new HashMap<>();
     private final Watch watcher;
     private final TaskprocessingThread schedulingThread;
     private final TaskprocessingThread finishThread;
@@ -112,7 +116,7 @@ public abstract class Scheduler {
                     continue;
                 }
             } catch ( Exception e ){
-                log.info( "Could not schedule task: {} undo all", nodeTaskAlignment.task.getConfig().getHash() );
+                log.info( "Could not schedule task: {} undo all", nodeTaskAlignment.task.getConfig().getRunName() );
                 e.printStackTrace();
                 undoTaskScheduling( nodeTaskAlignment.task );
                 if ( scheduleObject.isStopSubmitIfOneFails() ) {
@@ -241,14 +245,19 @@ public abstract class Scheduler {
 
     /* External access to Tasks */
 
-    public void addTask( TaskConfig conf ) {
+    public void addTask( int id, TaskConfig conf ) {
         final Task task = new Task( conf, dag );
-        synchronized (tasksByHash) {
-            if( ! tasksByHash.containsKey( conf.getHash() ) ){
-                tasksByHash.put( conf.getHash(), task );
+        synchronized ( tasksByPodName ) {
+            if ( !tasksByPodName.containsKey( conf.getRunName() ) ) {
+                tasksByPodName.put( conf.getRunName(), task );
             }
         }
-        synchronized ( upcomingTasks ){
+        synchronized ( tasksById ) {
+            if ( !tasksById.containsKey( id ) ) {
+                tasksById.put( id, task );
+            }
+        }
+        synchronized ( upcomingTasks ) {
             upcomingTasks.add( task );
         }
         if( currentBatchInstance != null ){
@@ -256,13 +265,21 @@ public abstract class Scheduler {
         }
     }
 
-    TaskConfig getConfigFor( String hash ){
-        synchronized (tasksByHash) {
-            if( tasksByHash.containsKey( hash ) ){
-                return tasksByHash.get( hash ).getConfig();
+    public boolean removeTask( int id ) {
+        final Task task;
+        synchronized ( tasksById ) {
+            task = tasksById.get( id );
             }
+        if ( task == null ) {
+            return false;
         }
-        return null;
+        synchronized ( tasksByPodName ) {
+            tasksByPodName.remove( task.getConfig().getRunName() );
+        }
+        synchronized ( upcomingTasks ) {
+            upcomingTasks.remove( task );
+        }
+        return true;
     }
 
     /**
@@ -275,10 +292,10 @@ public abstract class Scheduler {
         return new HashMap<>();
     }
 
-    public TaskState getTaskState(String taskid) {
-        synchronized (tasksByHash) {
-            if( tasksByHash.containsKey( taskid ) ){
-                return tasksByHash.get( taskid ).getState();
+    public TaskState getTaskState( int id ) {
+        synchronized ( tasksById ) {
+            if ( tasksById.containsKey( id ) ) {
+                return tasksById.get( id ).getState();
             }
         }
         return null;
@@ -400,7 +417,6 @@ public abstract class Scheduler {
     }
 
     /**
-     *
      * @param pod
      * @param state
      * @return returns the task, if the state was changed
@@ -428,9 +444,9 @@ public abstract class Scheduler {
 
     Task getTaskByPod( Pod pod ) {
         Task t = null;
-        synchronized (tasksByHash) {
-            if( tasksByHash.containsKey( pod.getMetadata().getName() ) ){
-                t = tasksByHash.get( pod.getMetadata().getName() );
+        synchronized ( tasksByPodName ) {
+            if ( tasksByPodName.containsKey( pod.getMetadata().getName() ) ) {
+                t = tasksByPodName.get( pod.getMetadata().getName() );
             }
         }
 

@@ -14,10 +14,11 @@ public class SchedulerConfig {
     public final String copyStrategy;
     public final boolean locationAware;
     public final boolean traceEnabled;
-
+    public final String namespace;
     public final String costFunction;
+    public final String strategy;
 
-    private SchedulerConfig(){
+    private SchedulerConfig() {
         this.localClaims = null;
         this.volumeClaims = null;
         this.workDir = null;
@@ -26,6 +27,8 @@ public class SchedulerConfig {
         this.locationAware = false;
         this.traceEnabled = false;
         this.costFunction = null;
+        this.namespace = null;
+        this.strategy = null;
     }
 
     @ToString

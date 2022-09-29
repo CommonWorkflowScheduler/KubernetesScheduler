@@ -138,7 +138,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 //Init failure
                 final Path workdir = Paths.get(finishedTask.getWorkingDir());
                 if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
-                    log.info( "Task " + finishedTask.getConfig().getHash() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and outfiles" );
+                    log.info( "Task " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and outfiles" );
                 } else {
                     final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                             workdir,
@@ -161,7 +161,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     }
                 }
             } catch ( Exception e ){
-                log.info( "Problem while finishing task: " + finishedTask.getConfig().getHash() + " (" + finishedTask.getConfig().getName() + ")", e );
+                log.info( "Problem while finishing task: " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ")", e );
             }
             super.taskWasFinished( finishedTask );
         });
@@ -256,7 +256,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             final Inputs inputs = new Inputs(
                     this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/",
                     this.localWorkDir + "/sync/",
-                    alignment.task.getConfig().getHash()
+                    alignment.task.getConfig().getRunName()
             );
 
             for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.getNodeFileAlignment().entrySet()) {
@@ -343,7 +343,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     MatchingFilesAndNodes getMatchingFilesAndNodes( final Task task, final Map<NodeWithAlloc, Requirements> availableByNode ){
         final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask(availableByNode, task);
         if( matchingNodesForTask.isEmpty() ) {
-            log.trace( "No node with enough resources for {}", task.getConfig().getHash() );
+            log.trace( "No node with enough resources for {}", task.getConfig().getRunName() );
             return null;
         }
 
@@ -354,13 +354,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             return null;
         }
         if( inputsOfTask == null ) {
-            log.info( "No node where the pod can start, pod: {}", task.getConfig().getHash() );
+            log.info( "No node where the pod can start, pod: {}", task.getConfig().getRunName() );
             return null;
         }
 
         filterNotMatchingNodesForTask( matchingNodesForTask, inputsOfTask );
         if( matchingNodesForTask.isEmpty() ) {
-            log.info( "No node which fulfills all requirements {}", task.getConfig().getHash() );
+            log.info( "No node which fulfills all requirements {}", task.getConfig().getRunName() );
             return null;
         }
 
@@ -381,7 +381,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     private void handleProblematicInit( Task task ){
-        String file = this.localWorkDir + "/sync/" + task.getConfig().getHash();
+        String file = this.localWorkDir + "/sync/" + task.getConfig().getRunName();
         try {
             Map<String,TaskInputFileLocationWrapper> wrapperByPath = new HashMap<>();
             task.getCopiedFiles().forEach( x -> wrapperByPath.put( x.getPath(), x ));

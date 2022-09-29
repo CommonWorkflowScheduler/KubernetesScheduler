@@ -15,7 +15,7 @@ public class TaskConfig {
     private final String name;
     private final Map< String, List<Object>> schedulerParams;
     private final TaskInput inputs;
-    private final String hash;
+    private final String runName;
     private final float cpus;
     private final long memoryInBytes;
     private final OutLabel outLabel;
@@ -34,7 +34,7 @@ public class TaskConfig {
         this.name = null;
         this.schedulerParams = null;
         this.inputs = new TaskInput( null, null, null, new LinkedList<>() );
-        this.hash = null;
+        this.runName = null;
         this.cpus = 0;
         this.memoryInBytes = 0;
         this.workDir = null;

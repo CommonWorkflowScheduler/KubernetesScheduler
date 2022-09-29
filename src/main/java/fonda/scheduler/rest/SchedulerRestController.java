@@ -14,7 +14,6 @@ import fonda.scheduler.scheduler.filealignment.RandomAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import fonda.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
 import lombok.extern.slf4j.Slf4j;
-import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -44,7 +43,7 @@ public class SchedulerRestController {
      * Execution: String in lowercase
      * Scheduler: An instance of a scheduler with the requested type
      */
-    private static final Map< Pair<String,String>, Scheduler > schedulerHolder = new HashMap<>();
+    private static final Map<String, Scheduler> schedulerHolder = new HashMap<>();
 
     public SchedulerRestController(
             @Autowired KubernetesClient client,
@@ -71,23 +70,25 @@ public class SchedulerRestController {
     }
 
     /**
-     * Register a sheduler for a workflow execution
-     * @param namespace namespace where the workflow runs
+     * Register a scheduler for a workflow execution
      * @param execution unique name of the execution
-     * @param strategy which scheduling strategy should be used
      * @param config Additional parameters for the scheduler
      * @return
      */
-    @PutMapping("/scheduler/registerScheduler/{namespace}/{execution}/{strategy}")
-    ResponseEntity<String> registerScheduler(@PathVariable String namespace, @PathVariable String execution, @PathVariable String strategy, @RequestBody(required = false) SchedulerConfig config ) {
+    @PostMapping("/v1/scheduler/{execution}")
+    ResponseEntity<String> registerScheduler(
+            @PathVariable String execution,
+            @RequestBody(required = false) SchedulerConfig config
+    ) {
 
-        log.info("Register execution: {} strategy: {} cf: {} config: {}", execution, strategy, config.costFunction, config);
+        final String namespace = config.namespace;
+        final String strategy = config.strategy;
+        log.info( "Register execution: {} strategy: {} cf: {} config: {}", execution, strategy, config.costFunction, config );
 
         Scheduler scheduler;
 
-        final Pair<String, String> key = getKey( namespace, execution );
 
-        if( schedulerHolder.containsKey( key ) ) {
+        if ( schedulerHolder.containsKey( execution ) ) {
             return noSchedulerFor( execution );
         }
 
@@ -120,7 +121,7 @@ public class SchedulerRestController {
                 return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
         }
 
-        schedulerHolder.put( key, scheduler );
+        schedulerHolder.put( execution, scheduler );
         client.addScheduler( scheduler );
 
         return new ResponseEntity<>( HttpStatus.OK );
@@ -129,35 +130,54 @@ public class SchedulerRestController {
 
     /**
      * Register a task for the execution
-     * @param namespace namespace where the workflow runs
+     *
      * @param execution unique name of the execution
      * @param config The config contains the task name, input files, and optional task parameter the scheduler has to determine
      * @return Parameters the scheduler suggests for the task
      */
-    @PutMapping("/scheduler/registerTask/{namespace}/{execution}")
-    ResponseEntity<? extends Object> registerTask(@PathVariable String namespace, @PathVariable String execution, @RequestBody TaskConfig config ) {
+    @PostMapping("/v1/scheduler/{execution}/task/{id}")
+    ResponseEntity<? extends Object> registerTask( @PathVariable String execution, @PathVariable int id, @RequestBody TaskConfig config ) {
 
         log.trace( execution + " " + config.getTask() + " got: " + config );
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if( scheduler == null ){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
 
-        scheduler.addTask( config );
-        Map<String, Object> schedulerParams = scheduler.getSchedulerParams(config.getTask(), config.getName());
+        scheduler.addTask( id, config );
+        Map<String, Object> schedulerParams = scheduler.getSchedulerParams( config.getTask(), config.getName() );
 
         return new ResponseEntity<>( schedulerParams, HttpStatus.OK );
 
     }
 
-    @PostMapping("/scheduler/startBatch/{namespace}/{execution}")
-    ResponseEntity<String> startBatch(@PathVariable String namespace, @PathVariable String execution ) {
+    /**
+     * Delete a task, onl works if the batch of the task was closed and if no pod was yet submitted.
+     * If a pod was submitted, delete the pod instead.
+     *
+     * @param execution
+     * @param id
+     * @return
+     */
+    @DeleteMapping("/v1/scheduler/{execution}/task/{id}")
+    ResponseEntity<? extends Object> deleteTask( @PathVariable String execution, @PathVariable int id ) {
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if( scheduler == null ){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+
+        final boolean found = scheduler.removeTask( id );
+        return new ResponseEntity<>( found ? HttpStatus.OK : HttpStatus.NOT_FOUND );
+
+    }
+
+    @PutMapping("/v1/scheduler/{execution}/startBatch")
+    ResponseEntity<String> startBatch( @PathVariable String execution ) {
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
         scheduler.startBatch();
@@ -165,12 +185,11 @@ public class SchedulerRestController {
 
     }
 
-    @PostMapping("/scheduler/endBatch/{namespace}/{execution}")
-    ResponseEntity<String> endBatch(@PathVariable String namespace, @PathVariable String execution, @RequestBody int tasksInBatch ) {
+    @PutMapping("/v1/scheduler/{execution}/endBatch")
+    ResponseEntity<String> endBatch( @PathVariable String execution, @RequestBody int tasksInBatch ) {
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if( scheduler == null ){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
         scheduler.endBatch( tasksInBatch );
@@ -180,55 +199,52 @@ public class SchedulerRestController {
 
     /**
      * Check Task state
-     * @param namespace namespace where the workflow runs
+     *
      * @param execution unique name of the execution
-     * @param taskid unique name of task (nf-XYZ...)
+     * @param id        unique id of task
      * @return boolean
      */
-    @GetMapping("/scheduler/taskstate/{namespace}/{execution}/{taskid}")
-    ResponseEntity<? extends Object> getTaskState(@PathVariable String namespace, @PathVariable String execution, @PathVariable String taskid ) {
+    @GetMapping("/v1/scheduler/{execution}/task/{id}")
+    ResponseEntity<? extends Object> getTaskState( @PathVariable String execution, @PathVariable int id ) {
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if( scheduler == null ){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
 
-        return new ResponseEntity<>( scheduler.getTaskState( taskid ), HttpStatus.OK );
+        return new ResponseEntity<>( scheduler.getTaskState( id ), HttpStatus.OK );
 
     }
 
     /**
      * Call this after the execution has finished
-     * @param namespace namespace where the workflow runs
+     *
      * @param execution unique name of the execution
      * @return
      */
-    @DeleteMapping ("/scheduler/{namespace}/{execution}")
-    ResponseEntity<String> delete(@PathVariable String namespace,  @PathVariable String execution) {
+    @DeleteMapping("/v1/scheduler/{execution}")
+    ResponseEntity<String> delete( @PathVariable String execution ) {
 
-        log.info("Delete scheduler: " + execution);
-        final Pair<String, String> key = getKey( namespace, execution );
+        log.info( "Delete scheduler: " + execution );
 
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if( scheduler == null ){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
-        schedulerHolder.remove( key );
+        schedulerHolder.remove( execution );
         client.removeScheduler( scheduler );
         scheduler.close();
         closedLastScheduler = System.currentTimeMillis();
         return new ResponseEntity<>( HttpStatus.OK );
     }
 
-    @GetMapping("/daemon/{namespace}/{execution}/{node}")
-    ResponseEntity<String> getDaemonName(@PathVariable String namespace, @PathVariable String execution, @PathVariable String node ) {
+    @GetMapping("/v1/daemon/{execution}/{node}")
+    ResponseEntity<String> getDaemonName( @PathVariable String execution, @PathVariable String node ) {
 
-        log.info( "Asking for Daemon ns: {} exec: {} node: {}", namespace, execution, node );
+        log.info( "Asking for Daemon exec: {} node: {}", execution, node );
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if(!(scheduler instanceof SchedulerWithDaemonSet)){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
             return noSchedulerFor( execution );
         }
 
@@ -242,14 +258,13 @@ public class SchedulerRestController {
 
     }
 
-    @GetMapping("/file/{namespace}/{execution}")
-    ResponseEntity<? extends Object> getNodeForFile(@PathVariable String namespace, @PathVariable String execution, @RequestParam String path ) {
+    @GetMapping("/v1/file/{execution}")
+    ResponseEntity<? extends Object> getNodeForFile( @PathVariable String execution, @RequestParam String path ) {
 
-        log.info( "Get file location request: {} {} {}", namespace, execution, path );
+        log.info( "Get file location request: {} {}", execution, path );
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if(!(scheduler instanceof SchedulerWithDaemonSet)){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
             return noSchedulerFor( execution );
         }
 
@@ -269,20 +284,19 @@ public class SchedulerRestController {
 
     }
 
-    @PostMapping("/file/location/{method}/{namespace}/{execution}")
-    ResponseEntity<String> changeLocationForFile(@PathVariable String method, @PathVariable String namespace, @PathVariable String execution, @RequestBody PathAttributes pa ) {
-        return changeLocationForFile(method,namespace,execution,null,pa);
+    @PostMapping("/v1/file/{execution}/location/{method}")
+    ResponseEntity<String> changeLocationForFile( @PathVariable String method, @PathVariable String execution, @RequestBody PathAttributes pa ) {
+        return changeLocationForFile( method, execution, null, pa );
     }
 
-    @PostMapping("/file/location/{method}/{namespace}/{execution}/{node}")
-    ResponseEntity<String> changeLocationForFile(@PathVariable String method, @PathVariable String namespace, @PathVariable String execution, @PathVariable String node, @RequestBody PathAttributes pa ) {
+    @PostMapping("/v1/file/{execution}/location/{method}/{node}")
+    ResponseEntity<String> changeLocationForFile( @PathVariable String method, @PathVariable String execution, @PathVariable String node, @RequestBody PathAttributes pa ) {
 
-        log.info( "Change file location request: {} {} {} {}", method, namespace, execution, pa );
+        log.info( "Change file location request: {} {} {}", method, execution, pa );
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if(!(scheduler instanceof SchedulerWithDaemonSet)){
-            log.info("No scheduler for: " + execution);
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
+            log.info( "No scheduler for: " + execution );
             return noSchedulerFor( execution );
         }
 
@@ -304,18 +318,13 @@ public class SchedulerRestController {
         return new ResponseEntity<>( HttpStatus.OK );
     }
 
-    private Pair<String,String> getKey(String namespace, String execution ){
-        return new Pair<>(namespace.toLowerCase(), execution.toLowerCase());
-    }
-
-    @PutMapping("/scheduler/DAG/addVertices/{namespace}/{execution}")
-    ResponseEntity<String> addVertices(@PathVariable String namespace, @PathVariable String execution, @RequestBody List<Vertex> vertices ) {
+    @PostMapping("/v1/scheduler/{execution}/DAG/vertices")
+    ResponseEntity<String> addVertices( @PathVariable String execution, @RequestBody List<Vertex> vertices ) {
 
         log.trace( "submit vertices: {}", vertices );
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if( scheduler == null ){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
 
@@ -325,19 +334,51 @@ public class SchedulerRestController {
 
     }
 
-    @PutMapping("/scheduler/DAG/addEdges/{namespace}/{execution}")
-    ResponseEntity<String> addEdges(@PathVariable String namespace, @PathVariable String execution, @RequestBody List<InputEdge> edges ) {
+    @DeleteMapping("/v1/scheduler/{execution}/DAG/vertices")
+    ResponseEntity<String> deleteVertices( @PathVariable String execution, @RequestBody int[] vertices ) {
+
+        log.trace( "submit vertices: {}", vertices );
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+
+        scheduler.getDag().removeVertices( vertices );
+
+        return new ResponseEntity<>( HttpStatus.OK );
+
+    }
+
+    @PostMapping("/v1/scheduler/{execution}/DAG/edges")
+    ResponseEntity<String> addEdges( @PathVariable String execution, @RequestBody List<InputEdge> edges ) {
 
         log.trace( "submit edges: {}", edges );
 
-        final Pair<String, String> key = getKey( namespace, execution );
-        final Scheduler scheduler = schedulerHolder.get( key );
-        if( scheduler == null ){
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
 
         final DAG dag = scheduler.getDag();
         dag.registerEdges( edges );
+
+        return new ResponseEntity<>( HttpStatus.OK );
+
+    }
+
+    @DeleteMapping("/v1/scheduler/{execution}/DAG/edges")
+    ResponseEntity<String> deleteEdges( @PathVariable String execution, @RequestBody int[] edges ) {
+
+        log.trace( "submit edges: {}", edges );
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+
+        final DAG dag = scheduler.getDag();
+        dag.removeEdges( edges );
 
         return new ResponseEntity<>( HttpStatus.OK );
 
