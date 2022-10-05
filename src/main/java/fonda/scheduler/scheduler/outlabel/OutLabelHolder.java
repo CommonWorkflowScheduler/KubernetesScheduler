@@ -18,6 +18,9 @@ public abstract class OutLabelHolder {
      * @return Null if no node was determined until now
      */
     public NodeLocation getNodeForLabel(String outLabel) {
+        if ( outLabel == null ) {
+            return null;
+        }
         final InternalHolder holder = internalHolder.get(outLabel);
         return holder == null ? null : holder.getBestNode().stream().findFirst().orElse(null);
     }
