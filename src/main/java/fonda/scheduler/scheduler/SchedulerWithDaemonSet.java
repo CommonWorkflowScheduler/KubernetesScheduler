@@ -254,7 +254,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
         try {
             final Inputs inputs = new Inputs(
-                    this.getDns() + "/daemon/" + getNamespace() + "/" + getExecution() + "/",
+                    this.getDns() + "daemon/" + getNamespace() + "/" + getExecution() + "/",
                     this.localWorkDir + "/sync/",
                     alignment.task.getConfig().getRunName()
             );
