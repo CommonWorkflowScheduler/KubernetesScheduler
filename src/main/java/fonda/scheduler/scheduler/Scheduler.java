@@ -60,7 +60,7 @@ public abstract class Scheduler {
         this.namespace = namespace;
         log.trace( "Register scheduler for " + this.name );
         this.client = client;
-        this.dns = config.dns;
+        this.dns = config.dns.endsWith( "/" ) ? config.dns : config.dns + "/";
         this.dag = new DAG();
         this.traceEnabled = config.traceEnabled;
 
