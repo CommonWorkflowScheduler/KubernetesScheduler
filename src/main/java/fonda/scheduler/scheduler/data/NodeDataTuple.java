@@ -27,12 +27,15 @@ public class NodeDataTuple implements Comparable<NodeDataTuple> {
         this.weight = weight;
     }
 
+    /**
+     * @return reduce the worth, if this is not the outLabelNode
+     */
     public double getWorth() {
         return getSizeInBytes() / weight;
     }
 
     @Override
-        public int compareTo(@NotNull NodeDataTuple o) {
-            return Double.compare( getWorth(), o.getWorth() );
-        }
+    public int compareTo(@NotNull NodeDataTuple o) {
+        return Double.compare( getWorth(), o.getWorth() );
+    }
 }
