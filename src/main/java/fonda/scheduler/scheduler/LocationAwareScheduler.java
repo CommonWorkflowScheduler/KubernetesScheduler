@@ -53,7 +53,6 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     ) {
         long startTime = System.nanoTime();
         log.info( "Task: {} has a value of: {}", taskData.getTask().getConfig().getRunName(), taskData.getValue() );
-        taskData.removeAllNodesWhichHaveNotEnoughResources( availableByNode );
         final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode(taskData, planedToCopy, availableByNode, assignedPodsByNode);
         if ( result == null ) {
             return null;
@@ -117,6 +116,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                     taskData.setNodeAndWeight( nodeForLabel, taskData.getTask().getConfig().getOutLabel().getWeight() );
                 }
             }
+            //Calculate the available nodes for this task + their weight. Re-add it to the queue, if it changed
             if ( taskData.calculate( availableByNode ) || changed ){
                 if ( !taskData.getNodeDataTuples().isEmpty() ) {
                     unscheduledTasksSorted.add(taskData);

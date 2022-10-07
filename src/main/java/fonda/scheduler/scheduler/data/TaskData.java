@@ -115,15 +115,6 @@ public class TaskData implements Comparable<TaskData> {
         return changed;
     }
 
-    public void removeAllNodesWhichHaveNotEnoughResources( Map<NodeWithAlloc, Requirements> availableByNode ) {
-        final Iterator<NodeDataTuple> iterator = nodeDataTuples.iterator();
-        while (iterator.hasNext()) {
-            if ( !availableByNode.get( iterator.next().getNode() ).higherOrEquals( task.getPod().getRequest() ) ) {
-                iterator.remove();
-            }
-        }
-    }
-
     private void calc() {
         if ( nodeDataTuples.isEmpty() ) {
             value = Double.MIN_VALUE;
