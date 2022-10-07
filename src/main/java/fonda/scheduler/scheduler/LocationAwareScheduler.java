@@ -23,6 +23,10 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
 
     @Getter(AccessLevel.PACKAGE)
     private final InputAlignment inputAlignment;
+    @Getter(AccessLevel.PACKAGE)
+    private final int maxCopyTasksPerNode;
+    @Getter(AccessLevel.PACKAGE)
+    private final int maxWaitingCopyTasksPerNode;
 
     public LocationAwareScheduler (
             String name,
@@ -32,6 +36,8 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             InputAlignment inputAlignment) {
         super( name, client, namespace, config );
         this.inputAlignment = inputAlignment;
+        this.maxCopyTasksPerNode = config.maxCopyTasksPerNode == null ? 1 : config.maxCopyTasksPerNode;
+        this.maxWaitingCopyTasksPerNode = config.maxWaitingCopyTasksPerNode == null ? 1 : config.maxWaitingCopyTasksPerNode;
     }
 
 
@@ -126,7 +132,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             }
 
             final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, assignedPodsByNode, planedToCopy, ++index);
-            if ( nodeAlignment != null && onlyAllowXCopyToNodeTasks( nodeAlignment, taskCountWhichCopyToNode, 1 ) ) {
+            if ( nodeAlignment != null && onlyAllowXCopyToNodeTasks( nodeAlignment, taskCountWhichCopyToNode, getMaxCopyTasksPerNode() ) ) {
                 alignment.add(nodeAlignment);
                 outLabelHolder.scheduleTaskOnNode( taskData.getTask(), nodeAlignment.node.getNodeLocation() );
                 addAlignmentToPlanned( planedToCopy, nodeAlignment.fileAlignment.getNodeFileAlignment(), taskData.getTask(), nodeAlignment.node );

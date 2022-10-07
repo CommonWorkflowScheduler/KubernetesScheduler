@@ -18,6 +18,10 @@ public class SchedulerConfig {
     public final String costFunction;
     public final String strategy;
 
+    public final Integer maxCopyTasksPerNode;
+
+    public final Integer maxWaitingCopyTasksPerNode;
+
     private SchedulerConfig() {
         this.localClaims = null;
         this.volumeClaims = null;
@@ -29,6 +33,8 @@ public class SchedulerConfig {
         this.costFunction = null;
         this.namespace = null;
         this.strategy = null;
+        this.maxCopyTasksPerNode = null;
+        this.maxWaitingCopyTasksPerNode = null;
     }
 
     @ToString
