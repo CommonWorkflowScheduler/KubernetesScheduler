@@ -12,14 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Inputs {
 
     public final String dns;
+    public final String execution;
     public final String hash;
     public final List<InputEntry> data;
     public final List<SymlinkInput> symlinks;
     public final String syncDir;
     public final Map<String,List<String>> waitForFilesOfTask;
 
-    public Inputs( String dns, String syncDir, String hash ) {
+    public Inputs( String dns, String execution, String syncDir, String hash ) {
         this.dns = dns;
+        this.execution = execution;
         this.syncDir = syncDir;
         this.hash = hash;
         this.data = new LinkedList<>();

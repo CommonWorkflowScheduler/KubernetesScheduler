@@ -24,6 +24,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -255,6 +256,23 @@ public class SchedulerRestController {
         }
 
         return new ResponseEntity<>( daemon, HttpStatus.OK );
+
+    }
+
+    @PostMapping("/v1/downloadtask/{execution}")
+    ResponseEntity<String> finishDownload( @PathVariable String execution, @RequestBody byte[] task ) {
+
+        String name = new String( task, StandardCharsets.UTF_8 );
+        if ( name.endsWith( "=" ) ) {
+            name = name.substring( 0, name.length() - 1 );
+        }
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
+            return noSchedulerFor( execution );
+        }
+        ((SchedulerWithDaemonSet) scheduler).taskHasFinishedCopyTask(  name );
+        return new ResponseEntity<>( HttpStatus.OK );
 
     }
 

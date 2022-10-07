@@ -107,6 +107,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
         alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
         getCopyStrategy().generateCopyScript( alignment.task, writeConfigResult.isWroteConfig() );
+        alignment.task.setCopiesDataToNode( writeConfigResult.isCopyDataToNode() );
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         alignment.task.setInputFiles( allLocationWrappers );
         useLocations( allLocationWrappers );
@@ -120,7 +121,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             task.setInputFiles( null );
         }
         if ( task.getCopyingToNode() != null ) {
-            removeFromCopyingToNode( task.getNode(), task.getCopyingToNode());
+            removeFromCopyingToNode( task.getNode().getNodeLocation(), task.getCopyingToNode());
             task.setCopyingToNode( null );
         }
         task.setCopiedFiles( null );
@@ -142,7 +143,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 } else {
                     final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                             workdir,
-                            finishedTask.getNode(),
+                            finishedTask.getNode().getNodeLocation(),
                             !finishedTask.wasSuccessfullyExecuted(),
                             finishedTask
                     );
@@ -254,7 +255,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
         try {
             final Inputs inputs = new Inputs(
-                    this.getDns() + "daemon/" + getNamespace() + "/" + getExecution() + "/",
+                    this.getDns(),
+                    getExecution(),
                     this.localWorkDir + "/sync/",
                     alignment.task.getConfig().getRunName()
             );
@@ -290,14 +292,15 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 }
             }
 
+            boolean copyDataToNode = !inputs.data.isEmpty();
             inputs.waitForTask( waitForTask );
             inputs.symlinks.addAll(alignment.fileAlignment.getSymlinks());
             inputs.sortData();
-            final boolean allEmpty = inputs.data.isEmpty() && inputs.symlinks.isEmpty() && inputs.waitForFilesOfTask.isEmpty();
+            final boolean allEmpty = !copyDataToNode && inputs.symlinks.isEmpty() && inputs.waitForFilesOfTask.isEmpty();
             if ( !allEmpty ) {
                 new ObjectMapper().writeValue( config, inputs );
             }
-            return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode, !allEmpty);
+            return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode, !allEmpty, copyDataToNode);
 
         } catch (IOException e) {
             log.error( "Cannot write " + config, e);
@@ -385,8 +388,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         try {
             Map<String,TaskInputFileLocationWrapper> wrapperByPath = new HashMap<>();
             task.getCopiedFiles().forEach( x -> wrapperByPath.put( x.getPath(), x ));
-            log.info( "Get daemon on node {}; daemons: {}", task.getNode().getIdentifier(), daemonByNode );
-            final InputStream inputStream = getConnection(getDaemonOnNode(task.getNode().getIdentifier())).retrieveFileStream(file);
+            log.info( "Get daemon on node {}; daemons: {}", task.getNode().getNodeLocation().getIdentifier(), daemonByNode );
+            final InputStream inputStream = getConnection(getDaemonOnNode(task.getNode().getNodeLocation().getIdentifier())).retrieveFileStream(file);
             if (inputStream == null) {
                 //Init has not even started
                 return;
@@ -441,7 +444,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final Task task = changeStateOfTask(pod, exitCode == 0 ? State.PREPARED : State.INIT_WITH_ERRORS);
         task.setPod( new PodWithAge( pod ) );
         log.info( "Pod {}, Init Code: {}", pod.getMetadata().getName(), exitCode);
-        removeFromCopyingToNode( task.getNode(), task.getCopyingToNode() );
+        removeFromCopyingToNode( task.getNode().getNodeLocation(), task.getCopyingToNode() );
         if( exitCode == 0 ){
             task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
         } else {
@@ -471,6 +474,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 iterator.remove();
             }
         }
+    }
+
+    public void taskHasFinishedCopyTask( String name ){
+        final Task task = tasksByPodName.get( name );
+        task.getNode().startingTaskCopyingDataFinished( task );
+        informResourceChange();
     }
 
     /**

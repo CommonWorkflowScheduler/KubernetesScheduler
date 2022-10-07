@@ -104,6 +104,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         final List<NodeTaskAlignment> alignment = new LinkedList<>();
         final Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy = new HashMap<>();
         final Map<NodeWithAlloc, Integer> assignedPodsByNode = new HashMap<>();
+        Map<NodeWithAlloc,Integer> taskCountWhichCopyToNode = new HashMap<>();
         while( !unscheduledTasksSorted.isEmpty() ){
             TaskData taskData = unscheduledTasksSorted.poll();
             boolean changed = false;
@@ -125,13 +126,46 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             }
 
             final NodeTaskFilesAlignment nodeAlignment = createNodeAlignment(taskData, availableByNode, assignedPodsByNode, planedToCopy, ++index);
-            if ( nodeAlignment != null ) {
+            if ( nodeAlignment != null && onlyAllowXCopyToNodeTasks( nodeAlignment, taskCountWhichCopyToNode, 1 ) ) {
                 alignment.add(nodeAlignment);
                 outLabelHolder.scheduleTaskOnNode( taskData.getTask(), nodeAlignment.node.getNodeLocation() );
                 addAlignmentToPlanned( planedToCopy, nodeAlignment.fileAlignment.getNodeFileAlignment(), taskData.getTask(), nodeAlignment.node );
             }
         }
         return alignment;
+    }
+
+
+    /**
+     * Check if the node is already used by x tasks which copy data to it
+     * @param nodeTaskAlignments
+     * @param taskCountWhichCopyToNode
+     * @param maxCopyToNodeTasks
+     * @return true if the task can be scheduled on that node and no if already maxCopyToNodeTasks tasks copy to that node
+     */
+    private boolean onlyAllowXCopyToNodeTasks( NodeTaskFilesAlignment nodeTaskAlignments, Map<NodeWithAlloc,Integer> taskCountWhichCopyToNode, int maxCopyToNodeTasks ){
+
+        final Map<Location, AlignmentWrapper> nodeFileAlignment = nodeTaskAlignments.fileAlignment.getNodeFileAlignment();
+
+        //Does this task needs to copy data to the node?
+        boolean copyDataToNode = false;
+        for ( Map.Entry<Location, AlignmentWrapper> locationAlignmentWrapperEntry : nodeFileAlignment.entrySet() ) {
+            if ( locationAlignmentWrapperEntry.getValue().getFilesToCopy().size() > 0 ) {
+                copyDataToNode = true;
+                break;
+            }
+        }
+
+        //Only keep if there are no more than maxCopyToNodeTasks
+        if ( copyDataToNode ) {
+            final int alreadyAssignedToNode = taskCountWhichCopyToNode.computeIfAbsent( nodeTaskAlignments.node, NodeWithAlloc::getStartingPods );
+            if ( alreadyAssignedToNode >= maxCopyToNodeTasks ) {
+                return false;
+            } else {
+                taskCountWhichCopyToNode.put( nodeTaskAlignments.node, alreadyAssignedToNode + 1 );
+            }
+        }
+        return true;
     }
 
     @Override

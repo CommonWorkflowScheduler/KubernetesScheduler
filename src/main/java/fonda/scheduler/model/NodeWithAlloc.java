@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 @Slf4j
@@ -25,6 +25,8 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     private final Requirements maxResources;
 
     private final Map<String, Requirements> assignedPods;
+
+    private final List<PodWithAge> startingTaskCopyingData = new LinkedList<>();
 
     @Getter
     private final NodeLocation nodeLocation;
@@ -63,22 +65,52 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         log.info("Node {} has RAM: {} and CPU: {}", node.getMetadata().getName(), maxRam, maxCpu);
     }
 
-    public void addPod( PodWithAge pod ){
+    public void addPod( PodWithAge pod, boolean withStartingTasks ) {
         Requirements request = pod.getRequest();
-        log.info( "New Pod on node {} with request {}", this.getMetadata().getName(), request );
+        if ( withStartingTasks ) {
+            synchronized ( startingTaskCopyingData ) {
+                if ( !startingTaskCopyingData.contains( pod ) ) {
+                    startingTaskCopyingData.add( pod );
+                }
+            }
+        }
         synchronized (assignedPods) {
             assignedPods.put( pod.getMetadata().getUid(), request );
         }
     }
 
+    private void removeStartingTaskCopyingDataByUid( String uid ) {
+        synchronized ( startingTaskCopyingData ) {
+            final Iterator<PodWithAge> iterator = startingTaskCopyingData.iterator();
+            while ( iterator.hasNext() ) {
+                final PodWithAge podWithAge = iterator.next();
+                if ( podWithAge.getMetadata().getUid().equals( uid ) ) {
+                    iterator.remove();
+                    break;
+                }
+            }
+        }
+    }
+
     public boolean removePod( Pod pod ){
+        removeStartingTaskCopyingDataByUid( pod.getMetadata().getUid() );
         synchronized (assignedPods) {
             return assignedPods.remove( pod.getMetadata().getUid() ) != null;
         }
     }
 
+
+    public void startingTaskCopyingDataFinished( Task task ) {
+        final String uid = task.getPod().getMetadata().getUid();
+        removeStartingTaskCopyingDataByUid( uid );
+    }
+
     public int getRunningPods(){
         return assignedPods.size();
+    }
+
+    public int getStartingPods(){
+        return startingTaskCopyingData.size();
     }
 
     /**

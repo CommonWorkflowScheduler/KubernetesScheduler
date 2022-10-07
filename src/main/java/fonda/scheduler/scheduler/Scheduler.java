@@ -363,11 +363,11 @@ public abstract class Scheduler {
             log.error( "Cannot read " + nodeFile, e);
         }
 
-        alignment.task.setNode( alignment.node.getNodeLocation() );
+        alignment.task.setNode( alignment.node );
 
         final PodWithAge pod = alignment.task.getPod();
 
-        alignment.node.addPod( pod );
+        alignment.node.addPod( pod, alignment.task.isCopiesDataToNode() );
 
         log.info ( "Assign pod: " + pod.getMetadata().getName() + " to node: " + alignment.node.getMetadata().getName() );
 
@@ -436,6 +436,9 @@ public abstract class Scheduler {
         return null;
     }
 
+    /**
+     * starts the scheduling routine
+     */
     public void informResourceChange() {
         synchronized (unscheduledTasks){
             unscheduledTasks.notifyAll();

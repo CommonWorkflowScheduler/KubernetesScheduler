@@ -8,6 +8,7 @@ import signal
 import sys
 import time
 import urllib.request
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
@@ -43,8 +44,8 @@ def closeWithWarning(errorCode, syncFile):
     myExit(errorCode)
 
 
-def getIP(node, dns):
-    ip = urllib.request.urlopen(dns + node).read()
+def getIP(node, dns, execution):
+    ip = urllib.request.urlopen(dns + "daemon/" + execution + "/" + node).read()
     return str(ip.decode("utf-8"))
 
 
@@ -64,14 +65,14 @@ def clearLocation(path, dst=None):
     return True
 
 
-def getFTP(node, currentIP, dns, syncFile):
+def getFTP(node, currentIP, dns, execution, syncFile):
     global errors
     connectionProblem = 0
     while connectionProblem < 8:
         try:
             if currentIP is None:
                 log.info("Request ip for node: %s", node)
-                ip = getIP(node, dns)
+                ip = getIP(node, dns, execution)
             else:
                 ip = currentIP
             log.info("Try to connect to %s", ip)
@@ -140,7 +141,7 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
     return 0, 0
 
 
-def download(node, currentIP, files, dns, syncFile):
+def download(node, currentIP, files, dns, execution, syncFile):
     ftp = None
     size = len(files)
     global CLOSE
@@ -148,7 +149,7 @@ def download(node, currentIP, files, dns, syncFile):
     downloadTime = 0
     while not CLOSE and len(files) > 0:
         if ftp is None:
-            ftp = getFTP(node, currentIP, dns, syncFile)
+            ftp = getFTP(node, currentIP, dns, execution, syncFile)
             currentIP = None
         filename = files[0]
         index = size - len(files) + 1
@@ -238,7 +239,7 @@ def generateSymlinks(symlinks):
                 log.warning("File exists: %s -> %s", src, dst)
 
 
-def downloadAllData(data, dns, syncFile):
+def downloadAllData(data, dns, execution, syncFile):
     global trace
     throughput = []
     with ThreadPoolExecutor(max_workers=max(10, len(data))) as executor:
@@ -247,7 +248,7 @@ def downloadAllData(data, dns, syncFile):
             files = d["files"]
             node = d["node"]
             currentIP = d["currentIP"]
-            futures.append(executor.submit(download, node, currentIP, files, dns, syncFile))
+            futures.append(executor.submit(download, node, currentIP, files, dns, execution, syncFile))
         lastNum = -1
         while len(futures) > 0:
             if lastNum != len(futures):
@@ -281,6 +282,16 @@ def writeTrace(dataMap):
             traceFile.write("scheduler_init_errors=" + str(errors) + "\n")
 
 
+def finishedDownload(dns, execution, taskname):
+    try:
+        dns = dns + "downloadtask/" + execution
+        log.info("Request: %s", dns)
+        urllib.request.urlopen(dns, taskname.encode( "utf-8" ))
+    except BaseException as err:
+        log.exception(err)
+        myExit(100)
+
+
 def run():
     global trace
     startTime = time.time()
@@ -288,8 +299,10 @@ def run():
     config = loadConfig(".command.inputs.json")
 
     dns = config["dns"]
+    execution = config["execution"]
     data = config["data"]
     symlinks = config["symlinks"]
+    taskname = config["hash"]
 
     with open(config["syncDir"] + config["hash"], 'w') as syncFile:
         registerSignal(syncFile)
@@ -301,7 +314,7 @@ def run():
         syncFile.write('##SYMLINKS##\n')
         syncFile.flush()
         startTimeDownload = time.time()
-        downloadAllData(data, dns, syncFile)
+        downloadAllData(data, dns, execution, syncFile)
         trace["scheduler_init_download_runtime"] = int((time.time() - startTimeDownload) * 1000)
         if CLOSE:
             log.debug("Closed with code %s", str(EXIT))
@@ -309,6 +322,8 @@ def run():
         log.info("Finished Download")
         syncFile.write('##FINISHED##\n')
         registerSignal2()
+
+    finishedDownload(dns, execution, taskname)
 
     startTimeDependingTasks = time.time()
     waitForDependingTasks(config["waitForFilesOfTask"], startTime, config["syncDir"])

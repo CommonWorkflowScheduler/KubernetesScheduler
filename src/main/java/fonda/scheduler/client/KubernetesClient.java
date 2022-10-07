@@ -158,7 +158,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 switch ( action ){
                     case ADDED:
                         if ( !PodWithAge.hasFinishedOrFailed( pod ) ) {
-                            node.addPod(new PodWithAge(pod));
+                            node.addPod(new PodWithAge(pod), false);
                         }
                         break;
                     case MODIFIED:

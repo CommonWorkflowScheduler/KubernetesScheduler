@@ -39,7 +39,7 @@ public class Task {
 
     @Getter
     @Setter
-    private NodeLocation node = null;
+    private NodeWithAlloc node = null;
 
     @Getter
     @Setter
@@ -53,6 +53,10 @@ public class Task {
     private final TraceRecord traceRecord = new TraceRecord();
 
     private long timeAddedToQueue;
+
+    @Getter
+    @Setter
+    private boolean copiesDataToNode = false;
 
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
@@ -97,7 +101,7 @@ public class Task {
         return "Task{" +
                 "state=" + state +
                 ", pod=" + (pod == null ? "--" : pod.getMetadata().getName()) +
-                ", node='" + (node != null ? node.getIdentifier() : "--") + '\'' +
+                ", node='" + (node != null ? node.getNodeLocation().getIdentifier() : "--") + '\'' +
                 ", workDir='" + getWorkingDir() + '\'' +
                 '}';
     }
