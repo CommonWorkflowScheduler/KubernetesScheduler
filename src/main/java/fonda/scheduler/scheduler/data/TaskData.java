@@ -97,6 +97,7 @@ public class TaskData implements Comparable<TaskData> {
 
     /**
      * Recalculate the value. New value is smaller or equal old value
+     * Delete all nodes that have not enough unassigned resources for the task.
      * @param availableByNode
      * @return if the value has changed
      */
