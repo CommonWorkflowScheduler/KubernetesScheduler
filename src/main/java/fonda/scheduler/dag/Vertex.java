@@ -1,6 +1,8 @@
 package fonda.scheduler.dag;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -14,6 +16,9 @@ public abstract class Vertex {
     private final int uid;
     final Set<Edge> in = new HashSet<>();
     final Set<Edge> out = new HashSet<>();
+
+    @Setter(AccessLevel.PACKAGE)
+    private int rank = 0;
 
     Vertex( String label, int uid ) {
         this.label = label;
@@ -55,6 +60,7 @@ public abstract class Vertex {
             descendants.add((Process) this);
         }
         e.getFrom().removeDescendant( e, descendants );
+        e.getFrom().informDeletedDescendent();
     }
 
     public void removeOutbound( Edge e ) {
@@ -117,4 +123,40 @@ public abstract class Vertex {
     public int hashCode() {
         return getUid();
     }
+
+    /**
+     * For processes add one, otherwise return the input
+     * @param rank
+     * @return
+     */
+    abstract int incRank( int rank );
+
+    void informNewDescendent( int rank ) {
+        if ( rank > getRank() ) {
+            setRank( rank );
+            for ( Edge edge : in ) {
+                edge.getFrom().informNewDescendent( incRank( rank ) );
+            }
+        }
+    }
+
+    void informDeletedDescendent() {
+        int rank = 0;
+        if ( !out.isEmpty() ) {
+            for ( Edge edge : out ) {
+                final Vertex to = edge.getTo();
+                final int toRank = to.incRank( to.getRank() );
+                if ( toRank > rank ) {
+                    rank = toRank;
+                }
+            }
+        }
+        if ( rank != getRank() ) {
+            setRank( rank );
+            for ( Edge edge : in ) {
+                edge.getFrom().informDeletedDescendent();
+            }
+        }
+    }
+
 }

@@ -145,6 +145,14 @@ public class Process extends Vertex {
             v.addAncestor( ancestorsCopy );
             v.addAncestor( this );
         });
+
+        final int rank = e.getTo().getRank();
+        informNewDescendent( rank + 1 );
+
     }
 
+    @Override
+    int incRank( int rank ) {
+        return rank + 1;
+    }
 }

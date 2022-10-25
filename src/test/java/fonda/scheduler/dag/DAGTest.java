@@ -54,18 +54,19 @@ public class DAGTest {
         }).collect(Collectors.toCollection(HashSet::new));
     }
 
-    private void isSameEdge(HashSet<Edge> expectedIn, HashSet<Edge> expectedOut, Vertex vertex ){
+    private void isSameEdge( HashSet<Edge> expectedIn, HashSet<Edge> expectedOut, Vertex vertex ){
         final String[] in = setToArrayEdges(expectedIn);
         final String[] out = setToArrayEdges(expectedOut);
         assertArrayEquals( "In of " + vertex.getLabel(), in, setToArrayEdges(vertex.getIn()) );
         assertArrayEquals( "Out of " + vertex.getLabel(), out, setToArrayEdges(vertex.getOut()) );
     }
 
-    private void isSameProc(HashSet<Process> expectedAncestors, HashSet<Process> expectedDescendants, Vertex vertex ){
+    private void isSameProc( HashSet<Process> expectedAncestors, HashSet<Process> expectedDescendants, Vertex vertex, int rank ){
         final String[] descendants = setToArrayProcesses(expectedDescendants);
         final String[] ancestors = setToArrayProcesses(expectedAncestors);
         assertArrayEquals( "Descendants of " + vertex.getLabel(), descendants, setToArrayProcesses(vertex.getDescendants()) );
         assertArrayEquals( "Ancestors of " + vertex.getLabel(), ancestors, setToArrayProcesses(vertex.getAncestors()) );
+        assertEquals( rank, vertex.getRank() );
     }
 
     private String[] setToArrayProcesses(Set<Process> set) {
@@ -304,25 +305,25 @@ public class DAGTest {
 
         final DAG dag = createDag();
         dag.removeEdges( 3 );
-        isSameProc(                                          new HashSet<>(),               set( dag, "a","b","c","d","e","f","g","h","i" ), dag.getByUid( 1 ) );
+        isSameProc(                                          new HashSet<>(),               set( dag, "a","b","c","d","e","f","g","h","i" ), dag.getByUid( 1 ), 5 );
         isSameEdge(                                          new HashSet<>(),        setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), dag.getByUid( 1 ) );
-        isSameProc(                                          new HashSet<>(),                                    set( dag, "g","i" ), dag.getByProcess("a") );
+        isSameProc(                                          new HashSet<>(),                                    set( dag, "g","i" ), dag.getByProcess("a"), 2 );
         isSameEdge(                     setTo( dag, 2, new int[]{1, 1} ),                 setFrom( dag, 2, new int[]{4, 8} ), dag.getByProcess("a") );
-        isSameProc(                                          new HashSet<>(),                    set( dag, "c","d","e","f","h","i" ), dag.getByProcess("b") );
+        isSameProc(                                          new HashSet<>(),                    set( dag, "c","d","e","f","h","i" ), dag.getByProcess("b"), 4 );
         isSameEdge(                     setTo( dag, 3, new int[]{2, 1} ), setFrom( dag, 3, new int[]{6, 5},new int[]{5, 4} ), dag.getByProcess("b") );
-        isSameProc(                                          set( dag, "b" ),                                set( dag, "e","h","i" ), dag.getByProcess("c") );
+        isSameProc(                                          set( dag, "b" ),                                set( dag, "e","h","i" ), dag.getByProcess("c"), 3 );
         isSameEdge(                     setTo( dag, 4, new int[]{5, 3} ),                 setFrom( dag, 4, new int[]{7, 6} ), dag.getByProcess("c") );
-        isSameProc(                                          set( dag, "b" ),                                set( dag, "f","h","i" ), dag.getByProcess("d") );
+        isSameProc(                                          set( dag, "b" ),                                set( dag, "f","h","i" ), dag.getByProcess("d"), 3 );
         isSameEdge(                     setTo( dag, 5, new int[]{6, 3} ),                 setFrom( dag, 5, new int[]{8, 7} ), dag.getByProcess("d") );
-        isSameProc(                                      set( dag, "b","c" ),                                    set( dag, "h","i" ), dag.getByProcess("e") );
+        isSameProc(                                      set( dag, "b","c" ),                                    set( dag, "h","i" ), dag.getByProcess("e"), 2 );
         isSameEdge(                     setTo( dag, 6, new int[]{7, 4} ),                 setFrom( dag, 6, new int[]{9, 9} ), dag.getByProcess("e") );
-        isSameProc(                                      set( dag, "b","d" ),                                    set( dag, "h","i" ), dag.getByProcess("f") );
+        isSameProc(                                      set( dag, "b","d" ),                                    set( dag, "h","i" ), dag.getByProcess("f"), 2 );
         isSameEdge(                     setTo( dag, 7, new int[]{8, 5} ),                setFrom( dag, 7, new int[]{10, 9} ), dag.getByProcess("f") );
-        isSameProc(                                          set( dag, "a" ),                                        set( dag, "i" ), dag.getByProcess("g") );
+        isSameProc(                                          set( dag, "a" ),                                        set( dag, "i" ), dag.getByProcess("g"), 1 );
         isSameEdge(                     setTo( dag, 8, new int[]{4, 2} ),               setFrom( dag, 8, new int[]{11, 10} ), dag.getByProcess("g") );
-        isSameProc(                          set( dag, "b","c","d","e","f" ),                                        set( dag, "i" ), dag.getByProcess("h") );
+        isSameProc(                          set( dag, "b","c","d","e","f" ),                                        set( dag, "i" ), dag.getByProcess("h"), 1 );
         isSameEdge(    setTo( dag, 9, new int[]{10, 7},new int[]{9, 6} ),               setFrom( dag, 9, new int[]{12, 10} ), dag.getByProcess("h") );
-        isSameProc(              set( dag, "a","b","c","d","e","f","g","h" ),                                        new HashSet<>(), dag.getByProcess("i") );
+        isSameProc(              set( dag, "a","b","c","d","e","f","g","h" ),                                        new HashSet<>(), dag.getByProcess("i"), 0 );
         isSameEdge(  setTo( dag, 10, new int[]{12, 9},new int[]{11, 8} ),                                        new HashSet<>(), dag.getByProcess("i") );
 
     }
@@ -332,21 +333,21 @@ public class DAGTest {
 
         final DAG dag = createDag();
         dag.removeVertices( dag.getByProcess("c").getUid(), dag.getByProcess("e").getUid() );
-        isSameProc(                                         new HashSet<>(),                set( dag, "a","b","d","f","g","h","i" ), dag.getByUid( 1 ) );
+        isSameProc(                                         new HashSet<>(),                set( dag, "a","b","d","f","g","h","i" ), dag.getByUid( 1 ), 5 );
         isSameEdge(                                         new HashSet<>(), setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), dag.getByUid( 1 ) );
-        isSameProc(                                         new HashSet<>(),                              set( dag, "g","i" ), dag.getByProcess("a") );
+        isSameProc(                                         new HashSet<>(),                              set( dag, "g","i" ), dag.getByProcess("a"), 2 );
         isSameEdge(                    setTo( dag, 2, new int[]{1, 1} ),           setFrom( dag, 2, new int[]{4, 8} ), dag.getByProcess("a") );
-        isSameProc(                                         new HashSet<>(),                      set( dag, "d","f","h","i" ), dag.getByProcess("b") );
+        isSameProc(                                         new HashSet<>(),                      set( dag, "d","f","h","i" ), dag.getByProcess("b"), 4 );
         isSameEdge(                    setTo( dag, 3, new int[]{2, 1} ),           setFrom( dag, 3, new int[]{6, 5} ), dag.getByProcess("b") );
-        isSameProc(                                         set( dag, "b" ),                          set( dag, "f","h","i" ), dag.getByProcess("d") );
+        isSameProc(                                         set( dag, "b" ),                          set( dag, "f","h","i" ), dag.getByProcess("d"), 3 );
         isSameEdge(                    setTo( dag, 5, new int[]{6, 3} ),           setFrom( dag, 5, new int[]{8, 7} ), dag.getByProcess("d") );
-        isSameProc(                                     set( dag, "b","d" ),                              set( dag, "h","i" ), dag.getByProcess("f") );
+        isSameProc(                                     set( dag, "b","d" ),                              set( dag, "h","i" ), dag.getByProcess("f"), 2 );
         isSameEdge(                    setTo( dag, 7, new int[]{8, 5} ),          setFrom( dag, 7, new int[]{10, 9} ), dag.getByProcess("f") );
-        isSameProc(                                         set( dag, "a" ),                                  set( dag, "i" ), dag.getByProcess("g") );
+        isSameProc(                                         set( dag, "a" ),                                  set( dag, "i" ), dag.getByProcess("g"), 1 );
         isSameEdge(                    setTo( dag, 8, new int[]{4, 2} ),         setFrom( dag, 8, new int[]{11, 10} ), dag.getByProcess("g") );
-        isSameProc(                                 set( dag, "b","d","f" ),                                  set( dag, "i" ), dag.getByProcess("h") );
+        isSameProc(                                 set( dag, "b","d","f" ),                                  set( dag, "i" ), dag.getByProcess("h"), 1 );
         isSameEdge(                   setTo( dag, 9, new int[]{10, 7} ),         setFrom( dag, 9, new int[]{12, 10} ), dag.getByProcess("h") );
-        isSameProc(                     set( dag, "a","b","d","f","g","h" ),                                  new HashSet<>(), dag.getByProcess("i") );
+        isSameProc(                     set( dag, "a","b","d","f","g","h" ),                                  new HashSet<>(), dag.getByProcess("i"), 0 );
         isSameEdge( setTo( dag, 10, new int[]{12, 9},new int[]{11, 8} ),                                  new HashSet<>(), dag.getByProcess("i") );
         assertThrows( IllegalStateException.class, () -> dag.getByProcess("c") );
         assertThrows( IllegalStateException.class, () -> dag.getByProcess("e") );
@@ -382,28 +383,28 @@ public class DAGTest {
         dag.registerVertices( vertexList );
         dag.registerEdges(inputEdges);
 
-        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a") );
+        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a"), 3 );
         isSameEdge(                                      new HashSet<>(), setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), dag.getByProcess("a") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b"), 2 );
         isSameEdge(                 setTo( dag, 2, new int[]{1, 1} ),                 setFrom( dag, 2, new int[]{3, 4} ), dag.getByProcess("b") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c"), 2 );
         isSameEdge(                 setTo( dag, 3, new int[]{2, 1} ), setFrom( dag, 3, new int[]{4, 4},new int[]{5, 5} ), dag.getByProcess("c") );
-        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d") );
+        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d"), 1 );
         isSameEdge( setTo( dag, 4, new int[]{4, 3},new int[]{3, 2} ),                 setFrom( dag, 4, new int[]{6, 5} ), dag.getByProcess("d") );
-        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e") );
+        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e"), 0 );
         isSameEdge( setTo( dag, 5, new int[]{5, 3},new int[]{6, 4} ),                                        new HashSet<>(), dag.getByProcess("e") );
 
         dag.removeEdges( 5 );
 
-        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a") );
+        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a"), 3 );
         isSameEdge(                                      new HashSet<>(), setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), dag.getByProcess("a") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b"), 2 );
         isSameEdge(                 setTo( dag, 2, new int[]{1, 1} ),                 setFrom( dag, 2, new int[]{3, 4} ), dag.getByProcess("b") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c"), 2 );
         isSameEdge(                 setTo( dag, 3, new int[]{2, 1} ),                setFrom( dag, 3, new int[]{4, 4} ), dag.getByProcess("c") );
-        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d") );
+        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d"), 1 );
         isSameEdge( setTo( dag, 4, new int[]{4, 3},new int[]{3, 2} ),                 setFrom( dag, 4, new int[]{6, 5} ), dag.getByProcess("d") );
-        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e") );
+        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e"), 0 );
         isSameEdge(                 setTo( dag, 5, new int[]{6, 4} ),                                        new HashSet<>(), dag.getByProcess("e") );
 
     }
@@ -437,41 +438,41 @@ public class DAGTest {
         dag.registerVertices( vertexList );
         dag.registerEdges(inputEdges);
 
-        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a") );
+        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a"), 3 );
         isSameEdge(                                      new HashSet<>(), setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), dag.getByProcess("a") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b"), 2 );
         isSameEdge(                 setTo( dag, 2, new int[]{1, 1} ),                 setFrom( dag, 2, new int[]{3, 4} ), dag.getByProcess("b") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c"), 2 );
         isSameEdge(                 setTo( dag, 3, new int[]{2, 1} ),                 setFrom( dag, 3, new int[]{4, 4} ), dag.getByProcess("c") );
-        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d") );
+        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d"), 1 );
         isSameEdge( setTo( dag, 4, new int[]{4, 3},new int[]{3, 2} ), setFrom( dag, 4, new int[]{6, 5},new int[]{5, 5} ), dag.getByProcess("d") );
-        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e") );
+        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e"), 0 );
         isSameEdge( setTo( dag, 5, new int[]{6, 4},new int[]{5, 4} ),                                        new HashSet<>(), dag.getByProcess("e") );
 
         dag.removeEdges( 5 );
 
-        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a") );
+        isSameProc(                                      new HashSet<>(),                            set( dag, "b","c","d","e" ), dag.getByProcess("a"), 3 );
         isSameEdge(                                      new HashSet<>(), setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), dag.getByProcess("a") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("b"), 2 );
         isSameEdge(                 setTo( dag, 2, new int[]{1, 1} ),                 setFrom( dag, 2, new int[]{3, 4} ), dag.getByProcess("b") );
-        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c") );
+        isSameProc(                                      set( dag, "a" ),                                    set( dag, "d","e" ), dag.getByProcess("c"), 2 );
         isSameEdge(                 setTo( dag, 3, new int[]{2, 1} ),                 setFrom( dag, 3, new int[]{4, 4} ), dag.getByProcess("c") );
-        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d") );
+        isSameProc(                              set( dag, "a","b","c" ),                                        set( dag, "e" ), dag.getByProcess("d"), 1 );
         isSameEdge( setTo( dag, 4, new int[]{4, 3},new int[]{3, 2} ),                 setFrom( dag, 4, new int[]{6, 5} ), dag.getByProcess("d") );
-        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e") );
+        isSameProc(                          set( dag, "a","b","c","d" ),                                        new HashSet<>(), dag.getByProcess("e"), 0 );
         isSameEdge(                 setTo( dag, 5, new int[]{6, 4} ),                                        new HashSet<>(), dag.getByProcess("e") );
 
         dag.removeEdges( 6 );
 
-        isSameProc(                                      new HashSet<>(),                                set( dag, "b","c","d" ), dag.getByProcess("a") );
+        isSameProc(                                      new HashSet<>(),                                set( dag, "b","c","d" ), dag.getByProcess("a"), 2 );
         isSameEdge(                                      new HashSet<>(), setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), dag.getByProcess("a") );
-        isSameProc(                                      set( dag, "a" ),                                        set( dag, "d" ), dag.getByProcess("b") );
+        isSameProc(                                      set( dag, "a" ),                                        set( dag, "d" ), dag.getByProcess("b"), 1 );
         isSameEdge(                 setTo( dag, 2, new int[]{1, 1} ),                setFrom( dag, 2, new int[]{3, 4} ), dag.getByProcess("b") );
-        isSameProc(                                      set( dag, "a" ),                                        set( dag, "d" ), dag.getByProcess("c") );
+        isSameProc(                                      set( dag, "a" ),                                        set( dag, "d" ), dag.getByProcess("c"), 1 );
         isSameEdge(                 setTo( dag, 3, new int[]{2, 1} ),                 setFrom( dag, 3, new int[]{4, 4} ), dag.getByProcess("c") );
-        isSameProc(                              set( dag, "a","b","c" ),                                        new HashSet<>(), dag.getByProcess("d") );
+        isSameProc(                              set( dag, "a","b","c" ),                                        new HashSet<>(), dag.getByProcess("d"), 0 );
         isSameEdge( setTo( dag, 4, new int[]{4, 3},new int[]{3, 2} ),                                        new HashSet<>(), dag.getByProcess("d") );
-        isSameProc(                                      new HashSet<>(),                                        new HashSet<>(), dag.getByProcess("e") );
+        isSameProc(                                      new HashSet<>(),                                        new HashSet<>(), dag.getByProcess("e"), 0 );
         isSameEdge(                                      new HashSet<>(),                                        new HashSet<>(), dag.getByProcess("e") );
 
     }
@@ -525,25 +526,25 @@ public class DAGTest {
         dag.registerVertices(vertexList);
         dag.registerEdges(inputEdges);
 
-        isSameProc(                                         new HashSet<>(),            set( dag, "a","b","c","d","e","f","g","h","i" ), o );
+        isSameProc(                                         new HashSet<>(),            set( dag, "a","b","c","d","e","f","g","h","i" ), o, 5 );
         isSameEdge(                                         new HashSet<>(),     setFrom( dag, 1, new int[]{2, 3},new int[]{1, 2} ), o );
-        isSameProc(                                         new HashSet<>(),                            set( dag, "c","e","g","h","i" ), a );
+        isSameProc(                                         new HashSet<>(),                            set( dag, "c","e","g","h","i" ), a, 4 );
         isSameEdge(                    setTo( dag, 2, new int[]{1, 1} ),     setFrom( dag, 2, new int[]{3, 4},new int[]{4, 8} ), a );
-        isSameProc(                                         new HashSet<>(),                        set( dag, "c","d","e","f","h","i" ), b );
+        isSameProc(                                         new HashSet<>(),                        set( dag, "c","d","e","f","h","i" ), b, 4 );
         isSameEdge(                    setTo( dag, 3, new int[]{2, 1} ),     setFrom( dag, 3, new int[]{6, 5},new int[]{5, 4} ), b );
-        isSameProc(                                     set( dag, "a","b" ),                                    set( dag, "e","h","i" ), c );
+        isSameProc(                                     set( dag, "a","b" ),                                    set( dag, "e","h","i" ), c, 3 );
         isSameEdge(    setTo( dag, 4, new int[]{5, 3},new int[]{3, 2} ),                     setFrom( dag, 4, new int[]{7, 6} ), c );
-        isSameProc(                                         set( dag, "b" ),                                    set( dag, "f","h","i" ), d );
+        isSameProc(                                         set( dag, "b" ),                                    set( dag, "f","h","i" ), d, 3 );
         isSameEdge(                    setTo( dag, 5, new int[]{6, 3} ),                     setFrom( dag, 5, new int[]{8, 7} ), d );
-        isSameProc(                                 set( dag, "a","b","c" ),                                        set( dag, "h","i" ), e );
+        isSameProc(                                 set( dag, "a","b","c" ),                                        set( dag, "h","i" ), e, 2 );
         isSameEdge(                    setTo( dag, 6, new int[]{7, 4} ),                     setFrom( dag, 6, new int[]{9, 9} ), e );
-        isSameProc(                                     set( dag, "b","d" ),                                        set( dag, "h","i" ), f );
+        isSameProc(                                     set( dag, "b","d" ),                                        set( dag, "h","i" ), f, 2 );
         isSameEdge(                    setTo( dag, 7, new int[]{8, 5} ),                    setFrom( dag, 7, new int[]{10, 9} ), f );
-        isSameProc(                                         set( dag, "a" ),                                            set( dag, "i" ), g );
+        isSameProc(                                         set( dag, "a" ),                                            set( dag, "i" ), g, 1 );
         isSameEdge(                    setTo( dag, 8, new int[]{4, 2} ),                   setFrom( dag, 8, new int[]{11, 10} ), g );
-        isSameProc(                     set( dag, "a","b","c","d","e","f" ),                                            set( dag, "i" ), h );
+        isSameProc(                     set( dag, "a","b","c","d","e","f" ),                                            set( dag, "i" ), h, 1 );
         isSameEdge(   setTo( dag, 9, new int[]{10, 7},new int[]{9, 6} ),                   setFrom( dag, 9, new int[]{12, 10} ), h );
-        isSameProc(             set( dag, "a","b","c","d","e","f","g","h" ),                                            new HashSet<>(), i );
+        isSameProc(             set( dag, "a","b","c","d","e","f","g","h" ),                                            new HashSet<>(), i, 0 );
         isSameEdge( setTo( dag, 10, new int[]{12, 9},new int[]{11, 8} ),                                            new HashSet<>(), i );
         return dag;
     }

@@ -48,4 +48,8 @@ public abstract class NotProcess extends Vertex {
         }
     }
 
+    @Override
+    int incRank( int rank ) {
+        return rank;
+    }
 }
