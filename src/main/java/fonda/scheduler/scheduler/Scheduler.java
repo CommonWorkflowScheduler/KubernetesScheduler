@@ -1,5 +1,6 @@
 package fonda.scheduler.scheduler;
 
+import fonda.scheduler.client.Informable;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.model.*;
@@ -22,7 +23,7 @@ import java.io.IOException;
 import java.util.*;
 
 @Slf4j
-public abstract class Scheduler {
+public abstract class Scheduler implements Informable {
 
     //Visible variables
     @Getter
@@ -312,7 +313,7 @@ public abstract class Scheduler {
      * @param node
      * @return
      */
-    boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+    public boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
         return node.canScheduleNewPod()
                 && availableByNode.higherOrEquals( pod.getRequest() )
                 && affinitiesMatch( pod, node );
@@ -483,7 +484,7 @@ public abstract class Scheduler {
      * @param task
      * @return
      */
-    Set<NodeWithAlloc> getMatchingNodesForTask(Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
+    public Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
         Set<NodeWithAlloc> result = new HashSet<>();
         for (Map.Entry<NodeWithAlloc, Requirements> entry : availableByNode.entrySet()) {
             if ( this.canSchedulePodOnNode( entry.getValue(), task.getPod(), entry.getKey() ) ){

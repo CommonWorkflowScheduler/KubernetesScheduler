@@ -4,15 +4,18 @@ import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.dag.InputEdge;
 import fonda.scheduler.dag.Vertex;
-import fonda.scheduler.model.SchedulerConfig;
-import fonda.scheduler.model.TaskConfig;
+import fonda.scheduler.model.*;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.*;
 import fonda.scheduler.scheduler.filealignment.GreedyAlignment;
-import fonda.scheduler.scheduler.filealignment.RandomAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import fonda.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
+import fonda.scheduler.scheduler.nodeassign.FairAssign;
+import fonda.scheduler.scheduler.nodeassign.NodeAssign;
+import fonda.scheduler.scheduler.nodeassign.RandomNodeAssign;
+import fonda.scheduler.scheduler.nodeassign.RoundRobinAssign;
+import fonda.scheduler.scheduler.prioritize.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,13 +105,6 @@ public class SchedulerRestController {
         }
 
         switch ( strategy.toLowerCase() ){
-            case "fifo" :
-            case "random" :
-            case "fifo-random" :
-                scheduler = config.locationAware
-                        ? new RandomLAScheduler( execution, client, namespace, config, new RandomAlignment() )
-                        : new RandomScheduler( execution, client, namespace, config );
-                break;
             case "lav1" :
                 if ( !config.locationAware ) {
                     return new ResponseEntity<>( "LA scheduler only work if location aware", HttpStatus.BAD_REQUEST );
@@ -118,12 +114,40 @@ public class SchedulerRestController {
                 }
                 scheduler = new LASchedulerV1( execution, client, namespace, config, new GreedyAlignment(costFunction) );
                 break;
-            default:
-                return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
+            default: {
+                final String[] split = strategy.split( "-" );
+                Prioritize prioritize = null;
+                NodeAssign assign = null;
+                if ( split.length <= 2 ) {
+                    switch ( split[0].toLowerCase() ) {
+                        case "fifo": prioritize = new FifoPrioritize(); break;
+                        case "rank": prioritize = new RankPrioritize(); break;
+                        case "random": case "r": prioritize = new RandomPrioritize(); break;
+                        case "max": prioritize = new MaxInputPrioritize(); break;
+                        case "min": prioritize = new MinInputPrioritize(); break;
+                        default:
+                            return new ResponseEntity<>( "No Prioritize for: " + split[0], HttpStatus.NOT_FOUND );
+                    }
+                    if ( split.length == 2 ) {
+                        switch ( split[1].toLowerCase() ) {
+                            case "random": case "r": assign = new RandomNodeAssign(); break;
+                            case "roundrobin": case "rr": assign = new RoundRobinAssign(); break;
+                            case "fair": case "f": assign = new FairAssign(); break;
+                            default:
+                                return new ResponseEntity<>( "No Assign for: " + split[1], HttpStatus.NOT_FOUND );
+                        }
+                    } else {
+                        assign = new RoundRobinAssign();
+                    }
+                    scheduler = new PrioritizeAssignScheduler( execution, client, namespace, config, prioritize, assign );
+                } else {
+                    return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
+                }
+            }
         }
 
         schedulerHolder.put( execution, scheduler );
-        client.addScheduler( scheduler );
+        client.addInformable( scheduler );
 
         return new ResponseEntity<>( HttpStatus.OK );
 
@@ -233,7 +257,7 @@ public class SchedulerRestController {
             return noSchedulerFor( execution );
         }
         schedulerHolder.remove( execution );
-        client.removeScheduler( scheduler );
+        client.removeInformable( scheduler );
         scheduler.close();
         closedLastScheduler = System.currentTimeMillis();
         return new ResponseEntity<>( HttpStatus.OK );

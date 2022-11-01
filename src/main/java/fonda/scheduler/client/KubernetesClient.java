@@ -19,7 +19,7 @@ import java.util.*;
 public class KubernetesClient extends DefaultKubernetesClient  {
 
     private final Map<String, NodeWithAlloc> nodeHolder= new HashMap<>();
-    private final List<Scheduler> schedulerList = new LinkedList<>();
+    private final List<Informable> informables = new LinkedList<>();
 
 
     public KubernetesClient(){
@@ -30,40 +30,38 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         this.nodes().watch( new NodeWatcher( this ) );
     }
 
-    public void addScheduler( Scheduler scheduler ){
-        log.info("Added scheduler {}", scheduler.getName());
-        synchronized ( schedulerList ){
-            schedulerList.add( scheduler );
+    public void addInformable( Informable informable ){
+        synchronized ( informables ){
+            informables.add( informable );
         }
     }
 
-    public void removeScheduler( Scheduler scheduler ){
-        log.info("Removed scheduler {}", scheduler.getName());
-        synchronized ( schedulerList ){
-            schedulerList.remove( scheduler );
+    public void removeInformable( Informable informable ){
+        synchronized ( informables ){
+            informables.remove( informable );
         }
     }
 
-    private void informAllScheduler(){
-        synchronized ( schedulerList ){
-            for (Scheduler scheduler : schedulerList) {
-                scheduler.informResourceChange();
+    private void informAllInformable(){
+        synchronized ( informables ){
+            for (Informable informable : informables ) {
+                informable.informResourceChange();
             }
         }
     }
 
-    private void informAllSchedulersNewNode( NodeWithAlloc node ){
-        synchronized ( schedulerList ){
-            for (Scheduler scheduler : schedulerList) {
-                scheduler.newNode( node );
+    private void informAllNewNode( NodeWithAlloc node ){
+        synchronized ( informables ){
+            for (Informable informable : informables ) {
+                informable.newNode( node );
             }
         }
     }
 
-    private void informAllSchedulersRemovedNode( NodeWithAlloc node ){
-        synchronized ( schedulerList ){
-            for (Scheduler scheduler : schedulerList) {
-                scheduler.removedNode( node );
+    private void informAllRemovedNode( NodeWithAlloc node ){
+        synchronized ( informables ){
+            for (Informable informable : informables ) {
+                informable.removedNode( node );
             }
         }
     }
@@ -109,7 +107,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                         }
                     }
                     if ( change ) {
-                        kubernetesClient.informAllSchedulersNewNode( processedNode );
+                        kubernetesClient.informAllNewNode( processedNode );
                     }
                     break;
                 case DELETED:
@@ -121,7 +119,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                         }
                     }
                     if ( change ) {
-                        kubernetesClient.informAllSchedulersRemovedNode( processedNode );
+                        kubernetesClient.informAllRemovedNode( processedNode );
                     }
                     break;
                 case ERROR:
@@ -172,7 +170,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                         //Delete Pod in any case
                         if ( node.removePod( pod ) ){
                             log.info("Pod has released its resources: {}", pod.getMetadata().getName());
-                            kubernetesClient.informAllScheduler();
+                            kubernetesClient.informAllInformable();
                         }
                         break;
                     default: log.warn("No implementation for {}", action);

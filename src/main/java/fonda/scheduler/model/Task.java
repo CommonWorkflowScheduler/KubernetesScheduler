@@ -3,7 +3,6 @@ package fonda.scheduler.model;
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.dag.Process;
 import fonda.scheduler.model.location.Location;
-import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.util.Batch;
@@ -12,11 +11,15 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 public class Task {
+
+    @Getter
+    private final long submissionTime = System.currentTimeMillis();
 
     @Getter
     private final TaskConfig config;
@@ -94,6 +97,24 @@ public class Task {
     public String getOutLabel(){
         final OutLabel outLabel = config.getOutLabel();
         return outLabel == null ? null : outLabel.getLabel();
+    }
+
+    private long inputSize = -1;
+
+    public long getInputSize(){
+        synchronized ( this ) {
+            if ( inputSize == -1 ) {
+                //calculate
+                inputSize = getConfig()
+                        .getInputs()
+                        .fileInputs
+                        .parallelStream()
+                        .mapToLong( input -> new File(input.value.sourceObj).length() )
+                        .sum();
+            }
+        }
+        //return cached value
+        return inputSize;
     }
 
     @Override
