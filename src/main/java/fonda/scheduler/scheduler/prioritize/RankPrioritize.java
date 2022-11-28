@@ -10,7 +10,7 @@ public class RankPrioritize implements Prioritize {
     public void sortTasks( List<Task> tasks ) {
         tasks.sort( ( o1, o2 ) -> {
             if ( o1.getProcess().getRank() == o2.getProcess().getRank() ) {
-                return (int) (o1.getSubmissionTime() - o2.getSubmissionTime());
+                return o1.getId() - o2.getId();
             }
             //Prefer larger ranks
             return o2.getProcess().getRank() - o1.getProcess().getRank();

@@ -14,12 +14,15 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class Task {
 
+    private static AtomicInteger idCounter = new AtomicInteger(0);
+
     @Getter
-    private final long submissionTime = System.currentTimeMillis();
+    private final int id = idCounter.getAndIncrement();
 
     @Getter
     private final TaskConfig config;
