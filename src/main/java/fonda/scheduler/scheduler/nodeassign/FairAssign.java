@@ -29,7 +29,7 @@ public class FairAssign extends NodeAssign {
             Double bestScore = null;
             final BigDecimal podRequest = pod.getRequest().getCpu();
             for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
-                if ( scheduler.canSchedulePodOnNode( availableByNode.get( e.getKey() ), pod, e.getKey() ) ) {
+                if ( scheduler.canSchedulePodOnNode( e.getValue(), pod, e.getKey() ) ) {
                     final BigDecimal maxValue = e.getKey().getMaxResources().getCpu();
                     //how much is available if we assign this pod
                     final BigDecimal newValue = e.getValue().getCpu().subtract( podRequest );
