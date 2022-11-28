@@ -211,10 +211,16 @@ public abstract class Scheduler implements Informable {
         } else {
             Batch batch = task.getBatch();
             batch.informScheduable( task );
-            tryToScheduleBatch( batch );
+            synchronized (batchHelper) {
+                tryToScheduleBatch( batch );
+            }
         }
     }
 
+    /**
+     * Synchronize calls via batchHelper
+     * @param batch
+     */
     private void tryToScheduleBatch( Batch batch ){
         if ( batch.canSchedule() ){
             synchronized (unscheduledTasks){
@@ -314,6 +320,9 @@ public abstract class Scheduler implements Informable {
      * @return
      */
     public boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+        if ( availableByNode == null ) {
+            return false;
+        }
         return node.canScheduleNewPod()
                 && availableByNode.higherOrEquals( pod.getRequest() )
                 && affinitiesMatch( pod, node );
