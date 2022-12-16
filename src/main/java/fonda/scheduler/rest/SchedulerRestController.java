@@ -8,6 +8,9 @@ import fonda.scheduler.model.*;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.*;
+import fonda.scheduler.scheduler.filealignment.GreedyAlignment;
+import fonda.scheduler.scheduler.filealignment.costfunctions.CostFunction;
+import fonda.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
 import fonda.scheduler.scheduler.nodeassign.FairAssign;
 import fonda.scheduler.scheduler.nodeassign.NodeAssign;
 import fonda.scheduler.scheduler.nodeassign.RandomNodeAssign;
@@ -125,8 +128,8 @@ public class SchedulerRestController {
                 break;
             default: {
                 final String[] split = strategy.split( "-" );
-                Prioritize prioritize = null;
-                NodeAssign assign = null;
+                Prioritize prioritize;
+                NodeAssign assign;
                 if ( split.length <= 2 ) {
                     switch ( split[0].toLowerCase() ) {
                         case "fifo": prioritize = new FifoPrioritize(); break;
