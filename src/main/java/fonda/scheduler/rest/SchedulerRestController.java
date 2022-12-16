@@ -8,14 +8,15 @@ import fonda.scheduler.model.*;
 import fonda.scheduler.rest.exceptions.NotARealFileException;
 import fonda.scheduler.rest.response.getfile.FileResponse;
 import fonda.scheduler.scheduler.*;
-import fonda.scheduler.scheduler.filealignment.GreedyAlignment;
-import fonda.scheduler.scheduler.filealignment.costfunctions.CostFunction;
-import fonda.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
 import fonda.scheduler.scheduler.nodeassign.FairAssign;
 import fonda.scheduler.scheduler.nodeassign.NodeAssign;
 import fonda.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import fonda.scheduler.scheduler.nodeassign.RoundRobinAssign;
 import fonda.scheduler.scheduler.prioritize.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -73,6 +74,14 @@ public class SchedulerRestController {
         return new ResponseEntity<>( "There is no scheduler for " + execution, HttpStatus.BAD_REQUEST );
     }
 
+    @Operation(summary = "Register a new execution")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Execution successfully registered",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Scheduling algorithm or cost function not found",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "Scheduling algorithm does not work with current config",
+                    content = @Content) })
     /**
      * Register a scheduler for a workflow execution
      * @param execution unique name of the execution
@@ -155,6 +164,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "Register a task for execution")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task successfully registered",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     /**
      * Register a task for the execution
      *
@@ -179,8 +194,17 @@ public class SchedulerRestController {
 
     }
 
+
+    @Operation(summary = "Delete a task of execution")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task successfully deleted",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Task not found",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     /**
-     * Delete a task, onl works if the batch of the task was closed and if no pod was yet submitted.
+     * Delete a task, only works if the batch of the task was closed and if no pod was yet submitted.
      * If a pod was submitted, delete the pod instead.
      *
      * @param execution
@@ -200,6 +224,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully started batch",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     @PutMapping("/v1/scheduler/{execution}/startBatch")
     ResponseEntity<String> startBatch( @PathVariable String execution ) {
 
@@ -212,6 +242,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "End a batch")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully ended batch",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     @PutMapping("/v1/scheduler/{execution}/endBatch")
     ResponseEntity<String> endBatch( @PathVariable String execution, @RequestBody int tasksInBatch ) {
 
@@ -224,6 +260,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "Check the state of a task")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task found",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     /**
      * Check Task state
      *
@@ -243,6 +285,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "Delete an execution after it has finished or crashed")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Execution successfully deleted",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     /**
      * Call this after the execution has finished
      *
@@ -362,6 +410,12 @@ public class SchedulerRestController {
         return new ResponseEntity<>( HttpStatus.OK );
     }
 
+    @Operation(summary = "Register DAG vertices")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vertices successfully registered",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     @PostMapping("/v1/scheduler/{execution}/DAG/vertices")
     ResponseEntity<String> addVertices( @PathVariable String execution, @RequestBody List<Vertex> vertices ) {
 
@@ -378,6 +432,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "Delete DAG vertices")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vertices successfully removed",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     @DeleteMapping("/v1/scheduler/{execution}/DAG/vertices")
     ResponseEntity<String> deleteVertices( @PathVariable String execution, @RequestBody int[] vertices ) {
 
@@ -394,6 +454,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "Register DAG edges")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Edges successfully registered",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     @PostMapping("/v1/scheduler/{execution}/DAG/edges")
     ResponseEntity<String> addEdges( @PathVariable String execution, @RequestBody List<InputEdge> edges ) {
 
@@ -411,6 +477,12 @@ public class SchedulerRestController {
 
     }
 
+    @Operation(summary = "Delete DAG edges")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Edges successfully removed",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
     @DeleteMapping("/v1/scheduler/{execution}/DAG/edges")
     ResponseEntity<String> deleteEdges( @PathVariable String execution, @RequestBody int[] edges ) {
 
