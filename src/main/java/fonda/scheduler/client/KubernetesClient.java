@@ -116,7 +116,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
     }
 
     public void assignPodToNodeAndRemoveInit( PodWithAge pod, String node ) {
-        pod.getSpec().getInitContainers().remove( 0 );
+        if ( pod.getSpec().getInitContainers().size() > 0 ) {
+            pod.getSpec().getInitContainers().remove( 0 );
+        }
         pod.getMetadata().setResourceVersion( null );
         pod.getMetadata().setManagedFields( null );
         pod.getSpec().setNodeName( node );
