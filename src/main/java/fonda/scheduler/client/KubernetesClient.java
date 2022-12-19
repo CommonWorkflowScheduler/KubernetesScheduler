@@ -3,10 +3,7 @@ package fonda.scheduler.client;
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.PodWithAge;
 import fonda.scheduler.scheduler.Scheduler;
-import io.fabric8.kubernetes.api.model.ContainerStatus;
-import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
@@ -83,6 +80,51 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 .get("memory");
         return Quantity.getAmountInBytes(memory);
     }
+
+    private void forceDeletePod( Pod pod ) {
+        this.pods()
+                .inNamespace(pod.getMetadata().getNamespace())
+                .withName(pod.getMetadata().getName())
+                .withGracePeriod(0)
+                .withPropagationPolicy( DeletionPropagation.BACKGROUND )
+                .delete();
+    }
+
+    private void createPod( Pod pod ) {
+        this.pods()
+                .inNamespace(pod.getMetadata().getNamespace())
+                .resource( pod )
+                .create();
+    }
+
+    public void assignPodToNode( PodWithAge pod, String node ) {
+        Binding b1 = new Binding();
+
+        ObjectMeta om = new ObjectMeta();
+        om.setName( pod.getMetadata().getName());
+        om.setNamespace( pod.getMetadata().getNamespace());
+        b1.setMetadata(om);
+
+        ObjectReference objectReference = new ObjectReference();
+        objectReference.setApiVersion("v1");
+        objectReference.setKind("Node");
+        objectReference.setName( node );
+
+        b1.setTarget(objectReference);
+
+        bindings().create(b1);
+    }
+
+    public void assignPodToNodeAndRemoveInit( PodWithAge pod, String node ) {
+        pod.getSpec().getInitContainers().remove( 0 );
+        pod.getMetadata().setResourceVersion( null );
+        pod.getMetadata().setManagedFields( null );
+        pod.getSpec().setNodeName( node );
+
+        forceDeletePod( pod );
+        createPod( pod );
+    }
+
 
     static class NodeWatcher implements Watcher<Node>{
 

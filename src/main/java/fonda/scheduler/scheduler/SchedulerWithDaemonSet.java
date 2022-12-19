@@ -22,18 +22,14 @@ import fonda.scheduler.scheduler.outlabel.HolderMaxTasks;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.*;
-import io.fabric8.kubernetes.api.model.ContainerStatus;
-import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.Watcher;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.ftp.FTPClient;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -103,15 +99,28 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         if ( traceEnabled ) {
             traceAlignment( nodeTaskFilesAlignment, writeConfigResult );
         }
+        nodeTaskFilesAlignment.setRemoveInit( !writeConfigResult.isWroteConfig() );
         alignment.task.setCopiedFiles( writeConfigResult.getInputFiles() );
         addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
         alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
-        getCopyStrategy().generateCopyScript( alignment.task, writeConfigResult.isWroteConfig() );
+        if ( writeConfigResult.isWroteConfig() ) {
+            getCopyStrategy().generateCopyScript( alignment.task, writeConfigResult.isWroteConfig() );
+        }
         alignment.task.setCopiesDataToNode( writeConfigResult.isCopyDataToNode() );
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         alignment.task.setInputFiles( allLocationWrappers );
         useLocations( allLocationWrappers );
         return super.assignTaskToNode( alignment );
+    }
+
+    @Override
+    void assignPodToNode( PodWithAge pod, NodeTaskAlignment alignment ) {
+        if ( ((NodeTaskFilesAlignment) alignment).isRemoveInit() ) {
+            log.info( "Removing init container from pod {}", pod.getMetadata().getName() );
+            client.assignPodToNodeAndRemoveInit( pod, alignment.node.getName() );
+        } else {
+            super.assignPodToNode( pod, alignment );
+        }
     }
 
     @Override

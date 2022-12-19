@@ -362,6 +362,10 @@ public abstract class Scheduler implements Informable {
         return node.canSchedule( pod );
     }
 
+    void assignPodToNode( PodWithAge pod, NodeTaskAlignment alignment ){
+        client.assignPodToNode( pod, alignment.node.getMetadata().getName() );
+    }
+
     boolean assignTaskToNode( NodeTaskAlignment alignment ){
 
         final File nodeFile = new File(alignment.task.getWorkingDir() + '/' + ".command.node");
@@ -381,21 +385,7 @@ public abstract class Scheduler implements Informable {
 
         log.info ( "Assign pod: " + pod.getMetadata().getName() + " to node: " + alignment.node.getMetadata().getName() );
 
-        Binding b1 = new Binding();
-
-        ObjectMeta om = new ObjectMeta();
-        om.setName(pod.getMetadata().getName());
-        om.setNamespace(pod.getMetadata().getNamespace());
-        b1.setMetadata(om);
-
-        ObjectReference objectReference = new ObjectReference();
-        objectReference.setApiVersion("v1");
-        objectReference.setKind("Node");
-        objectReference.setName(alignment.node.getMetadata().getName());
-
-        b1.setTarget(objectReference);
-
-        client.bindings().create(b1);
+        assignPodToNode( pod, alignment );
 
         pod.getSpec().setNodeName( alignment.node.getMetadata().getName() );
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
