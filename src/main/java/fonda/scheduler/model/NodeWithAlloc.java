@@ -68,14 +68,24 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         Requirements request = pod.getRequest();
         if ( withStartingTasks ) {
             synchronized ( startingTaskCopyingData ) {
-                if ( !startingTaskCopyingData.contains( pod ) ) {
-                    startingTaskCopyingData.add( pod );
+                final Iterator<PodWithAge> iterator = startingTaskCopyingData.iterator();
+                while ( iterator.hasNext() ) {
+                    final PodWithAge copyPod = iterator.next();
+                    if ( getPodInternalId( pod ).equals( getPodInternalId( copyPod ) )) {
+                        iterator.remove();
+                        break;
+                    }
                 }
+                startingTaskCopyingData.add( pod );
             }
         }
         synchronized (assignedPods) {
-            assignedPods.put( pod.getMetadata().getUid(), request );
+            assignedPods.put( getPodInternalId( pod ) , request );
         }
+    }
+
+    private String getPodInternalId( Pod pod ) {
+        return pod.getMetadata().getNamespace() + "||" + pod.getMetadata().getName();
     }
 
     private void removeStartingTaskCopyingDataByUid( String uid ) {
@@ -94,7 +104,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     public boolean removePod( Pod pod ){
         removeStartingTaskCopyingDataByUid( pod.getMetadata().getUid() );
         synchronized (assignedPods) {
-            return assignedPods.remove( pod.getMetadata().getUid() ) != null;
+            return assignedPods.remove( getPodInternalId( pod ) ) != null;
         }
     }
 
