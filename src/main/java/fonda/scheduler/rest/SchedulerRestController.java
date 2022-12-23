@@ -16,6 +16,7 @@ import fonda.scheduler.scheduler.nodeassign.NodeAssign;
 import fonda.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import fonda.scheduler.scheduler.nodeassign.RoundRobinAssign;
 import fonda.scheduler.scheduler.prioritize.*;
+import fonda.scheduler.scheduler.LocationAwareSchedulerV2Simple;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -125,6 +126,15 @@ public class SchedulerRestController {
                     costFunction = new MinSizeCost( 0 );
                 }
                 scheduler = new LASchedulerV1( execution, client, namespace, config, new GreedyAlignment(costFunction) );
+                break;
+            case "lav2" :
+                if ( !config.locationAware ) {
+                    return new ResponseEntity<>( "LA scheduler only work if location aware", HttpStatus.BAD_REQUEST );
+                }
+                if ( costFunction == null ) {
+                    costFunction = new MinSizeCost( 0 );
+                }
+                scheduler = new LocationAwareSchedulerV2Simple( execution, client, namespace, config, new GreedyAlignment(costFunction) );
                 break;
             default: {
                 final String[] split = strategy.split( "-" );
@@ -326,7 +336,7 @@ public class SchedulerRestController {
             return noSchedulerFor( execution );
         }
 
-        String daemon = ((SchedulerWithDaemonSet) scheduler).getDaemonOnNode( node );
+        String daemon = ((SchedulerWithDaemonSet) scheduler).getDaemonIpOnNode( node );
 
         if ( daemon == null ){
             return new ResponseEntity<>( "No daemon for node found: " + node , HttpStatus.NOT_FOUND );

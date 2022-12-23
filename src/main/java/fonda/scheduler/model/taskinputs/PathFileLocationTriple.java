@@ -36,6 +36,15 @@ public class PathFileLocationTriple implements Input {
         return this.size;
     }
 
+    public LocationWrapper locationWrapperOnLocation(Location loc){
+        for (LocationWrapper location : locations) {
+            if ( location.getLocation().equals(loc) ) {
+                return location;
+            }
+        }
+        throw new IllegalStateException("LocationWrapper not found for location " + loc);
+    }
+
     public boolean locatedOnLocation(Location loc){
         for (LocationWrapper location : locations) {
             if ( location.getLocation() == loc ) {

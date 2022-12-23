@@ -56,18 +56,28 @@ public class LocationWrapper {
         this.active = false;
     }
 
+    /**
+     * use the file, if you copy it to a node, or a task uses it as input
+     */
     public void use(){
         synchronized ( this ) {
             inUse++;
         }
     }
 
+    /**
+     * free the file, if you finished copy it to a node, or a task the task finished that used it as an input
+     */
     public void free(){
         synchronized ( this ) {
             inUse--;
         }
     }
 
+    /**
+     * Any task currently reading or writing to this file
+     * @return
+     */
     public boolean isInUse(){
         return inUse > 0;
     }
