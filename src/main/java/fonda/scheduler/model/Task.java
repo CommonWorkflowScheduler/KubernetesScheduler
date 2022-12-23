@@ -2,18 +2,16 @@ package fonda.scheduler.model;
 
 import fonda.scheduler.dag.DAG;
 import fonda.scheduler.dag.Process;
-import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.util.Batch;
-import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -53,7 +51,7 @@ public class Task {
 
     @Getter
     @Setter
-    private Map< String, Tuple<Task, Location>> copyingToNode;
+    private CurrentlyCopyingOnNode copyingToNode;
 
     @Getter
     private final TraceRecord traceRecord = new TraceRecord();

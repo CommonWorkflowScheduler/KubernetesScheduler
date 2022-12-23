@@ -4,6 +4,7 @@ import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.NodeLocation;
+import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.model.tracing.TraceRecord;
 import fonda.scheduler.scheduler.data.NodeDataTuple;
@@ -11,6 +12,8 @@ import fonda.scheduler.scheduler.data.TaskData;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
 import fonda.scheduler.util.*;
+import fonda.scheduler.util.copying.CurrentlyCopying;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +57,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             final TaskData taskData,
             final Map<NodeWithAlloc, Requirements> availableByNode,
             final Map<NodeWithAlloc, Integer> assignedPodsByNode,
-            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
+            CurrentlyCopying planedToCopy,
             int index
     ) {
         long startTime = System.nanoTime();
@@ -80,22 +83,6 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         return new NodeTaskFilesAlignment(result.getA(), task, result.getB());
     }
 
-    private void addAlignmentToPlanned (
-            Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy,
-            final Map<Location, AlignmentWrapper> nodeFileAlignment,
-            Task task,
-            NodeWithAlloc node
-    ) {
-        for (Map.Entry<Location, AlignmentWrapper> entry : nodeFileAlignment.entrySet()) {
-            final Map<String, Tuple<Task, Location>> map = planedToCopy.computeIfAbsent(node.getNodeLocation(), k -> new HashMap<>());
-            for (FilePath filePath : entry.getValue().getFilesToCopy()) {
-                if ( entry.getKey() != node.getNodeLocation() ) {
-                    map.put(filePath.getPath(), new Tuple<>(task, entry.getKey()));
-                }
-            }
-        }
-    }
-
     /**
      * Align all tasks to the best node
      * @param unscheduledTasksSorted
@@ -108,7 +95,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
     ){
         int index = 0;
         final List<NodeTaskAlignment> alignment = new LinkedList<>();
-        final Map< Location, Map< String, Tuple<Task,Location>> > planedToCopy = new HashMap<>();
+        final CurrentlyCopying planedToCopy = new CurrentlyCopying();
         final Map<NodeWithAlloc, Integer> assignedPodsByNode = new HashMap<>();
         Map<NodeWithAlloc,Integer> taskCountWhichCopyToNode = new HashMap<>();
         while( !unscheduledTasksSorted.isEmpty() ){
@@ -270,7 +257,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
 
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
+            CurrentlyCopying planedToCopy,
             Map<NodeWithAlloc, Requirements> availableByNode,
             Map<NodeWithAlloc, Integer> assignedPodsByNode
     ) {
@@ -285,8 +272,8 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         for (NodeDataTuple nodeDataTuple : nodeDataTuples) {
             
             final NodeWithAlloc currentNode = nodeDataTuple.getNode();
-            final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(currentNode.getNodeLocation());
-            final Map<String, Tuple<Task, Location>> currentlyPlanedToCopy = planedToCopy.get(currentNode.getNodeLocation());
+            final CurrentlyCopyingOnNode currentlyCopying = getCurrentlyCopying().get(currentNode.getNodeLocation());
+            final CurrentlyCopyingOnNode currentlyPlanedToCopy = planedToCopy.get(currentNode.getNodeLocation());
             FileAlignment fileAlignment = null;
             try {
                 fileAlignment = inputAlignment.getInputAlignment(
@@ -411,5 +398,72 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         taskData.setWeight( outWeight );
         return taskData;
     }
+
+    @Override
+    boolean assignTaskToNode( NodeTaskAlignment alignment ) {
+        final NodeTaskFilesAlignment nodeTaskFilesAlignment = (NodeTaskFilesAlignment) alignment;
+        final WriteConfigResult writeConfigResult = writeInitConfig(nodeTaskFilesAlignment);
+        if ( writeConfigResult == null ) {
+            return false;
+        }
+        if ( traceEnabled ) {
+            traceAlignment( nodeTaskFilesAlignment, writeConfigResult );
+        }
+        nodeTaskFilesAlignment.setRemoveInit( !writeConfigResult.isWroteConfig() );
+        alignment.task.setCopiedFiles( writeConfigResult.getInputFiles() );
+        addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
+        alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
+        if ( writeConfigResult.isWroteConfig() ) {
+            getCopyStrategy().generateCopyScript( alignment.task, writeConfigResult.isWroteConfig() );
+        }
+        alignment.task.setCopiesDataToNode( writeConfigResult.isCopyDataToNode() );
+        final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
+        alignment.task.setInputFiles( allLocationWrappers );
+        useLocations( allLocationWrappers );
+        return super.assignTaskToNode( alignment );
+    }
+
+    private void traceAlignment( NodeTaskFilesAlignment alignment, WriteConfigResult writeConfigResult ) {
+        final TraceRecord traceRecord = alignment.task.getTraceRecord();
+
+        int filesOnNodeOtherTask = 0;
+        int filesNotOnNode = 0;
+        long filesOnNodeOtherTaskByte = 0;
+        long filesNotOnNodeByte = 0;
+
+        final NodeLocation currentNode = alignment.node.getNodeLocation();
+        for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.getNodeFileAlignment().entrySet()) {
+            final AlignmentWrapper alignmentWrapper = entry.getValue();
+            if( entry.getKey() == currentNode) {
+                traceRecord.setSchedulerFilesNode( alignmentWrapper.getFilesToCopy().size() + alignmentWrapper.getWaitFor().size() );
+                traceRecord.setSchedulerFilesNodeBytes( alignmentWrapper.getToCopySize() + alignmentWrapper.getToWaitSize() );
+            } else {
+                filesOnNodeOtherTask += alignmentWrapper.getWaitFor().size();
+                filesOnNodeOtherTaskByte += alignmentWrapper.getToWaitSize();
+                filesNotOnNodeByte += alignmentWrapper.getToCopySize();
+                filesNotOnNode += alignmentWrapper.getFilesToCopy().size();
+            }
+        }
+        if (traceRecord.getSchedulerFilesNode() == null) {
+            traceRecord.setSchedulerFilesNode(0);
+        }
+        if (traceRecord.getSchedulerFilesNodeBytes() == null) {
+            traceRecord.setSchedulerFilesNodeBytes(0l);
+        }
+        traceRecord.setSchedulerFilesNodeOtherTask(filesOnNodeOtherTask);
+        traceRecord.setSchedulerFilesNodeOtherTaskBytes(filesOnNodeOtherTaskByte);
+        final int schedulerFilesNode = traceRecord.getSchedulerFilesNode() == null ? 0 : traceRecord.getSchedulerFilesNode();
+        traceRecord.setSchedulerFiles(schedulerFilesNode + filesOnNodeOtherTask + filesNotOnNode);
+        final long schedulerFilesNodeBytes = traceRecord.getSchedulerFilesNodeBytes() == null ? 0 : traceRecord.getSchedulerFilesNodeBytes();
+        traceRecord.setSchedulerFilesBytes(schedulerFilesNodeBytes + filesOnNodeOtherTaskByte + filesNotOnNodeByte);
+        traceRecord.setSchedulerDependingTask( (int) writeConfigResult.getWaitForTask().values().stream().distinct().count() );
+        traceRecord.setSchedulerNodesToCopyFrom( alignment.fileAlignment.getNodeFileAlignment().size() - (schedulerFilesNode > 0 ? 1 : 0) );
+    }
+
+    @Override
+    public boolean canSchedulePodOnNode( Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+        return this.getDaemonIpOnNode( node ) != null && super.canSchedulePodOnNode( availableByNode, pod, node );
+    }
+
 
 }

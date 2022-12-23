@@ -12,6 +12,7 @@ import fonda.scheduler.util.AlignmentWrapper;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.FilePath;
 import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,8 +60,8 @@ public class GreedyAlignment extends InputAlignmentClass {
     public FileAlignment getInputAlignment(@NotNull Task task,
                                            @NotNull TaskInputs inputsOfTask,
                                            @NotNull NodeWithAlloc node,
-                                           Map<String, Tuple<Task, Location>> currentlyCopying,
-                                           Map<String, Tuple<Task, Location>> currentlyPlanedToCopy,
+                                           CurrentlyCopyingOnNode currentlyCopying,
+                                           CurrentlyCopyingOnNode currentlyPlanedToCopy,
                                            double maxCost) {
         inputsOfTask.sort();
         return super.getInputAlignment( task, inputsOfTask, node, currentlyCopying, currentlyPlanedToCopy, maxCost );

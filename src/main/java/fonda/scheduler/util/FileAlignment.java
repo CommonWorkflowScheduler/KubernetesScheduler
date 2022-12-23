@@ -1,16 +1,19 @@
 package fonda.scheduler.util;
 
 import fonda.scheduler.model.location.Location;
+import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Getter
+@ToString
 public class FileAlignment {
 
     /*
@@ -31,6 +34,18 @@ public class FileAlignment {
 
     public double getWorth() {
         return cost / weight;
+    }
+
+    /**
+     * Check if data is copied from at least one node
+     * @param node this node is not checked
+     * @return
+     */
+    public boolean copyFromSomewhere( Location node ) {
+        return nodeFileAlignment
+                .entrySet()
+                .stream()
+                .anyMatch( a -> a.getKey() != node && a.getValue().getFilesToCopy().size() > 0 );
     }
 
     public List<LocationWrapper> getAllLocationWrappers(){

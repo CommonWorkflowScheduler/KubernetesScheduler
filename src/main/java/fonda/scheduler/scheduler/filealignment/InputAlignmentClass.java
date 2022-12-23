@@ -12,12 +12,16 @@ import fonda.scheduler.util.AlignmentWrapper;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.FilePathWithTask;
 import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.copying.CopySource;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 abstract class InputAlignmentClass implements InputAlignment {
 
     /**
@@ -28,22 +32,24 @@ abstract class InputAlignmentClass implements InputAlignment {
      * @param locations
      * @return
      */
-    private Tuple<LocationWrapper,Task> alreadyCopying(Map<String, Tuple<Task, Location>> currentlyCopying, String path, List<LocationWrapper> locations, String debug ){
-        if (  currentlyCopying != null && currentlyCopying.containsKey( path )  ){
-            final Tuple<Task, Location> taskLocationTuple = currentlyCopying.get(path);
-            final Location copyFrom = taskLocationTuple.getB();
+    private Tuple<LocationWrapper,Task> alreadyCopying( CurrentlyCopyingOnNode currentlyCopying, String path, List<LocationWrapper> locations, String debug ){
+        if ( currentlyCopying != null && currentlyCopying.isCurrentlyCopying( path )  ){
+            final CopySource copySource = currentlyCopying.getCopySource( path );
+            final Location copyFrom = copySource.getLocation();
             for ( LocationWrapper locationWrapper : locations ) {
                 if ( locationWrapper.getLocation() == copyFrom ) {
-                    return new Tuple(locationWrapper,taskLocationTuple.getA());
+                    log.info( "Checking if {} is already copying: {} (Found)", path, currentlyCopying.getAllFilesCurrentlyCopying() );
+                    return new Tuple(locationWrapper,copySource.getTask());
                 }
             }
             throw new NoAligmentPossibleException( "Node is a already copying file: " + path + " but in an incompatible version." );
         }
+        log.info( "Checking if {} is already copying: {} (Not found)", path, currentlyCopying == null ? null : currentlyCopying.getAllFilesCurrentlyCopying() );
         return null;
     }
 
     private boolean canUseFileFromOtherTask (
-            Map<String, Tuple<Task, Location>> currentlyCopying,
+            CurrentlyCopyingOnNode currentlyCopying,
             PathFileLocationTriple pathFileLocationTriple,
             Map<Location, AlignmentWrapper> map,
             String debug
@@ -66,15 +72,15 @@ abstract class InputAlignmentClass implements InputAlignment {
     public FileAlignment getInputAlignment(@NotNull Task task,
                                            @NotNull TaskInputs inputsOfTask,
                                            @NotNull NodeWithAlloc node,
-                                           Map<String, Tuple<Task, Location>> currentlyCopying,
-                                           Map<String, Tuple<Task, Location>> currentlyPlanedToCopy,
+                                           CurrentlyCopyingOnNode currentlyCopying,
+                                           CurrentlyCopyingOnNode currentlyPlanedToCopy,
                                            double maxCost) {
         final HashMap<Location, AlignmentWrapper> map = new HashMap<>();
         double cost = 0;
         for (PathFileLocationTriple pathFileLocationTriple : inputsOfTask.getFiles()) {
             if ( !canUseFileFromOtherTask( currentlyCopying, pathFileLocationTriple, map, "copying" )
                     &&
-                    ! canUseFileFromOtherTask( currentlyPlanedToCopy, pathFileLocationTriple, map, "currentSchedule" )
+                    !canUseFileFromOtherTask( currentlyPlanedToCopy, pathFileLocationTriple, map, "currentSchedule" )
             ) {
                 final double newCost = findAlignmentForFile( pathFileLocationTriple, node.getNodeLocation(), map );
                 if ( newCost > maxCost ) {

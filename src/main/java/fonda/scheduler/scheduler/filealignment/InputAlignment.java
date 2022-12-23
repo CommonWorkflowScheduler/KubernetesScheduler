@@ -6,6 +6,7 @@ import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -23,8 +24,8 @@ public interface InputAlignment {
     FileAlignment getInputAlignment( @NotNull Task task,
                                      @NotNull TaskInputs inputsOfTask,
                                      @NotNull NodeWithAlloc node,
-                                     Map<String, Tuple<Task, Location>> currentlyCopying,
-                                     Map<String, Tuple<Task, Location>> currentlyPlanedToCopy,
+                                     CurrentlyCopyingOnNode currentlyCopying,
+                                     CurrentlyCopyingOnNode currentlyPlanedToCopy,
                                      double maxCost );
 
     /**
@@ -37,8 +38,8 @@ public interface InputAlignment {
     default FileAlignment getInputAlignment( @NotNull Task task,
                                              @NotNull TaskInputs inputsOfTask,
                                              @NotNull NodeWithAlloc node,
-                                             Map<String, Tuple<Task, Location>> currentlyCopying,
-                                             Map<String, Tuple<Task, Location>> currentlyPlanedToCopy
+                                             CurrentlyCopyingOnNode currentlyCopying,
+                                             CurrentlyCopyingOnNode currentlyPlanedToCopy
     ){
         return getInputAlignment( task, inputsOfTask, node, currentlyCopying, currentlyPlanedToCopy, Double.MAX_VALUE );
     }

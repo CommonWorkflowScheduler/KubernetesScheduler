@@ -2,13 +2,17 @@ package fonda.scheduler.client;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.PodWithAge;
-import fonda.scheduler.scheduler.Scheduler;
+import fonda.scheduler.scheduler.LocationAwareSchedulerV2;
+import fonda.scheduler.util.MyExecListner;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
+import io.fabric8.kubernetes.client.dsl.ExecListener;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -125,6 +129,21 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
         forceDeletePod( pod );
         createPod( pod );
+    }
+
+    public void execCommand( String podName, String namespace, String[] command, MyExecListner listener ){
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream error = new ByteArrayOutputStream();
+        final ExecWatch exec = this.pods()
+                .inNamespace( namespace )
+                .withName( podName )
+                .writingOutput( out )
+                .writingError( error )
+                .usingListener( listener )
+                .exec( command );
+        listener.setExec( exec );
+        listener.setError( error );
+        listener.setOut( out );
     }
 
 

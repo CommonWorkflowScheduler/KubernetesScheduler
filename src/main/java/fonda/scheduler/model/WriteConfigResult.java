@@ -2,6 +2,7 @@ package fonda.scheduler.model;
 
 import fonda.scheduler.model.location.Location;
 import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.Getter;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public class WriteConfigResult {
 
     private final List<TaskInputFileLocationWrapper> inputFiles;
     private final Map<String, Task > waitForTask;
-    private final Map< String, Tuple<Task, Location>> copyingToNode;
+    private final CurrentlyCopyingOnNode copyingToNode;
 
     private boolean copyDataToNode;
 
@@ -21,7 +22,7 @@ public class WriteConfigResult {
     public WriteConfigResult(
             List<TaskInputFileLocationWrapper> inputFiles,
             Map<String, Task> waitForTask,
-            Map<String, Tuple<Task, Location>> copyingToNode,
+            CurrentlyCopyingOnNode copyingToNode,
             boolean wroteConfig,
             boolean copyDataToNode
     ) {

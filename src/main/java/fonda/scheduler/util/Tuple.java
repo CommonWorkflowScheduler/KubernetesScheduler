@@ -1,8 +1,10 @@
 package fonda.scheduler.util;
 
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
+@ToString
 public class Tuple <S,T> {
 
     private final S a;

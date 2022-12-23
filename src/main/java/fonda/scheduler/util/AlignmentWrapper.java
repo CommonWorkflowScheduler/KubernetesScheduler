@@ -1,11 +1,13 @@
 package fonda.scheduler.util;
 
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.LinkedList;
 import java.util.List;
 
 @Getter
+@ToString
 public class AlignmentWrapper {
 
     private final List<FilePath> filesToCopy = new LinkedList<>();

@@ -12,6 +12,8 @@ import fonda.scheduler.scheduler.data.TaskData;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.copying.CurrentlyCopying;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -42,7 +44,7 @@ public class RandomLAScheduler extends LocationAwareScheduler {
     @Override
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode(
             final TaskData taskData,
-            Map< Location, Map<String, Tuple<Task, Location>>> planedToCopy,
+            CurrentlyCopying planedToCopy,
             Map<NodeWithAlloc, Requirements> availableByNode,
             Map<NodeWithAlloc, Integer> assignedPodsByNode
     ){
@@ -51,8 +53,8 @@ public class RandomLAScheduler extends LocationAwareScheduler {
             return null;
         }
         final NodeWithAlloc node = nodeWithAlloc.get();
-        final Map<String, Tuple<Task, Location>> currentlyCopying = getCopyingToNode().get(node.getNodeLocation());
-        final Map<String, Tuple<Task, Location>> currentlyPlanetToCopy = planedToCopy.get(node.getNodeLocation());
+        final CurrentlyCopyingOnNode currentlyCopying = getCurrentlyCopying().get(node.getNodeLocation());
+        final CurrentlyCopyingOnNode currentlyPlanetToCopy = planedToCopy.get(node.getNodeLocation());
         final FileAlignment fileAlignment = getInputAlignment().getInputAlignment(
                 taskData.getTask(),
                 taskData.getMatchingFilesAndNodes().getInputsOfTask(),

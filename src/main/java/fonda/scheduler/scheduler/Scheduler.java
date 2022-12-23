@@ -86,6 +86,7 @@ public abstract class Scheduler implements Informable {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
+        final LinkedList<Task> unscheduledTasksCopy = new LinkedList<>( unscheduledTasks );
         long startSchedule = System.currentTimeMillis();
         if( traceEnabled ) {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
@@ -98,6 +99,7 @@ public abstract class Scheduler implements Informable {
             boolean possible = validSchedulePlan ( taskNodeAlignment );
             if (!possible) {
                 log.info("The whole scheduling plan is not possible anymore.");
+                informOtherResourceChange();
                 return taskNodeAlignment.size();
             }
         }
@@ -126,10 +128,19 @@ public abstract class Scheduler implements Informable {
                 continue;
             }
             taskWasScheduled(nodeTaskAlignment.task);
+            unscheduledTasksCopy.remove( nodeTaskAlignment.task );
             scheduled++;
         }
+        //Use instance object that does not contain yet scheduled tasks
+        postScheduling( unscheduledTasksCopy );
         return unscheduledTasks.size() - taskNodeAlignment.size() + failure;
     }
+
+    /**
+     * This method is called when a SchedulePlan was successfully executed.
+     * @param unscheduledTasks
+     */
+    void postScheduling( final List<Task> unscheduledTasks ) {}
 
     /**
      * Call this method in case of any scheduling problems
@@ -143,12 +154,14 @@ public abstract class Scheduler implements Informable {
         for ( NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment ) {
             final Requirements requirements = availableByNode.get(nodeTaskAlignment.node);
             if ( requirements == null ) {
+                log.info( "Node {} is not available anymore", nodeTaskAlignment.node.getMetadata().getName() );
                 return false;
             }
             requirements.subFromThis(nodeTaskAlignment.task.getPod().getRequest());
         }
         for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
             if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) {
+                log.info( "Node {} has not enough resources. Available: {}, After assignment it would be: {}", e.getKey().getMetadata().getName(), e.getKey().getAvailableResources(), e.getValue() );
                 return false;
             }
         }
@@ -323,9 +336,11 @@ public abstract class Scheduler implements Informable {
         if ( availableByNode == null ) {
             return false;
         }
-        return node.canScheduleNewPod()
-                && availableByNode.higherOrEquals( pod.getRequest() )
-                && affinitiesMatch( pod, node );
+        return canSchedulePodOnNode( pod, node ) && availableByNode.higherOrEquals( pod.getRequest() );
+    }
+
+    public boolean canSchedulePodOnNode(PodWithAge pod, NodeWithAlloc node ) {
+        return node.canScheduleNewPod() && affinitiesMatch( pod, node );
     }
 
     boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
@@ -374,7 +389,7 @@ public abstract class Scheduler implements Informable {
             printWriter.write( alignment.node.getName() );
             printWriter.write( '\n' );
         } catch (IOException e) {
-            log.error( "Cannot read " + nodeFile, e);
+            log.error( "Cannot write " + nodeFile, e);
         }
 
         alignment.task.setNode( alignment.node );
@@ -440,9 +455,17 @@ public abstract class Scheduler implements Informable {
      * starts the scheduling routine
      */
     public void informResourceChange() {
+        informOtherResourceChange();
         synchronized (unscheduledTasks){
             unscheduledTasks.notifyAll();
         }
+    }
+
+    /**
+     * Call if something was changed withing the scheduling loop. In all other cases, call informResourceChange()
+     */
+    private void informOtherResourceChange() {
+        schedulingThread.otherResourceChange();
     }
 
     Task getTaskByPod( Pod pod ) {

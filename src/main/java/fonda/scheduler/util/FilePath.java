@@ -25,4 +25,9 @@ public class FilePath {
     public LocationWrapper getLocationWrapper() {
         return locationWrapper;
     }
+
+    @Override
+    public String toString() {
+        return getPath();
+    }
 }
