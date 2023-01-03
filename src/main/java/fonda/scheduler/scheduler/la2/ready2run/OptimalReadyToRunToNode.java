@@ -92,8 +92,8 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
         }
 
         for ( NodeWithAlloc node : memUsed.keySet() ) {
-            model.addLessOrEqual(memUsed.get( node ), availableByNode.get( node ).getRam().longValue() );
-            model.addLessOrEqual(cpuUsed.get( node ), availableByNode.get( node ).getCpu().multiply( MILLION ).longValue() );
+            model.addLessOrEqual( memUsed.get( node ), availableByNode.get( node ).getRam().longValue() );
+            model.addLessOrEqual( cpuUsed.get( node ), availableByNode.get( node ).getCpu().multiply( MILLION ).longValue() );
         }
 
         model.maximize( objective );
