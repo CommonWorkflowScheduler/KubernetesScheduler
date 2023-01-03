@@ -13,13 +13,14 @@ import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.data.TaskInputsNodes;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
+import fonda.scheduler.scheduler.internal.ReadyToRunToNode;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.*;
 import fonda.scheduler.util.copying.CurrentlyCopying;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
+import fonda.scheduler.util.score.FileSizeRankScore;
 import io.fabric8.kubernetes.api.model.Status;
-import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
+public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     @Getter(AccessLevel.PACKAGE)
     private final InputAlignment inputAlignment;
@@ -42,6 +43,8 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     private final CopyToNodeManager copyToNodeManager = new CopyToNodeManager();
 
     private final LogCopyTask logCopyTask = new LogCopyTask();
+
+    private final ReadyToRunToNode readyToRunToNode;
 
     /**
      * This lock is used to syncronize the creation of the copy tasks and the finishing.
@@ -57,17 +60,16 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
             KubernetesClient client,
             String namespace,
             SchedulerConfig config,
-            InputAlignment inputAlignment) {
+            InputAlignment inputAlignment,
+            ReadyToRunToNode readyToRunToNode ) {
         super( name, client, namespace, config );
         this.inputAlignment = inputAlignment;
         this.maxCopyTasksPerNode = config.maxCopyTasksPerNode == null ? 1 : config.maxCopyTasksPerNode;
         this.maxWaitingCopyTasksPerNode = config.maxWaitingCopyTasksPerNode == null ? 1 : config.maxWaitingCopyTasksPerNode;
+        this.readyToRunToNode = readyToRunToNode;
+        this.readyToRunToNode.init( new FileSizeRankScore( hierarchyWrapper ) );
+        readyToRunToNode.setLogger( logCopyTask );
     }
-
-    protected abstract List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
-            List<TaskInputsNodes> taskWithAllData,
-            Map<NodeWithAlloc, Requirements> availableByNode
-    );
 
     @Override
     public ScheduleObject getTaskNodeAlignment(
@@ -102,7 +104,7 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 .stream()
                 .filter( td -> !td.getNodesWithAllData().isEmpty() )
                 .collect( Collectors.toList() );
-        final List<NodeTaskLocalFilesAlignment> alignment = createAlignmentForTasksWithAllDataOnNode(taskWithAllData, availableByNode);
+        final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode(taskWithAllData, availableByNode);
         final ScheduleObject scheduleObject = new ScheduleObject( (List) alignment );
         scheduleObject.setCheckStillPossible( true );
         scheduleObject.setStopSubmitIfOneFails( true );
@@ -119,8 +121,7 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     .map( task -> {
                         final TaskInputs inputsOfTask = extractInputsOfData( task );
                         if ( inputsOfTask == null ) return null;
-                        final DataOnNode dataOnNode = getDataOnNode( task, inputsOfTask, allNodes );
-                        return dataOnNode;
+                        return getDataOnNode( task, inputsOfTask, allNodes );
                     } )
                     .filter( Objects::nonNull )
                     .collect( Collectors.toList() );
@@ -146,11 +147,7 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         command[2] += "/code/ftp.py false " + nodeTaskFilesAlignment.node.getName() + " \"" + json + "\"";
         String name = nodeTaskFilesAlignment.task.getConfig().getName() + "-copy-" + nodeTaskFilesAlignment.node.getName();
         log.info( "Starting {} to node {}", nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName() );
-        String files = "";
-        for (TaskInputFileLocationWrapper t : copyTask.getInputFiles()) {
-            files += t.getPath() + ", ";
-        }
-        logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "start (" +  files + ")" );
+        logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "start" );
         client.execCommand( getDaemonNameOnNode( copyTask.getNodeLocation().getIdentifier() ), getNamespace(), command, new LaListener( copyTask, name, nodeTaskFilesAlignment ) );
     }
 
@@ -387,7 +384,7 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
             return null;
         }
 
-        logCopyTask.log( taskData.getTask().getConfig().getName() + " " + bestAlignment );
+        //logCopyTask.log( taskData.getTask().getConfig().getName() + " " + bestAlignment );
 
         return new Tuple<>( bestNode, bestAlignment );
     }
@@ -413,7 +410,7 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         final DataOnNode dataOnNode = new DataOnNode( task, inputsOfTask );
         for ( NodeWithAlloc node : allNodes ) {
             final long avgSize = inputsOfTask.calculateAvgSize();
-            if ( !inputsOfTask.getExcludedNodes().contains( node ) && affinitiesMatch( task.getPod(), node ) ) {
+            if ( !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() ) && affinitiesMatch( task.getPod(), node ) ) {
                 final Tuple<Boolean, Long> booleanLongTuple = inputsOfTask.calculateDataOnNodeAdditionalInfo( node.getNodeLocation() );
                 if ( booleanLongTuple.getA() ) {
                     dataOnNode.allData( node );
@@ -421,7 +418,7 @@ public abstract class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     //As we only calculate the average size of all files, it can happen that more than 100% are on the node
                     dataOnNode.addData( node, 0.999 );
                 } else {
-                    dataOnNode.addData( node, booleanLongTuple.getB() / avgSize );
+                    dataOnNode.addData( node, booleanLongTuple.getB() / (double) avgSize );
                 }
             }
         }

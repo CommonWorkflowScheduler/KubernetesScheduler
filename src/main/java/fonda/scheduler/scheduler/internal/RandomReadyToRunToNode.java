@@ -1,26 +1,29 @@
-package fonda.scheduler.scheduler;
+package fonda.scheduler.scheduler.internal;
 
-import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;
-import fonda.scheduler.model.SchedulerConfig;
-import fonda.scheduler.scheduler.LocationAwareSchedulerV2;
 import fonda.scheduler.scheduler.data.TaskInputsNodes;
-import fonda.scheduler.scheduler.filealignment.InputAlignment;
-import fonda.scheduler.util.FileAlignment;
-import fonda.scheduler.util.NodeTaskFilesAlignment;
+import fonda.scheduler.util.LogCopyTask;
 import fonda.scheduler.util.NodeTaskLocalFilesAlignment;
+import fonda.scheduler.util.score.CalculateScore;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class LocationAwareSchedulerV2Simple extends LocationAwareSchedulerV2 {
+@Slf4j
+public class RandomReadyToRunToNode implements ReadyToRunToNode {
 
-    public LocationAwareSchedulerV2Simple( String name, KubernetesClient client, String namespace, SchedulerConfig config, InputAlignment inputAlignment ) {
-        super( name, client, namespace, config, inputAlignment );
-    }
+
+    @Setter
+    private LogCopyTask logger;
+
+
+    @Override
+    public void init( CalculateScore calculateScore ) {}
 
     /**
      * Select the first node that fits the requirements.
@@ -29,10 +32,11 @@ public class LocationAwareSchedulerV2Simple extends LocationAwareSchedulerV2 {
      * @return
      */
     @Override
-    protected List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
+    public List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
             List<TaskInputsNodes> taskWithAllData,
             Map<NodeWithAlloc, Requirements> availableByNode
     ) {
+        long start = System.currentTimeMillis();
         final List<NodeTaskLocalFilesAlignment> alignment = new LinkedList<>();
         final Iterator<TaskInputsNodes> iterator = taskWithAllData.iterator();
         while( iterator.hasNext() ) {
@@ -56,6 +60,10 @@ public class LocationAwareSchedulerV2Simple extends LocationAwareSchedulerV2 {
                 }
             }
         }
+        final String message = "Solved in " + (System.currentTimeMillis() - start) + "ms ( " + taskWithAllData.size() + " vars )";
+        log.info( message );
+        logger.log( message );
         return alignment;
     }
+
 }

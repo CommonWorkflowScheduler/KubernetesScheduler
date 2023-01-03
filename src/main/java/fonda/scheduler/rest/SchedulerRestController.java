@@ -11,12 +11,13 @@ import fonda.scheduler.scheduler.*;
 import fonda.scheduler.scheduler.filealignment.GreedyAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import fonda.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
+import fonda.scheduler.scheduler.internal.OptimalReadyToRunToNode;
 import fonda.scheduler.scheduler.nodeassign.FairAssign;
 import fonda.scheduler.scheduler.nodeassign.NodeAssign;
 import fonda.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import fonda.scheduler.scheduler.nodeassign.RoundRobinAssign;
 import fonda.scheduler.scheduler.prioritize.*;
-import fonda.scheduler.scheduler.LocationAwareSchedulerV2Simple;
+import fonda.scheduler.util.score.FileSizeScore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -134,7 +135,7 @@ public class SchedulerRestController {
                 if ( costFunction == null ) {
                     costFunction = new MinSizeCost( 0 );
                 }
-                scheduler = new LocationAwareSchedulerV2Simple( execution, client, namespace, config, new GreedyAlignment(costFunction) );
+                scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment(costFunction), new OptimalReadyToRunToNode() );
                 break;
             default: {
                 final String[] split = strategy.split( "-" );

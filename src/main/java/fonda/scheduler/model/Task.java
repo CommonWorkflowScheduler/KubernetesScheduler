@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 @Slf4j
 public class Task {
@@ -116,6 +117,10 @@ public class Task {
         }
         //return cached value
         return inputSize;
+    }
+
+    public Requirements getRequest() {
+        return pod.getRequest();
     }
 
     @Override
