@@ -59,6 +59,8 @@ public class CurrentlyCopyingOnNode {
 
     @Override
     public String toString() {
-        return getAllFilesCurrentlyCopying().toString();
+        synchronized ( this.currentlyCopying ) {
+            return this.currentlyCopying.keySet().toString();
+        }
     }
 }
