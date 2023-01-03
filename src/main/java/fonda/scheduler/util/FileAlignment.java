@@ -45,7 +45,7 @@ public class FileAlignment {
         return nodeFileAlignment
                 .entrySet()
                 .stream()
-                .anyMatch( a -> a.getKey() != node && a.getValue().getFilesToCopy().size() > 0 );
+                .anyMatch( a -> a.getKey() != node && !a.getValue().getFilesToCopy().isEmpty() );
     }
 
     public List<LocationWrapper> getAllLocationWrappers(){

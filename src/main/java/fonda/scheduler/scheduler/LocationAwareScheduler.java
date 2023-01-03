@@ -143,7 +143,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         //Does this task needs to copy data to the node?
         boolean copyDataToNode = false;
         for ( Map.Entry<Location, AlignmentWrapper> locationAlignmentWrapperEntry : nodeFileAlignment.entrySet() ) {
-            if ( locationAlignmentWrapperEntry.getValue().getFilesToCopy().size() > 0 ) {
+            if ( !locationAlignmentWrapperEntry.getValue().getFilesToCopy().isEmpty() ) {
                 copyDataToNode = true;
                 break;
             }
