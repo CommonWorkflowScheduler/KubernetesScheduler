@@ -2,6 +2,7 @@ package fonda.scheduler.util;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Task;
+import fonda.scheduler.model.location.NodeLocation;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,10 +11,10 @@ import java.util.Map;
 
 public class CopyToNodeManager {
 
-    private final Map<NodeWithAlloc, List<Task>> taskOnNodes = new HashMap<>();
-    private final Map<Task, List<NodeWithAlloc>> nodesForTask = new HashMap<>();
+    private final Map<NodeLocation, List<Task>> taskOnNodes = new HashMap<>();
+    private final Map<Task, List<NodeLocation>> nodesForTask = new HashMap<>();
 
-    public void copyToNode( Task task, NodeWithAlloc node, double part ){
+    public void copyToNode( Task task, NodeLocation node ){
         synchronized ( this ) {
             List<Task> tasks = taskOnNodes.get( node );
             if ( tasks == null ) {
@@ -22,7 +23,7 @@ public class CopyToNodeManager {
             }
             tasks.add( task );
 
-            List<NodeWithAlloc> nodes = nodesForTask.get( task );
+            List<NodeLocation> nodes = nodesForTask.get( task );
             if ( nodes == null ) {
                 nodes = new LinkedList<>();
                 nodesForTask.put( task, nodes );
@@ -31,23 +32,23 @@ public class CopyToNodeManager {
         }
     }
 
-    public void finishedCopyToNode( Task task, NodeWithAlloc node ){
+    public void finishedCopyToNode( Task task, NodeLocation node ){
         synchronized ( this ) {
             List<Task> tasks = taskOnNodes.get( node );
             if ( tasks != null ) {
                 tasks.remove( task );
             }
 
-            List<NodeWithAlloc> nodes = nodesForTask.get( task );
+            List<NodeLocation> nodes = nodesForTask.get( task );
             if ( nodes != null ) {
                 nodes.remove( node );
             }
         }
     }
 
-    public Map<NodeWithAlloc, Integer> getCurrentlyCopyingTasksOnNode() {
-        Map<NodeWithAlloc, Integer> result = new HashMap<>();
-        for ( Map.Entry<NodeWithAlloc, List<Task>> entry : taskOnNodes.entrySet() ) {
+    public Map<NodeLocation, Integer> getCurrentlyCopyingTasksOnNode() {
+        Map<NodeLocation, Integer> result = new HashMap<>();
+        for ( Map.Entry<NodeLocation, List<Task>> entry : taskOnNodes.entrySet() ) {
             result.put( entry.getKey(), entry.getValue().size() );
         }
         return result;

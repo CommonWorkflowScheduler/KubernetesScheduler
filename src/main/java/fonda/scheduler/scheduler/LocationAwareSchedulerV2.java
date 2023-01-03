@@ -1,7 +1,5 @@
 package fonda.scheduler.scheduler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fonda.scheduler.client.KubernetesClient;
 import fonda.scheduler.model.*;
 import fonda.scheduler.model.location.Location;
@@ -14,7 +12,6 @@ import fonda.scheduler.scheduler.data.TaskInputsNodes;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
 import fonda.scheduler.scheduler.la2.copystrategy.CopyRunner;
-import fonda.scheduler.scheduler.la2.copystrategy.LaListener;
 import fonda.scheduler.scheduler.la2.copystrategy.ShellCopy;
 import fonda.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
@@ -50,7 +47,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     private final CopyRunner copyRunner;
 
     /**
-     * This lock is used to syncronize the creation of the copy tasks and the finishing.
+     * This lock is used to synchronize the creation of the copy tasks and the finishing.
      * Otherwise, it could happen that:
      * 1. Copy tasks checks for data already on the node
      * 2. Copy tasks finished, data is removed from currently copying and added to onNode
@@ -136,8 +133,22 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
             //TODO align tasks that should start next
             nodeTaskFilesAlignments = createCopyTasks( tasksAndData );
         }
-        nodeTaskFilesAlignments.parallelStream().forEach( n -> copyRunner.startCopyTasks( initializeCopyTask( n ), n ) );
+        nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }
+
+    private void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
+        final CopyTask copyTask = initializeCopyTask( nodeTaskFilesAlignment );
+        //Files that will be copied
+        reserveCopyTask( copyTask );
+        try {
+            copyRunner.startCopyTasks( copyTask, nodeTaskFilesAlignment );
+        } catch ( Exception e ) {
+            log.error( "Could not start copy task", e );
+            undoReserveCopyTask( copyTask );
+        }
+
+    }
+
 
     /**
      * Creates config and reserves files
@@ -150,15 +161,28 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         copyTask.setNodeLocation( nodeTaskFilesAlignment.node.getNodeLocation() );
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         copyTask.setAllLocationWrapper( allLocationWrappers );
-
         log.info( "addToCopyingToNode task: {}, node: {}", nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName() );
-        //Files that will be copied
-        addToCopyingToNode( nodeTaskFilesAlignment.node.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-        useLocations( allLocationWrappers );
         return copyTask;
     }
 
+    private void reserveCopyTask( CopyTask copyTask ) {
+        //Store files to copy
+        addToCopyingToNode( copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
+        //Copy tasks on nodes
+        copyToNodeManager.copyToNode( copyTask.getTask(), copyTask.getNodeLocation() );
+        useLocations( copyTask.getAllLocationWrapper() );
+    }
+
+    private void undoReserveCopyTask( CopyTask copyTask ) {
+        //Store files to copy
+        removeFromCopyingToNode( copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
+        //Copy tasks on nodes
+        copyToNodeManager.finishedCopyToNode( copyTask.getTask(), copyTask.getNodeLocation() );
+        freeLocations( copyTask.getAllLocationWrapper() );
+    }
+
     public void copyTaskFinished( CopyTask copyTask, boolean success ) {
+        copyToNodeManager.finishedCopyToNode( copyTask.getTask(), copyTask.getNodeLocation() );
         if( success ){
             synchronized ( copyLock ) {
                 copyTask.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
@@ -248,20 +272,20 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         }
 
         inputs.sortData();
-        return new CopyTask( inputs, inputFiles, filesForCurrentNode);
+        return new CopyTask( inputs, inputFiles, filesForCurrentNode, alignment.task );
     }
 
     List<NodeTaskFilesAlignment> createCopyTasks( List<DataOnNode> tasksAndData ){
         final CurrentlyCopying planedToCopy = new CurrentlyCopying();
         tasksAndData.sort( Comparator.comparing( DataOnNode::getNodesWithAllData ).reversed() );
-        final Map<NodeWithAlloc, Integer> assignedPodsByNode = copyToNodeManager.getCurrentlyCopyingTasksOnNode();
+        final Map<NodeLocation, Integer> assignedPodsByNode = copyToNodeManager.getCurrentlyCopyingTasksOnNode();
         List<NodeTaskFilesAlignment> nodeTaskAlignments = new LinkedList<>();
         for ( DataOnNode dataOnNode : tasksAndData ) {
             final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode( dataOnNode, planedToCopy );
-            if ( result != null && assignedPodsByNode.getOrDefault( result.getA(), 0 ) < getMaxCopyTasksPerNode() ) {
+            if ( result != null && assignedPodsByNode.getOrDefault( result.getA().getNodeLocation(), 0 ) < getMaxCopyTasksPerNode() ) {
                 addAlignmentToPlanned( planedToCopy, result.getB().getNodeFileAlignment(), dataOnNode.getTask(), result.getA() );
                 nodeTaskAlignments.add( new NodeTaskFilesAlignment( result.getA(), dataOnNode.getTask(), result.getB() ) );
-                assignedPodsByNode.put( result.getA(), assignedPodsByNode.getOrDefault( result.getA(), 0 ) + 1 );
+                assignedPodsByNode.put( result.getA().getNodeLocation(), assignedPodsByNode.getOrDefault( result.getA().getNodeLocation(), 0 ) + 1 );
             }
         }
         return nodeTaskAlignments;

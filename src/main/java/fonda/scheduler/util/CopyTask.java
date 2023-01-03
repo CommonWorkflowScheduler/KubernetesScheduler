@@ -9,6 +9,7 @@ import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Getter
+@RequiredArgsConstructor
 public class CopyTask {
 
     @Getter(AccessLevel.NONE)
@@ -25,6 +27,7 @@ public class CopyTask {
     private final Inputs inputs;
     private final LinkedList<TaskInputFileLocationWrapper> inputFiles;
     private final CurrentlyCopyingOnNode filesForCurrentNode;
+    private final Task task;
 
     @Setter
     private List<LocationWrapper> allLocationWrapper;
@@ -32,9 +35,4 @@ public class CopyTask {
     @Setter
     private NodeLocation nodeLocation;
 
-    public CopyTask( Inputs inputs, LinkedList<TaskInputFileLocationWrapper> inputFiles, CurrentlyCopyingOnNode filesForCurrentNode ) {
-        this.inputs = inputs;
-        this.inputFiles = inputFiles;
-        this.filesForCurrentNode = filesForCurrentNode;
-    }
 }
