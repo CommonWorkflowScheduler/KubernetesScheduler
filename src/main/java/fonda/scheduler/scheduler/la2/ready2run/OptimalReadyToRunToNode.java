@@ -1,4 +1,4 @@
-package fonda.scheduler.scheduler.internal;
+package fonda.scheduler.scheduler.la2.ready2run;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;
@@ -45,6 +45,10 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
             Map<NodeWithAlloc, Requirements> availableByNode
     ) {
 
+        if ( taskWithAllData.isEmpty() || availableByNode.isEmpty() ){
+            return Collections.emptyList();
+        }
+
         long start = System.currentTimeMillis();
         final LinkedList<TaskNodeBoolVar> taskNodeBoolVars = new LinkedList<>();
 
@@ -82,6 +86,11 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
             }
             index++;
         }
+
+        if ( taskNodeBoolVars.isEmpty() ) {
+            return Collections.emptyList();
+        }
+
         for ( NodeWithAlloc node : memUsed.keySet() ) {
             model.addLessOrEqual(memUsed.get( node ), availableByNode.get( node ).getRam().longValue() );
             model.addLessOrEqual(cpuUsed.get( node ), availableByNode.get( node ).getCpu().multiply( MILLION ).longValue() );

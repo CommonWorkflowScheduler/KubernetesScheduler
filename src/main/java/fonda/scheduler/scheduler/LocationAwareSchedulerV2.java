@@ -13,15 +13,16 @@ import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.data.TaskInputsNodes;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
-import fonda.scheduler.scheduler.internal.ReadyToRunToNode;
+import fonda.scheduler.scheduler.la2.copystrategy.CopyRunner;
+import fonda.scheduler.scheduler.la2.copystrategy.LaListener;
+import fonda.scheduler.scheduler.la2.copystrategy.ShellCopy;
+import fonda.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
 import fonda.scheduler.scheduler.schedulingstrategy.InputEntry;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
 import fonda.scheduler.util.*;
 import fonda.scheduler.util.copying.CurrentlyCopying;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import fonda.scheduler.util.score.FileSizeRankScore;
-import io.fabric8.kubernetes.api.model.Status;
-import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +47,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private final ReadyToRunToNode readyToRunToNode;
 
+    private final CopyRunner copyRunner;
+
     /**
      * This lock is used to syncronize the creation of the copy tasks and the finishing.
      * Otherwise, it could happen that:
@@ -69,6 +72,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.readyToRunToNode = readyToRunToNode;
         this.readyToRunToNode.init( new FileSizeRankScore( hierarchyWrapper ) );
         readyToRunToNode.setLogger( logCopyTask );
+        this.copyRunner = new ShellCopy( client, this, logCopyTask );
     }
 
     @Override
@@ -116,6 +120,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         final List<NodeWithAlloc> allNodes = client.getAllNodes();
         final List<NodeTaskFilesAlignment> nodeTaskFilesAlignments;
         synchronized ( copyLock ) {
+            //Calculate the fraction of available data for each task and node.
             final List<DataOnNode> tasksAndData = unscheduledTasks
                     .parallelStream()
                     .map( task -> {
@@ -125,75 +130,13 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     } )
                     .filter( Objects::nonNull )
                     .collect( Collectors.toList() );
+
+            //Use the fraction to calculate the alignment
+            //TODO align tasks that can start as soon as the data is available
+            //TODO align tasks that should start next
             nodeTaskFilesAlignments = createCopyTasks( tasksAndData );
         }
-        nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTasks );
-    }
-    
-    private void startCopyTasks( NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
-        final CopyTask copyTask = initializeCopyTask( nodeTaskFilesAlignment );
-        String[] command = new String[3];
-        command[0] = "/bin/bash";
-        command[1] = "-c";
-        command[2] = "cd " + nodeTaskFilesAlignment.task.getWorkingDir() + " && ";
-        final String json;
-        try {
-            json = new ObjectMapper()
-                    .writeValueAsString( copyTask.getInputs() )
-                    .replace( "\"", "\\\"" );
-        } catch ( JsonProcessingException e ) {
-            throw new RuntimeException( e );
-        }
-        command[2] += "/code/ftp.py false " + nodeTaskFilesAlignment.node.getName() + " \"" + json + "\"";
-        String name = nodeTaskFilesAlignment.task.getConfig().getName() + "-copy-" + nodeTaskFilesAlignment.node.getName();
-        log.info( "Starting {} to node {}", nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName() );
-        logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "start" );
-        client.execCommand( getDaemonNameOnNode( copyTask.getNodeLocation().getIdentifier() ), getNamespace(), command, new LaListener( copyTask, name, nodeTaskFilesAlignment ) );
-    }
-
-    @RequiredArgsConstructor
-    private class LaListener implements MyExecListner {
-
-        @Setter
-        private ExecWatch exec;
-        private final CopyTask copyTask;
-        private final String name;
-        @Setter
-        private ByteArrayOutputStream out = new ByteArrayOutputStream();
-        @Setter
-        private ByteArrayOutputStream error = new ByteArrayOutputStream();
-        private boolean finished = false;
-
-        private final NodeTaskFilesAlignment nodeTaskFilesAlignment;
-
-        @Override
-        public void onClose( int exitCode, String reason ) {
-            if ( !finished ) {
-                log.error( "Copy task was not finished, but closed. ExitCode: " + exitCode + " Reason: " + reason );
-                copyTaskFinished( copyTask, exitCode == 0 );
-            }
-            informResourceChange();
-        }
-
-        @Override
-        public void onFailure( Throwable t, Response failureResponse ) {
-            log.info( name + " failed, output: ", t );
-            log.info( name + " Exec Output: {} ", out );
-            log.info( name + " Exec Error Output: {} ", error );
-            exec.close();
-            logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "failed" );
-        }
-
-        @Override
-        public void onExit( int exitCode, Status reason ) {
-            finished = true;
-            log.info( name + " was finished exitCode = {}, reason = {}", exitCode, reason );
-            log.debug( name + " Exec Output: {} ", out );
-            log.debug( name + " Exec Error Output: {} ", error );
-            copyTaskFinished( copyTask, exitCode == 0 );
-            exec.close();
-            logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "finished(" + exitCode + ")" );
-        }
+        nodeTaskFilesAlignments.parallelStream().forEach( n -> copyRunner.startCopyTasks( initializeCopyTask( n ), n ) );
     }
 
     /**
@@ -208,14 +151,14 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         final List<LocationWrapper> allLocationWrappers = nodeTaskFilesAlignment.fileAlignment.getAllLocationWrappers();
         copyTask.setAllLocationWrapper( allLocationWrappers );
 
-        log.info( "addToCopyingToNode task: {}, node: {}, data: {}, currentlyCopying: {}", nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getFilesForCurrentNode(), getCurrentlyCopying().get( nodeTaskFilesAlignment.node.getNodeLocation() ) );
+        log.info( "addToCopyingToNode task: {}, node: {}", nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName() );
         //Files that will be copied
         addToCopyingToNode( nodeTaskFilesAlignment.node.getNodeLocation(), copyTask.getFilesForCurrentNode() );
         useLocations( allLocationWrappers );
         return copyTask;
     }
 
-    private void copyTaskFinished( CopyTask copyTask, boolean success ) {
+    public void copyTaskFinished( CopyTask copyTask, boolean success ) {
         if( success ){
             synchronized ( copyLock ) {
                 copyTask.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
@@ -225,12 +168,12 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         } else {
             synchronized ( copyLock ) {
                 removeFromCopyingToNode( copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-                handleProblematicInit( copyTask );
+                handleProblematicCopy( copyTask );
             }
         }
     }
 
-    private void handleProblematicInit( CopyTask copyTask ){
+    private void handleProblematicCopy( CopyTask copyTask ){
         String file = this.localWorkDir + "/sync/" + copyTask.getInputs().execution;
         try {
             Map<String,TaskInputFileLocationWrapper> wrapperByPath = new HashMap<>();
@@ -406,18 +349,28 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     }
 
 
+    /**
+     * Calculate the fraction of data available on each node.
+     * @param task
+     * @param inputsOfTask
+     * @param allNodes
+     * @return A wrapper containing the fraction of data available on each node, the nodes where all data is available, the inputs and the task.
+     */
     private DataOnNode getDataOnNode( Task task, TaskInputs inputsOfTask, List<NodeWithAlloc> allNodes ) {
         final DataOnNode dataOnNode = new DataOnNode( task, inputsOfTask );
+        final long avgSize = inputsOfTask.calculateAvgSize();
         for ( NodeWithAlloc node : allNodes ) {
-            final long avgSize = inputsOfTask.calculateAvgSize();
             if ( !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() ) && affinitiesMatch( task.getPod(), node ) ) {
                 final Tuple<Boolean, Long> booleanLongTuple = inputsOfTask.calculateDataOnNodeAdditionalInfo( node.getNodeLocation() );
+                //All data is on the node
                 if ( booleanLongTuple.getA() ) {
                     dataOnNode.allData( node );
+                // special case, more data on the node than in avg
                 } else if ( booleanLongTuple.getB() >= avgSize ) {
                     //As we only calculate the average size of all files, it can happen that more than 100% are on the node
                     dataOnNode.addData( node, 0.999 );
                 } else {
+                    //Calculate the fraction of data on the node
                     dataOnNode.addData( node, booleanLongTuple.getB() / (double) avgSize );
                 }
             }

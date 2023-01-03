@@ -1,4 +1,4 @@
-package fonda.scheduler.scheduler.internal;
+package fonda.scheduler.scheduler.la2.ready2run;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;

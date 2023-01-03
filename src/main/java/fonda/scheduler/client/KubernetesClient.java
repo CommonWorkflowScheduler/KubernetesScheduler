@@ -2,13 +2,11 @@ package fonda.scheduler.client;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.PodWithAge;
-import fonda.scheduler.scheduler.LocationAwareSchedulerV2;
 import fonda.scheduler.util.MyExecListner;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
-import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import lombok.extern.slf4j.Slf4j;
 
