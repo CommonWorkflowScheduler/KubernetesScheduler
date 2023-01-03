@@ -12,7 +12,6 @@ import java.util.Set;
 @Slf4j
 abstract class InternalHolder {
 
-    private final Object syncHelperUpdateBestValue = new Object();
     private double bestValue = Double.MIN_VALUE;
     private final Set<NodeLocation> currentlyBestNodes = new HashSet<>();
     private final Map<NodeLocation, Set<Task>> tasksByNode = new HashMap<>();

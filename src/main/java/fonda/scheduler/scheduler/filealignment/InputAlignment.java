@@ -2,14 +2,10 @@ package fonda.scheduler.scheduler.filealignment;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Task;
-import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.util.FileAlignment;
-import fonda.scheduler.util.Tuple;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Map;
 
 public interface InputAlignment {
 

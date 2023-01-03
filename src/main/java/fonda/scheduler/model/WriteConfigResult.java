@@ -1,7 +1,5 @@
 package fonda.scheduler.model;
 
-import fonda.scheduler.model.location.Location;
-import fonda.scheduler.util.Tuple;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.Getter;
 

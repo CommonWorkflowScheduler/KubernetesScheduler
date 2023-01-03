@@ -2,7 +2,6 @@ package fonda.scheduler.util.copying;
 
 import fonda.scheduler.model.Task;
 import fonda.scheduler.model.location.Location;
-import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;

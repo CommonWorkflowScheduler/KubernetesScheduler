@@ -5,8 +5,6 @@ import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;
 import fonda.scheduler.model.SchedulerConfig;
 import fonda.scheduler.model.Task;
-import fonda.scheduler.model.location.Location;
-import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.scheduler.data.NodeDataTuple;
 import fonda.scheduler.scheduler.data.TaskData;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;

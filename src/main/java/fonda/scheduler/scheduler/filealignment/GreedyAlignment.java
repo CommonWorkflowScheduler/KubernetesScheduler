@@ -11,13 +11,11 @@ import fonda.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import fonda.scheduler.util.AlignmentWrapper;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.FilePath;
-import fonda.scheduler.util.Tuple;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 public class GreedyAlignment extends InputAlignmentClass {
