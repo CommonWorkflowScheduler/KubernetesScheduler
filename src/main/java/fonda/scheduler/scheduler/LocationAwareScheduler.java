@@ -122,7 +122,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
             if ( nodeAlignment != null && onlyAllowXCopyToNodeTasks( nodeAlignment, taskCountWhichCopyToNode, getMaxCopyTasksPerNode() ) ) {
                 alignment.add(nodeAlignment);
                 outLabelHolder.scheduleTaskOnNode( taskData.getTask(), nodeAlignment.node.getNodeLocation() );
-                addAlignmentToPlanned( planedToCopy, nodeAlignment.fileAlignment.getNodeFileAlignment(), taskData.getTask(), nodeAlignment.node );
+                planedToCopy.addAlignment( nodeAlignment.fileAlignment.getNodeFileAlignment(), taskData.getTask(), nodeAlignment.node );
             }
         }
         return alignment;
@@ -411,7 +411,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
         }
         nodeTaskFilesAlignment.setRemoveInit( !writeConfigResult.isWroteConfig() );
         alignment.task.setCopiedFiles( writeConfigResult.getInputFiles() );
-        addToCopyingToNode( alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
+        addToCopyingToNode( alignment.task, alignment.node.getNodeLocation(), writeConfigResult.getCopyingToNode() );
         alignment.task.setCopyingToNode( writeConfigResult.getCopyingToNode() );
         if ( writeConfigResult.isWroteConfig() ) {
             getCopyStrategy().generateCopyScript( alignment.task, writeConfigResult.isWroteConfig() );

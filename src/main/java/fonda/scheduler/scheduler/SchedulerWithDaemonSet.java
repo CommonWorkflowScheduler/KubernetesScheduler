@@ -121,7 +121,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             task.setInputFiles( null );
         }
         if ( task.getCopyingToNode() != null ) {
-            removeFromCopyingToNode( task.getNode().getNodeLocation(), task.getCopyingToNode());
+            removeFromCopyingToNode( task, task.getNode().getNodeLocation(), task.getCopyingToNode());
             task.setCopyingToNode( null );
         }
         task.setCopiedFiles( null );
@@ -174,11 +174,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
      * @param nodeLocation
      * @param toAdd
      */
-    void addToCopyingToNode(  NodeLocation nodeLocation, CurrentlyCopyingOnNode toAdd ){
+    void addToCopyingToNode( Task task, NodeLocation nodeLocation, CurrentlyCopyingOnNode toAdd ){
         if ( nodeLocation == null ) {
             throw new IllegalArgumentException( "NodeLocation cannot be null" );
         }
-        currentlyCopying.add( nodeLocation, toAdd );
+        currentlyCopying.add( task, nodeLocation, toAdd );
     }
 
     /**
@@ -186,11 +186,11 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
      * @param nodeLocation
      * @param toRemove
      */
-    void removeFromCopyingToNode( NodeLocation nodeLocation, CurrentlyCopyingOnNode toRemove ) {
+    void removeFromCopyingToNode( Task task, NodeLocation nodeLocation, CurrentlyCopyingOnNode toRemove ) {
         if (nodeLocation == null) {
             throw new IllegalArgumentException("NodeLocation cannot be null");
         }
-        currentlyCopying.remove( nodeLocation, toRemove );
+        currentlyCopying.remove( task, nodeLocation, toRemove );
     }
 
     /**
@@ -406,7 +406,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         final Task task = changeStateOfTask(pod, exitCode == 0 ? State.PREPARED : State.INIT_WITH_ERRORS);
         task.setPod( new PodWithAge( pod ) );
         log.info( "Pod {}, Init Code: {}", pod.getMetadata().getName(), exitCode);
-        removeFromCopyingToNode( task.getNode().getNodeLocation(), task.getCopyingToNode() );
+        removeFromCopyingToNode( task, task.getNode().getNodeLocation(), task.getCopyingToNode() );
         if( exitCode == 0 ){
             task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
         } else {
@@ -429,18 +429,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             final NodeWithAlloc next = iterator.next();
             if( excludedNodes.contains( next.getNodeLocation() ) ){
                 iterator.remove();
-            }
-        }
-    }
-
-    void addAlignmentToPlanned ( CurrentlyCopying planedToCopy, final Map<Location, AlignmentWrapper> nodeFileAlignment,
-                                         Task task, NodeWithAlloc node ) {
-        for (Map.Entry<Location, AlignmentWrapper> entry : nodeFileAlignment.entrySet()) {
-            final CurrentlyCopyingOnNode map = planedToCopy.get(node.getNodeLocation());
-            for (FilePath filePath : entry.getValue().getFilesToCopy()) {
-                if ( entry.getKey() != node.getNodeLocation() ) {
-                    map.add( filePath.getPath(), task, entry.getKey() );
-                }
             }
         }
     }

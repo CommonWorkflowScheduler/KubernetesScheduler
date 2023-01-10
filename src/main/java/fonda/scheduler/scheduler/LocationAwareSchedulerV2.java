@@ -11,6 +11,11 @@ import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.data.TaskInputsNodes;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
+import fonda.scheduler.scheduler.la2.MinCopyingComparator;
+import fonda.scheduler.scheduler.la2.MinSizeComparator;
+import fonda.scheduler.scheduler.la2.TaskStat;
+import fonda.scheduler.scheduler.la2.TaskStatComparator;
+import fonda.scheduler.scheduler.la2.capacityavailable.SimpleCapacityAvailableToNode;
 import fonda.scheduler.scheduler.la2.copystrategy.CopyRunner;
 import fonda.scheduler.scheduler.la2.copystrategy.ShellCopy;
 import fonda.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
@@ -37,14 +42,17 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     @Getter(AccessLevel.PACKAGE)
     private final int maxWaitingCopyTasksPerNode;
 
-    @Getter(AccessLevel.PACKAGE)
-    private final CopyToNodeManager copyToNodeManager = new CopyToNodeManager();
-
     private final LogCopyTask logCopyTask = new LogCopyTask();
 
     private final ReadyToRunToNode readyToRunToNode;
 
     private final CopyRunner copyRunner;
+
+    private final SimpleCapacityAvailableToNode capacityAvailableToNode;
+
+    private final TaskStatComparator phaseTwoComparator;
+
+    private final int copySameTaskInParallel;
 
     /**
      * This lock is used to synchronize the creation of the copy tasks and the finishing.
@@ -70,6 +78,9 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.readyToRunToNode.init( new FileSizeRankScore( hierarchyWrapper ) );
         readyToRunToNode.setLogger( logCopyTask );
         this.copyRunner = new ShellCopy( client, this, logCopyTask );
+        this.copySameTaskInParallel = 2;
+        capacityAvailableToNode = new SimpleCapacityAvailableToNode( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
+        phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
     }
 
     @Override
@@ -113,12 +124,17 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     }
 
     @Override
-    void postScheduling( List<Task> unscheduledTasks ) {
-        final List<NodeWithAlloc> allNodes = client.getAllNodes();
+    void postScheduling( List<Task> unscheduledTasks, final Map<NodeWithAlloc, Requirements> availableByNode ) {
+        final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode = getCurrentlyCopying().getCurrentlyCopyingTasksOnNode();
+        final List<NodeWithAlloc> allNodes = client.getAllNodes().stream().filter(
+                                                    node -> currentlyCopyingTasksOnNode
+                                                            .getOrDefault( node.getNodeLocation(), 0 ) < getMaxCopyTasksPerNode()
+                                            ).collect( Collectors.toList() );
         final List<NodeTaskFilesAlignment> nodeTaskFilesAlignments;
         synchronized ( copyLock ) {
-            //Calculate the fraction of available data for each task and node.
-            final List<DataOnNode> tasksAndData = unscheduledTasks
+            final TaskStats taskStats = new TaskStats();
+            //Calculate the stats of available data for each task and node.
+            unscheduledTasks
                     .parallelStream()
                     .map( task -> {
                         final TaskInputs inputsOfTask = extractInputsOfData( task );
@@ -126,12 +142,12 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                         return getDataOnNode( task, inputsOfTask, allNodes );
                     } )
                     .filter( Objects::nonNull )
-                    .collect( Collectors.toList() );
+                    .sequential()
+                    .forEach( taskStats::add );
 
-            //Use the fraction to calculate the alignment
-            //TODO align tasks that can start as soon as the data is available
-            //TODO align tasks that should start next
-            nodeTaskFilesAlignments = createCopyTasks( tasksAndData );
+            final CurrentlyCopying planedToCopy = new CurrentlyCopying();
+            //Fill the currently available resources as fast as possible: start the tasks with the least data missing on a node.
+            nodeTaskFilesAlignments = capacityAvailableToNode.createAlignmentForTasksWithEnoughCapacity( taskStats, planedToCopy, availableByNode, allNodes, getMaxCopyTasksPerNode() );
         }
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }
@@ -151,7 +167,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
 
     /**
-     * Creates config and reserves files
+     * Creates config
      *
      * @param nodeTaskFilesAlignment
      * @return
@@ -167,32 +183,25 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private void reserveCopyTask( CopyTask copyTask ) {
         //Store files to copy
-        addToCopyingToNode( copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-        //Copy tasks on nodes
-        copyToNodeManager.copyToNode( copyTask.getTask(), copyTask.getNodeLocation() );
+        addToCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
         useLocations( copyTask.getAllLocationWrapper() );
     }
 
     private void undoReserveCopyTask( CopyTask copyTask ) {
         //Store files to copy
-        removeFromCopyingToNode( copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-        //Copy tasks on nodes
-        copyToNodeManager.finishedCopyToNode( copyTask.getTask(), copyTask.getNodeLocation() );
+        removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
         freeLocations( copyTask.getAllLocationWrapper() );
     }
 
     public void copyTaskFinished( CopyTask copyTask, boolean success ) {
-        copyToNodeManager.finishedCopyToNode( copyTask.getTask(), copyTask.getNodeLocation() );
-        if( success ){
-            synchronized ( copyLock ) {
-                copyTask.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
-                removeFromCopyingToNode( copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-            }
+        synchronized ( copyLock ) {
             freeLocations( copyTask.getAllLocationWrapper() );
-        } else {
-            synchronized ( copyLock ) {
-                removeFromCopyingToNode( copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-                handleProblematicCopy( copyTask );
+            if( success ){
+                    copyTask.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
+                    removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
+            } else {
+                    removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
+                    handleProblematicCopy( copyTask );
             }
         }
     }
@@ -374,32 +383,26 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
 
     /**
-     * Calculate the fraction of data available on each node.
+     * Calculate the remaining data on each node.
      * @param task
      * @param inputsOfTask
      * @param allNodes
-     * @return A wrapper containing the fraction of data available on each node, the nodes where all data is available, the inputs and the task.
+     * @return A wrapper containing the remaining data on each node, the nodes where all data is available, the inputs and the task.
      */
-    private DataOnNode getDataOnNode( Task task, TaskInputs inputsOfTask, List<NodeWithAlloc> allNodes ) {
-        final DataOnNode dataOnNode = new DataOnNode( task, inputsOfTask );
-        final long avgSize = inputsOfTask.calculateAvgSize();
+    private TaskStat getDataOnNode( Task task, TaskInputs inputsOfTask, List<NodeWithAlloc> allNodes ) {
+        TaskStat taskStats = new TaskStat( task, inputsOfTask, phaseTwoComparator );
+        final CurrentlyCopying currentlyCopying = getCurrentlyCopying();
         for ( NodeWithAlloc node : allNodes ) {
             if ( !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() ) && affinitiesMatch( task.getPod(), node ) ) {
-                final Tuple<Boolean, Long> booleanLongTuple = inputsOfTask.calculateDataOnNodeAdditionalInfo( node.getNodeLocation() );
-                //All data is on the node
-                if ( booleanLongTuple.getA() ) {
-                    dataOnNode.allData( node );
-                // special case, more data on the node than in avg
-                } else if ( booleanLongTuple.getB() >= avgSize ) {
-                    //As we only calculate the average size of all files, it can happen that more than 100% are on the node
-                    dataOnNode.addData( node, 0.999 );
-                } else {
-                    //Calculate the fraction of data on the node
-                    dataOnNode.addData( node, booleanLongTuple.getB() / (double) avgSize );
+                final CurrentlyCopyingOnNode currentlyCopyingOnNode = currentlyCopying.get( node.getNodeLocation() );
+                final TaskNodeStats taskNodeStats = inputsOfTask.calculateMissingData( node.getNodeLocation(), currentlyCopyingOnNode );
+                if ( taskNodeStats != null ) {
+                    taskStats.add( node, taskNodeStats );
                 }
             }
         }
-        return dataOnNode;
+        taskStats.finish();
+        return taskStats;
     }
 
     @Override

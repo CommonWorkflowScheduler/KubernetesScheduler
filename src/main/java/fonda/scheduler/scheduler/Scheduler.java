@@ -132,7 +132,7 @@ public abstract class Scheduler implements Informable {
             scheduled++;
         }
         //Use instance object that does not contain yet scheduled tasks
-        postScheduling( unscheduledTasksCopy );
+        postScheduling( unscheduledTasksCopy, getAvailableByNode() );
         return unscheduledTasks.size() - taskNodeAlignment.size() + failure;
     }
 
@@ -140,7 +140,7 @@ public abstract class Scheduler implements Informable {
      * This method is called when a SchedulePlan was successfully executed.
      * @param unscheduledTasks
      */
-    void postScheduling( final List<Task> unscheduledTasks ) {}
+    void postScheduling( final List<Task> unscheduledTasks, Map<NodeWithAlloc, Requirements> availableByNode ) {}
 
     /**
      * Call this method in case of any scheduling problems
