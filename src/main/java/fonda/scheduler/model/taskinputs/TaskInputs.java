@@ -2,7 +2,10 @@ package fonda.scheduler.model.taskinputs;
 
 import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
+import fonda.scheduler.util.TaskNodeStats;
 import fonda.scheduler.util.Tuple;
+import fonda.scheduler.util.copying.CopySource;
+import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +67,39 @@ public class TaskInputs {
             }
         }
         return new Tuple<>( allOnNode, size );
+    }
+
+    /**
+     * Calculates the data on a node and returns whether all data is on the location
+     * @param loc
+     * @return the size remaining and the amount of data currently copying. Null if the task cannot run on this node.
+     */
+    public TaskNodeStats calculateMissingData( Location loc, CurrentlyCopyingOnNode currentlyCopying ) {
+        long sizeRemaining = 0;
+        long sizeCurrentlyCopying = 0;
+        long sizeOnNode = 0;
+        for ( PathFileLocationTriple fileLocation : files ) {
+            final long minSizeInBytes = fileLocation.getMinSizeInBytes();
+            //Is the file already on the node?
+            if ( fileLocation.locatedOnLocation(loc) ) {
+                sizeOnNode += minSizeInBytes;
+            } else {
+                //is the file currently copying?
+                final CopySource copySource = currentlyCopying.getCopySource( fileLocation.path.toString() );
+                if ( copySource != null ) {
+                    //Is this file compatible with the task?
+                    if ( fileLocation.locatedOnLocation( copySource.getLocation() ) ) {
+                        sizeCurrentlyCopying += minSizeInBytes;
+                    } else {
+                        //currently copying file is incompatible with this task
+                        return null;
+                    }
+                } else {
+                    sizeRemaining += minSizeInBytes;
+                }
+            }
+        }
+        return new TaskNodeStats( sizeRemaining, sizeCurrentlyCopying, sizeOnNode );
     }
 
     public long calculateAvgSize() {
