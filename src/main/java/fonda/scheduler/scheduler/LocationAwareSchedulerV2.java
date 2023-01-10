@@ -284,22 +284,6 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         return new CopyTask( inputs, inputFiles, filesForCurrentNode, alignment.task );
     }
 
-    List<NodeTaskFilesAlignment> createCopyTasks( List<DataOnNode> tasksAndData ){
-        final CurrentlyCopying planedToCopy = new CurrentlyCopying();
-        tasksAndData.sort( Comparator.comparing( DataOnNode::getNodesWithAllData ).reversed() );
-        final Map<NodeLocation, Integer> assignedPodsByNode = copyToNodeManager.getCurrentlyCopyingTasksOnNode();
-        List<NodeTaskFilesAlignment> nodeTaskAlignments = new LinkedList<>();
-        for ( DataOnNode dataOnNode : tasksAndData ) {
-            final Tuple<NodeWithAlloc, FileAlignment> result = calculateBestNode( dataOnNode, planedToCopy );
-            if ( result != null && assignedPodsByNode.getOrDefault( result.getA().getNodeLocation(), 0 ) < getMaxCopyTasksPerNode() ) {
-                addAlignmentToPlanned( planedToCopy, result.getB().getNodeFileAlignment(), dataOnNode.getTask(), result.getA() );
-                nodeTaskAlignments.add( new NodeTaskFilesAlignment( result.getA(), dataOnNode.getTask(), result.getB() ) );
-                assignedPodsByNode.put( result.getA().getNodeLocation(), assignedPodsByNode.getOrDefault( result.getA().getNodeLocation(), 0 ) + 1 );
-            }
-        }
-        return nodeTaskAlignments;
-    }
-
     Tuple<NodeWithAlloc, FileAlignment> calculateBestNode( final DataOnNode taskData, CurrentlyCopying planedToCopy ) {
         FileAlignment bestAlignment = null;
         NodeWithAlloc bestNode = null;
