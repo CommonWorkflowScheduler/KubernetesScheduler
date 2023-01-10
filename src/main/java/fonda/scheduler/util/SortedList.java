@@ -6,12 +6,10 @@ import java.util.ListIterator;
 
 public class SortedList<T extends Comparable<T>> extends LinkedList<T> {
 
-
     public SortedList( Collection<T> collection ) {
         super( collection );
         this.sort( Comparable::compareTo );
     }
-
 
     @Override
     public boolean add( T elem ) {

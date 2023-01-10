@@ -7,7 +7,6 @@ import lombok.Setter;
 
 public class NodeTaskFilesAlignment extends NodeTaskAlignment {
 
-
     public final FileAlignment fileAlignment;
 
     @Getter

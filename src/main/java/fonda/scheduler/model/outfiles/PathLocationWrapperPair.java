@@ -9,7 +9,6 @@ import java.util.Objects;
 @Getter
 public class PathLocationWrapperPair extends OutputFile {
 
-
     private final LocationWrapper locationWrapper;
 
     public PathLocationWrapperPair(Path path, LocationWrapper locationWrapper) {

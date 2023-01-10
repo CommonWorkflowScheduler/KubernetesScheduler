@@ -9,7 +9,6 @@ import java.util.List;
 
 public class NodeTaskLocalFilesAlignment extends NodeTaskAlignment {
 
-
     public final List<SymlinkInput> symlinks;
     public final List<LocationWrapper> locationWrappers;
 
