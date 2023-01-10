@@ -344,6 +344,12 @@ public abstract class Scheduler implements Informable {
     }
 
     boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
+
+        final boolean nodeCouldRunThisPod = node.getMaxResources().higherOrEquals( pod.getRequest() );
+        if ( !nodeCouldRunThisPod ){
+            return false;
+        }
+
         final Map<String, String> podsNodeSelector = pod.getSpec().getNodeSelector();
         final Map<String, String> nodesLabels = node.getMetadata().getLabels();
         if ( podsNodeSelector == null || podsNodeSelector.isEmpty() ) {
