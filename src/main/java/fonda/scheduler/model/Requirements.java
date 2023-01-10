@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 @ToString
-public class Requirements implements Serializable {
+public class Requirements implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -61,4 +61,8 @@ public class Requirements implements Serializable {
                 && this.ram.compareTo( requirements.ram ) >= 0;
     }
 
+    @Override
+    public Requirements clone() {
+        return new Requirements( this.cpu, this.ram );
+    }
 }
