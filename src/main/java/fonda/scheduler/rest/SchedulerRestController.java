@@ -125,7 +125,7 @@ public class SchedulerRestController {
                 if ( costFunction == null ) {
                     costFunction = new MinSizeCost( 0 );
                 }
-                scheduler = new LASchedulerV1( execution, client, namespace, config, new GreedyAlignment(costFunction) );
+                scheduler = new LASchedulerV1( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ) );
                 break;
             case "lav2" :
                 if ( !config.locationAware ) {
@@ -134,7 +134,7 @@ public class SchedulerRestController {
                 if ( costFunction == null ) {
                     costFunction = new MinSizeCost( 0 );
                 }
-                scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment(costFunction), new OptimalReadyToRunToNode() );
+                scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
                 break;
             default: {
                 final String[] split = strategy.split( "-" );

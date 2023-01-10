@@ -15,8 +15,12 @@ public class RandomAlignment extends InputAlignmentClass {
 
     private final Random random = new Random();
 
+    public RandomAlignment() {
+        super( 0 );
+    }
+
     @Override
-    double findAlignmentForFile(PathFileLocationTriple pathFileLocationTriple, NodeLocation scheduledNode, HashMap<Location, AlignmentWrapper> map) {
+    Costs findAlignmentForFile(PathFileLocationTriple pathFileLocationTriple, NodeLocation scheduledNode, HashMap<Location, AlignmentWrapper> map) {
         final Optional<LocationWrapper> first = pathFileLocationTriple
                 .locations
                 .stream()
@@ -28,7 +32,7 @@ public class RandomAlignment extends InputAlignmentClass {
         final Location location = locationWrapper.getLocation();
         final AlignmentWrapper alignmentWrapper = map.computeIfAbsent(location, k -> new AlignmentWrapper() );
         alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, locationWrapper ), 0, locationWrapper.getSizeInBytes() );
-        return 0;
+        return new Costs( 0, locationWrapper.getSizeInBytes() );
     }
 
 }

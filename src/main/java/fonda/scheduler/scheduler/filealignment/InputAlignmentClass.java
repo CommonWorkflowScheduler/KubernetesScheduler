@@ -14,6 +14,7 @@ import fonda.scheduler.util.FilePathWithTask;
 import fonda.scheduler.util.Tuple;
 import fonda.scheduler.util.copying.CopySource;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,6 +24,17 @@ import java.util.Map;
 
 @Slf4j
 abstract class InputAlignmentClass implements InputAlignment {
+
+    /**
+     * This weight weights the cost of copying files from one node. 1 - this value weights the overall data copied.
+     * How much should the individual costs of one node be weighted compared to the overall data copied.
+     */
+    private final double weightForSingleSource;
+
+    public InputAlignmentClass( double weightForSingleSource ) {
+        assert weightForSingleSource >= 0 && weightForSingleSource <= 1;
+        this.weightForSingleSource = weightForSingleSource;
+    }
 
     /**
      * Check if another scheduled task is already copying a required file
@@ -38,13 +50,11 @@ abstract class InputAlignmentClass implements InputAlignment {
             final Location copyFrom = copySource.getLocation();
             for ( LocationWrapper locationWrapper : locations ) {
                 if ( locationWrapper.getLocation() == copyFrom ) {
-                    log.info( "Checking if {} is already copying: {} (Found)", path, currentlyCopying.getAllFilesCurrentlyCopying() );
                     return new Tuple(locationWrapper,copySource.getTask());
                 }
             }
             throw new NoAligmentPossibleException( "Node is a already copying file: " + path + " but in an incompatible version." );
         }
-        log.info( "Checking if {} is already copying: {} (Not found)", path, currentlyCopying == null ? null : currentlyCopying.getAllFilesCurrentlyCopying() );
         return null;
     }
 
@@ -77,23 +87,35 @@ abstract class InputAlignmentClass implements InputAlignment {
                                            double maxCost) {
         final HashMap<Location, AlignmentWrapper> map = new HashMap<>();
         double cost = 0;
+        double overallCost = 0;
         for (PathFileLocationTriple pathFileLocationTriple : inputsOfTask.getFiles()) {
             if ( !canUseFileFromOtherTask( currentlyCopying, pathFileLocationTriple, map, "copying" )
                     &&
                     !canUseFileFromOtherTask( currentlyPlanedToCopy, pathFileLocationTriple, map, "currentSchedule" )
             ) {
-                final double newCost = findAlignmentForFile( pathFileLocationTriple, node.getNodeLocation(), map );
+                final Costs result = findAlignmentForFile( pathFileLocationTriple, node.getNodeLocation(), map );
+                final double newCost = (result.singleSourceCost * weightForSingleSource)
+                        + (result.individualCost + overallCost ) * ( 1 - weightForSingleSource);
                 if ( newCost > maxCost ) {
                     return null;
                 }
                 if ( newCost > cost ) {
                     cost = newCost;
+                    overallCost += result.individualCost;
                 }
             }
         }
         return new FileAlignment( map, inputsOfTask.getSymlinks(), cost);
     }
 
-    abstract double findAlignmentForFile(PathFileLocationTriple pathFileLocationTriple, NodeLocation scheduledNode, HashMap<Location, AlignmentWrapper> map);
+    abstract Costs findAlignmentForFile(PathFileLocationTriple pathFileLocationTriple, NodeLocation scheduledNode, HashMap<Location, AlignmentWrapper> map);
+
+    @RequiredArgsConstructor
+    class Costs {
+
+        private final double individualCost;
+        private final double singleSourceCost;
+
+    }
 
 }

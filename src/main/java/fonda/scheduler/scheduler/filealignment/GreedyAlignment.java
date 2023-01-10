@@ -19,17 +19,22 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 
 @Slf4j
-@RequiredArgsConstructor
 public class GreedyAlignment extends InputAlignmentClass {
 
     private final CostFunction cf;
 
-    double findAlignmentForFile (
+    public GreedyAlignment( double weightForSingleSource, CostFunction cf ) {
+        super( weightForSingleSource );
+        this.cf = cf;
+    }
+
+    Costs findAlignmentForFile (
             PathFileLocationTriple pathFileLocationTriple,
             NodeLocation scheduledNode,
             HashMap<Location, AlignmentWrapper> map
     ){
         double minCost = Double.MAX_VALUE;
+        double individualCost = -1;
         Location bestLoc = null;
         LocationWrapper bestLocationWrapper = null;
         for (LocationWrapper locationWrapper : pathFileLocationTriple.locations) {
@@ -45,11 +50,12 @@ public class GreedyAlignment extends InputAlignmentClass {
                 bestLoc = currentLoc;
                 minCost = calculatedCost;
                 bestLocationWrapper = locationWrapper;
+                individualCost = cf.getCost( locationWrapper );
             }
         }
         final AlignmentWrapper alignmentWrapper = map.computeIfAbsent(bestLoc, k -> new AlignmentWrapper() );
         alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, bestLocationWrapper ), minCost, bestLocationWrapper.getSizeInBytes() );
-        return minCost;
+        return new Costs( individualCost, minCost );
     }
 
     @Override
