@@ -1,6 +1,7 @@
 package fonda.scheduler.util;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -10,7 +11,9 @@ public class LogCopyTask {
 
     public LogCopyTask() {
         try {
-            this.writer = new BufferedWriter( new FileWriter( "/pvcdata/scheduler/copytasks.csv" ) );
+            final String pathname = "/input/data/scheduler/";
+            new File( pathname ).mkdirs();
+            this.writer = new BufferedWriter( new FileWriter( pathname + "copytasks.csv" ) );
         } catch ( IOException e ) {
             throw new RuntimeException( e );
         }
