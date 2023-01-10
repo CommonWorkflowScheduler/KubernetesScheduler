@@ -4,6 +4,7 @@ import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @ToString
+@RequiredArgsConstructor
 public class FileAlignment {
 
     /*
@@ -24,12 +26,6 @@ public class FileAlignment {
     private final double cost;
     @Setter
     private double weight = 1.0;
-
-    public FileAlignment(Map<Location, AlignmentWrapper> nodeFileAlignment, List<SymlinkInput> symlinks, double cost) {
-        this.nodeFileAlignment = nodeFileAlignment;
-        this.symlinks = symlinks;
-        this.cost = cost;
-    }
 
     public double getWorth() {
         return cost / weight;

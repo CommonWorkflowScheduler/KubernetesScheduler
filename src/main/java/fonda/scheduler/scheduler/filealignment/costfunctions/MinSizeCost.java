@@ -1,14 +1,12 @@
 package fonda.scheduler.scheduler.filealignment.costfunctions;
 
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class MinSizeCost implements CostFunction {
 
     private final double initCost;
-
-    public MinSizeCost(double initCost) {
-        this.initCost = initCost;
-    }
 
     @Override
     public double getInitCost() {

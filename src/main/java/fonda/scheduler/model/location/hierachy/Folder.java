@@ -1,5 +1,7 @@
 package fonda.scheduler.model.location.hierachy;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
@@ -9,11 +11,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PACKAGE)
 public class Folder extends HierarchyFile {
 
     private final ConcurrentMap<String, HierarchyFile> children = new ConcurrentHashMap<>();
-
-    Folder(){}
 
     @Override
     public boolean isDirectory() {

@@ -1,10 +1,13 @@
 package fonda.scheduler.model;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.List;
 
 @ToString
+@NoArgsConstructor(access = AccessLevel.PRIVATE,force = true)
 public class SchedulerConfig {
 
     public final List<LocalClaim> localClaims;
@@ -21,21 +24,6 @@ public class SchedulerConfig {
     public final Integer maxCopyTasksPerNode;
 
     public final Integer maxWaitingCopyTasksPerNode;
-
-    private SchedulerConfig() {
-        this.localClaims = null;
-        this.volumeClaims = null;
-        this.workDir = null;
-        this.dns = null;
-        this.copyStrategy = null;
-        this.locationAware = false;
-        this.traceEnabled = false;
-        this.costFunction = null;
-        this.namespace = null;
-        this.strategy = null;
-        this.maxCopyTasksPerNode = null;
-        this.maxWaitingCopyTasksPerNode = null;
-    }
 
     @ToString
     public static class LocalClaim {

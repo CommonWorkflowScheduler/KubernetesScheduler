@@ -1,14 +1,12 @@
 package fonda.scheduler.scheduler.data;
 
 import fonda.scheduler.model.NodeWithAlloc;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.jetbrains.annotations.NotNull;
 
 @Getter
 @EqualsAndHashCode
+@AllArgsConstructor
 public class NodeDataTuple implements Comparable<NodeDataTuple> {
 
     private final NodeWithAlloc node;
@@ -19,12 +17,6 @@ public class NodeDataTuple implements Comparable<NodeDataTuple> {
 
     public NodeDataTuple( NodeWithAlloc node, long sizeInBytes ) {
         this( node, sizeInBytes, 1.0 );
-    }
-
-    public NodeDataTuple(NodeWithAlloc node, long sizeInBytes, double weight ) {
-        this.node = node;
-        this.sizeInBytes = sizeInBytes;
-        this.weight = weight;
     }
 
     /**

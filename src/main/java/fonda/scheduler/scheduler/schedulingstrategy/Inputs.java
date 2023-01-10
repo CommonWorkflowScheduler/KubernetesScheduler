@@ -2,6 +2,7 @@ package fonda.scheduler.scheduler.schedulingstrategy;
 
 import fonda.scheduler.model.Task;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -9,25 +10,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@RequiredArgsConstructor
 public class Inputs {
 
     public final String dns;
     public final String execution;
-    public final String hash;
-    public final List<InputEntry> data;
-    public final List<SymlinkInput> symlinks;
+    public final List<InputEntry> data = new LinkedList<>();
+    public final List<SymlinkInput> symlinks = new LinkedList<>();
     public final String syncDir;
-    public final Map<String,List<String>> waitForFilesOfTask;
-
-    public Inputs( String dns, String execution, String syncDir, String hash ) {
-        this.dns = dns;
-        this.execution = execution;
-        this.syncDir = syncDir;
-        this.hash = hash;
-        this.data = new LinkedList<>();
-        this.symlinks = new LinkedList<>();
-        waitForFilesOfTask = new ConcurrentHashMap<>();
-    }
+    public final String hash;
+    public final Map<String,List<String>> waitForFilesOfTask = new ConcurrentHashMap<>();
 
     public void waitForTask( Map<String, Task> waitForTask ){
         for (Map.Entry<String, Task> e : waitForTask.entrySet()) {

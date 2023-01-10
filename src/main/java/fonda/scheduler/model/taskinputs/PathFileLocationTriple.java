@@ -4,6 +4,7 @@ import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.location.hierachy.RealHierarchyFile;
 import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import java.nio.file.Path;
@@ -11,18 +12,13 @@ import java.util.List;
 
 @ToString( exclude = "file" )
 @EqualsAndHashCode
+@RequiredArgsConstructor
 public class PathFileLocationTriple implements Input {
 
     public final Path path;
     public final RealHierarchyFile file;
     public final List<LocationWrapper> locations;
     private long size = -1;
-
-    public PathFileLocationTriple(Path path, RealHierarchyFile file, List<LocationWrapper> locations) {
-        this.path = path;
-        this.file = file;
-        this.locations = locations;
-    }
 
     public long getSizeInBytes() {
         if ( this.size != -1 ) {

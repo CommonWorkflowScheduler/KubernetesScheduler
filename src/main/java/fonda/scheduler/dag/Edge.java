@@ -1,12 +1,11 @@
 package fonda.scheduler.dag;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 @Getter
 @ToString
 @EqualsAndHashCode
+@RequiredArgsConstructor( access = AccessLevel.PACKAGE )
 public class Edge {
 
     private final int uid;
@@ -18,10 +17,4 @@ public class Edge {
         this(uid, null, from, to);
     }
 
-    Edge( int uid, String label, Vertex from, Vertex to) {
-        this.uid = uid;
-        this.label = label;
-        this.from = from;
-        this.to = to;
-    }
 }

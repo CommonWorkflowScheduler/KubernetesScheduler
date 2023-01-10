@@ -1,10 +1,13 @@
 package fonda.scheduler.rest;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Getter
 @ToString
+@NoArgsConstructor( access = AccessLevel.PRIVATE, force = true )
 public class PathAttributes {
 
     private final String path;
@@ -12,10 +15,4 @@ public class PathAttributes {
     private final long timestamp;
     private final long locationWrapperID;
 
-    private PathAttributes() {
-        this.path = null;
-        this.size = -1;
-        this.timestamp = -1;
-        this.locationWrapperID = -1;
-    }
 }

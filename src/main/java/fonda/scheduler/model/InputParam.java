@@ -1,17 +1,15 @@
 package fonda.scheduler.model;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @ToString
+@NoArgsConstructor(access = AccessLevel.NONE, force = true)
 public class InputParam<T> {
 
     public final String name;
     public final T value;
-
-    private InputParam() {
-        this.name = null;
-        this.value = null;
-    }
 
     /**
      * Only for testing

@@ -6,19 +6,17 @@ import fonda.scheduler.model.taskinputs.PathFileLocationTriple;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.util.Tuple;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.util.*;
 
 @Slf4j
+@RequiredArgsConstructor
 public class InputFileCollector {
 
     private final HierarchyWrapper hierarchyWrapper;
-
-    public InputFileCollector( HierarchyWrapper hierarchyWrapper ) {
-        this.hierarchyWrapper = hierarchyWrapper;
-    }
 
     private void processNext(
             final LinkedList<Tuple<HierarchyFile, Path>> toProcess,

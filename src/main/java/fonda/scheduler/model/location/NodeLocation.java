@@ -1,11 +1,14 @@
 package fonda.scheduler.model.location;
 
 import io.fabric8.kubernetes.api.model.Node;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+@RequiredArgsConstructor( access = AccessLevel.PRIVATE )
 public class NodeLocation extends Location {
 
     private static final long serialVersionUID = 1L;
@@ -14,10 +17,6 @@ public class NodeLocation extends Location {
 
     @Getter
     private final String identifier;
-
-    private NodeLocation(String identifier) {
-        this.identifier = identifier;
-    }
 
     public static NodeLocation getLocation( Node node ){
         return getLocation( node.getMetadata().getName() );

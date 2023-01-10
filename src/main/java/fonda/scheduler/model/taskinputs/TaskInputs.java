@@ -7,6 +7,7 @@ import fonda.scheduler.util.Tuple;
 import fonda.scheduler.util.copying.CopySource;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 @ToString
 @Getter
 @Slf4j
+@RequiredArgsConstructor
 public class TaskInputs {
 
     private final List<SymlinkInput> symlinks;
@@ -24,12 +26,6 @@ public class TaskInputs {
     private final Set<Location> excludedNodes;
 
     private boolean sorted = false;
-
-    public TaskInputs(List<SymlinkInput> symlinks, List<PathFileLocationTriple> files, Set<Location> excludedNodes) {
-        this.symlinks = symlinks;
-        this.files = files;
-        this.excludedNodes = excludedNodes;
-    }
 
     public boolean allFilesAreOnLocationAndNotOverwritten( Location loc, Set<String> pathCurrentlyCopying ){
         for (PathFileLocationTriple file : files) {

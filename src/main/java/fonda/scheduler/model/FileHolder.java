@@ -1,19 +1,16 @@
 package fonda.scheduler.model;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @ToString( exclude = {"stageName", "storePath"})
+@NoArgsConstructor(access = AccessLevel.NONE)
 public class FileHolder {
 
     public final String storePath;
     public final String sourceObj;
     public final String stageName;
-
-    private FileHolder() {
-        this.storePath = null;
-        this.sourceObj = null;
-        this.stageName = null;
-    }
 
     /**
      * Only for testing

@@ -12,19 +12,17 @@ import fonda.scheduler.util.AlignmentWrapper;
 import fonda.scheduler.util.FileAlignment;
 import fonda.scheduler.util.FilePath;
 import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 
 @Slf4j
+@RequiredArgsConstructor
 public class GreedyAlignment extends InputAlignmentClass {
 
     private final CostFunction cf;
-
-    public GreedyAlignment(CostFunction cf) {
-        this.cf = cf;
-    }
 
     double findAlignmentForFile (
             PathFileLocationTriple pathFileLocationTriple,

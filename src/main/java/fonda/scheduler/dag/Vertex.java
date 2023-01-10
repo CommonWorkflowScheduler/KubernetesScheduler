@@ -2,6 +2,7 @@ package fonda.scheduler.dag;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collection;
@@ -10,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class Vertex {
 
     private final String label;
@@ -19,11 +21,6 @@ public abstract class Vertex {
 
     @Setter(AccessLevel.PACKAGE)
     private int rank = 0;
-
-    Vertex( String label, int uid ) {
-        this.label = label;
-        this.uid = uid;
-    }
 
     public abstract Type getType();
 

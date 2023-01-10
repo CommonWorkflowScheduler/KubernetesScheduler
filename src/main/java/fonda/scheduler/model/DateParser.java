@@ -1,11 +1,13 @@
 package fonda.scheduler.model;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DateParser {
-
-    private DateParser(){}
 
     public static Long millisFromString( String date ) {
         if( date == null || date.isEmpty() || date.equals("-") || date.equals("w") ) {

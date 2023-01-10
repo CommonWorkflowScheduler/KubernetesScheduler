@@ -1,18 +1,16 @@
 package fonda.scheduler.model.outfiles;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.nio.file.Path;
 import java.util.Objects;
 
 @Getter
+@RequiredArgsConstructor
 public class OutputFile {
 
     private final Path path;
-
-    public OutputFile(Path path) {
-        this.path = path;
-    }
 
     @Override
     public boolean equals(Object o) {

@@ -1,17 +1,15 @@
 package fonda.scheduler.model.location.hierachy;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.nio.file.Path;
 
+@RequiredArgsConstructor
 public class LinkHierarchyFile extends AbstractHierarchyFile {
 
     @Getter
     private final Path dst;
-
-    public LinkHierarchyFile(Path dst ) {
-        this.dst = dst;
-    }
 
     @Override
     public boolean isDirectory() {
