@@ -2,7 +2,6 @@ package fonda.scheduler.util;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Task;
-import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import lombok.Getter;
 

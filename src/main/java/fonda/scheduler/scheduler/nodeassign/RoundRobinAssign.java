@@ -6,7 +6,6 @@ import fonda.scheduler.model.PodWithAge;
 import fonda.scheduler.model.Requirements;
 import fonda.scheduler.model.Task;
 import fonda.scheduler.util.NodeTaskAlignment;
-import io.swagger.v3.oas.models.links.Link;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;

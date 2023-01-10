@@ -1,7 +1,6 @@
 package fonda.scheduler.util;
 
 import fonda.scheduler.model.location.Location;
-import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.model.taskinputs.SymlinkInput;
 import lombok.Getter;

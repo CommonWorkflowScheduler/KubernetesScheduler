@@ -1,6 +1,5 @@
 package fonda.scheduler.scheduler.nodeassign;
 
-import fonda.scheduler.client.Informable;
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.PodWithAge;
 import fonda.scheduler.model.Requirements;
@@ -9,8 +8,6 @@ import fonda.scheduler.util.NodeTaskAlignment;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

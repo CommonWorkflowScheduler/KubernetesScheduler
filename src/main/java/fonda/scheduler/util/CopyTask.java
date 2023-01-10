@@ -2,7 +2,6 @@ package fonda.scheduler.util;
 
 import fonda.scheduler.model.Task;
 import fonda.scheduler.model.TaskInputFileLocationWrapper;
-import fonda.scheduler.model.location.Location;
 import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.model.location.hierachy.LocationWrapper;
 import fonda.scheduler.scheduler.schedulingstrategy.Inputs;
@@ -12,7 +11,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
