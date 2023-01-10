@@ -36,6 +36,19 @@ public class PathFileLocationTriple implements Input {
         return this.size;
     }
 
+    public long getMinSizeInBytes() {
+        if ( locations.isEmpty() ) {
+            throw new IllegalStateException("No locations for file " + path);
+        }
+        long minSize = Long.MAX_VALUE;
+        for (LocationWrapper location : locations) {
+            if ( location.getSizeInBytes() < minSize ) {
+                minSize = location.getSizeInBytes();
+            }
+        }
+        return minSize;
+    }
+
     public LocationWrapper locationWrapperOnLocation(Location loc){
         for (LocationWrapper location : locations) {
             if ( location.getLocation().equals(loc) ) {
