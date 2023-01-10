@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Keeps track of what is currently being copied to a node.
+ * This is used to avoid copying the same data to a node multiple times.
+ */
 public class CurrentlyCopyingOnNode {
 
     private final Map< String, CopySource> currentlyCopying = new HashMap<>();
