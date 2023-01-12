@@ -15,6 +15,7 @@ import fonda.scheduler.scheduler.la2.MinCopyingComparator;
 import fonda.scheduler.scheduler.la2.MinSizeComparator;
 import fonda.scheduler.scheduler.la2.TaskStat;
 import fonda.scheduler.scheduler.la2.TaskStatComparator;
+import fonda.scheduler.scheduler.la2.capacityavailable.CapacityAvailableToNode;
 import fonda.scheduler.scheduler.la2.capacityavailable.SimpleCapacityAvailableToNode;
 import fonda.scheduler.scheduler.la2.copystrategy.CopyRunner;
 import fonda.scheduler.scheduler.la2.copystrategy.ShellCopy;
@@ -48,7 +49,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private final CopyRunner copyRunner;
 
-    private final SimpleCapacityAvailableToNode capacityAvailableToNode;
+    private final CapacityAvailableToNode capacityAvailableToNode;
 
     private final TaskStatComparator phaseTwoComparator;
 
