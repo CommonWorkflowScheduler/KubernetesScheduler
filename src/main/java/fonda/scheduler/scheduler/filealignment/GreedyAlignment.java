@@ -31,31 +31,39 @@ public class GreedyAlignment extends InputAlignmentClass {
     Costs findAlignmentForFile (
             PathFileLocationTriple pathFileLocationTriple,
             NodeLocation scheduledNode,
-            HashMap<Location, AlignmentWrapper> map
+            HashMap<Location, AlignmentWrapper> map,
+            final Costs costs
     ){
         double minCost = Double.MAX_VALUE;
-        double individualCost = -1;
+        double currentMaxCostForIndividualNode = costs.getMaxCostForIndividualNode();
+        double currentSumOfCosts = costs.getSumOfCosts();
         Location bestLoc = null;
         LocationWrapper bestLocationWrapper = null;
         for (LocationWrapper locationWrapper : pathFileLocationTriple.locations) {
             final Location currentLoc = locationWrapper.getLocation();
-            final double calculatedCost;
+            final double maxCostOnIndividualNode;
+            final double tmpCurrentSumOfCosts;
             if ( currentLoc != scheduledNode) {
                 final AlignmentWrapper alignmentWrapper = map.get(currentLoc);
-                calculatedCost = cf.calculateCost(alignmentWrapper, locationWrapper);
+                tmpCurrentSumOfCosts = costs.getSumOfCosts() + cf.getCost( locationWrapper );
+                final double costOnIndividualNode = cf.calculateCost(alignmentWrapper, locationWrapper);
+                maxCostOnIndividualNode = Math.max( costOnIndividualNode, costs.getMaxCostForIndividualNode() );
             } else {
-                calculatedCost = 0;
+                tmpCurrentSumOfCosts = costs.getSumOfCosts();
+                maxCostOnIndividualNode = costs.getMaxCostForIndividualNode();
             }
+            final double calculatedCost = calculateCost( maxCostOnIndividualNode, tmpCurrentSumOfCosts );
             if ( calculatedCost < minCost ) {
                 bestLoc = currentLoc;
                 minCost = calculatedCost;
                 bestLocationWrapper = locationWrapper;
-                individualCost = cf.getCost( locationWrapper );
+                currentMaxCostForIndividualNode = maxCostOnIndividualNode;
+                currentSumOfCosts = tmpCurrentSumOfCosts;
             }
         }
         final AlignmentWrapper alignmentWrapper = map.computeIfAbsent(bestLoc, k -> new AlignmentWrapper() );
         alignmentWrapper.addAlignmentToCopy( new FilePath( pathFileLocationTriple, bestLocationWrapper ), minCost, bestLocationWrapper.getSizeInBytes() );
-        return new Costs( individualCost, minCost );
+        return new Costs( currentMaxCostForIndividualNode, currentSumOfCosts, minCost );
     }
 
     @Override
