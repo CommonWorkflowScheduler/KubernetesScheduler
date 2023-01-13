@@ -7,6 +7,7 @@ import fonda.scheduler.util.TaskNodeStats;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -19,7 +20,8 @@ public class TaskStat implements Comparable<TaskStat> {
     private final Task task;
     @Getter
     private final TaskInputs inputsOfTask;
-    private final TaskStatComparator comparator;
+    @Setter
+    private TaskStatComparator comparator;
     private final List<NodeAndStatWrapper> taskStats = new ArrayList<>();
     @Getter
     private int completeOnNodes = 0;

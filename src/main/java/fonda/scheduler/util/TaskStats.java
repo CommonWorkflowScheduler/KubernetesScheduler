@@ -2,6 +2,7 @@ package fonda.scheduler.util;
 
 import fonda.scheduler.model.Task;
 import fonda.scheduler.scheduler.la2.TaskStat;
+import fonda.scheduler.scheduler.la2.TaskStatComparator;
 
 import java.util.*;
 
@@ -27,6 +28,12 @@ public class TaskStats {
      */
     public void removeTasksThatHaveBeenStarted() {
         taskStats.entrySet().removeIf(entry -> entry.getValue().isCopyToNodeWithAvailableResources());
+    }
+
+    public void setComparator( TaskStatComparator comparator ) {
+        for ( TaskStat taskStat : taskStats.values() ) {
+            taskStat.setComparator( comparator );
+        }
     }
 
 }

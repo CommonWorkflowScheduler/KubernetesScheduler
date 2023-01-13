@@ -143,6 +143,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     .sequential()
                     .forEach( taskStats::add );
 
+            taskStats.setComparator( phaseTwoComparator );
+
             final CurrentlyCopying planedToCopy = new CurrentlyCopying();
             //Fill the currently available resources as fast as possible: start the tasks with the least data missing on a node.
             nodeTaskFilesAlignments = capacityAvailableToNode
@@ -382,7 +384,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
      * @return A wrapper containing the remaining data on each node, the nodes where all data is available, the inputs and the task.
      */
     private TaskStat getDataOnNode( Task task, TaskInputs inputsOfTask, List<NodeWithAlloc> allNodes ) {
-        TaskStat taskStats = new TaskStat( task, inputsOfTask, phaseTwoComparator );
+        TaskStat taskStats = new TaskStat( task, inputsOfTask );
         final CurrentlyCopying currentlyCopying = getCurrentlyCopying();
         for ( NodeWithAlloc node : allNodes ) {
             if ( !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() ) && affinitiesMatch( task.getPod(), node ) ) {
