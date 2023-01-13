@@ -4,25 +4,27 @@ import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;
 import fonda.scheduler.model.Task;
 import fonda.scheduler.model.location.NodeLocation;
-import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
-import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
 import fonda.scheduler.scheduler.la2.TaskStat;
-import fonda.scheduler.util.*;
+import fonda.scheduler.util.NodeTaskFilesAlignment;
+import fonda.scheduler.util.SortedList;
+import fonda.scheduler.util.TaskStats;
 import fonda.scheduler.util.copying.CurrentlyCopying;
-import fonda.scheduler.util.copying.CurrentlyCopyingOnNode;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
-@RequiredArgsConstructor
-public class SimpleCapacityAvailableToNode implements CapacityAvailableToNode {
+public class SimpleCapacityAvailableToNode extends CapacityAvailableToNode {
 
-    private final CurrentlyCopying currentlyCopying;
-    private final InputAlignment inputAlignment;
-    private final int copySameTaskInParallel;
+    public SimpleCapacityAvailableToNode(
+            CurrentlyCopying currentlyCopying,
+            InputAlignment inputAlignment,
+            int copySameTaskInParallel ) {
+        super( currentlyCopying, inputAlignment, copySameTaskInParallel );
+    }
 
     public List<NodeTaskFilesAlignment> createAlignmentForTasksWithEnoughCapacity(
             final TaskStats taskStats,
@@ -54,7 +56,12 @@ public class SimpleCapacityAvailableToNode implements CapacityAvailableToNode {
             if ( currentlyCopyingTasksOnNode.getOrDefault( node.getNodeLocation(), 0 ) < maxCopyingTaskPerNode
                     &&
                     availableByNodes.get( node ).higherOrEquals( task.getRequest() ) ) {
-                cannotAdd = !createFileAlignment( planedToCopy, availableByNodes, nodeTaskAlignments, currentlyCopyingTasksOnNode, poll, task, node );
+                if ( createFileAlignment( planedToCopy, nodeTaskAlignments, currentlyCopyingTasksOnNode, poll, task, node ) ) {
+                    cannotAdd = false;
+                    availableByNodes.get( node ).subFromThis( task.getRequest() );
+                } else {
+                    cannotAdd = true;
+                }
             } else {
                 cannotAdd = true;
             }
@@ -67,65 +74,7 @@ public class SimpleCapacityAvailableToNode implements CapacityAvailableToNode {
         return nodeTaskAlignments;
     }
 
-    private void removeTasksThatAreCopiedMoreThanXTimeCurrently( SortedList<TaskStat> taskStats, int maxParallelTasks ) {
-        taskStats.removeIf( elem -> currentlyCopying.getNumberOfNodesForTask( elem.getTask() ) == maxParallelTasks );
-    }
 
-
-    /**
-     *
-     * @param planedToCopy
-     * @param availableByNodes
-     * @param nodeTaskAlignments
-     * @param currentlyCopyingTasksOnNode
-     * @param poll
-     * @param task
-     * @param node
-     * @return the success of this operation
-     */
-    private boolean createFileAlignment(
-            CurrentlyCopying planedToCopy,
-            Map<NodeWithAlloc, Requirements> availableByNodes,
-            List<NodeTaskFilesAlignment> nodeTaskAlignments,
-            Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
-            TaskStat poll,
-            Task task,
-            NodeWithAlloc node
-    ) {
-        final FileAlignment fileAlignmentForTaskAndNode = getFileAlignmentForTaskAndNode( node, task, poll.getInputsOfTask(), planedToCopy );
-        if ( fileAlignmentForTaskAndNode != null && fileAlignmentForTaskAndNode.copyFromSomewhere( node.getNodeLocation() ) ) {
-            planedToCopy.addAlignment( fileAlignmentForTaskAndNode.getNodeFileAlignment(), task, node );
-            nodeTaskAlignments.add( new NodeTaskFilesAlignment( node, task, fileAlignmentForTaskAndNode ) );
-            availableByNodes.get( node ).subFromThis( task.getRequest() );
-            currentlyCopyingTasksOnNode.compute( node.getNodeLocation(), ( nodeLocation, value ) -> value == null ? 1 : value + 1 );
-            poll.copyToNodeWithAvailableResources();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private FileAlignment getFileAlignmentForTaskAndNode(
-            final NodeWithAlloc node,
-            final Task task,
-            final TaskInputs inputsOfTask,
-            final CurrentlyCopying planedToCopy
-    ) {
-        final CurrentlyCopyingOnNode currentlyCopyingOnNode = this.currentlyCopying.get(node.getNodeLocation());
-        final CurrentlyCopyingOnNode currentlyPlanedToCopy = planedToCopy.get(node.getNodeLocation());
-        try {
-            return inputAlignment.getInputAlignment(
-                    task,
-                    inputsOfTask,
-                    node,
-                    currentlyCopyingOnNode,
-                    currentlyPlanedToCopy,
-                    Double.MAX_VALUE
-            );
-        } catch ( NoAligmentPossibleException e ){
-            return null;
-        }
-    }
 
     private void removeAvailableResources( TaskStats taskStats, Map<NodeWithAlloc, Requirements> availableByNodes, List<NodeWithAlloc> allNodes ) {
         allNodes.parallelStream().forEach( node -> {
