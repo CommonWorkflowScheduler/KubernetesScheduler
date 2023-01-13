@@ -35,6 +35,10 @@ public class TaskStat implements Comparable<TaskStat> {
         this.copyToNodeWithAvailableResources = true;
     }
 
+    public boolean missingDataOnAnyNode() {
+        return !taskStats.isEmpty();
+    }
+
     /**
      * Call this to sort the taskStats list
      */
@@ -55,13 +59,21 @@ public class TaskStat implements Comparable<TaskStat> {
 
     private final AtomicInteger canStartAfterCopying = new AtomicInteger( 0 );
 
+
+    /**
+     * Will only be added to the list if there is missing data on the node.
+     * @param node
+     * @param taskNodeStats
+     */
     public void add( NodeWithAlloc node, TaskNodeStats taskNodeStats ) {
         assert !finished;
-        this.taskStats.add( new NodeAndStatWrapper( node, taskNodeStats ) );
         if ( taskNodeStats.allOnNode() ) {
             this.completeOnNodes++;
         } else if ( taskNodeStats.allOnNodeOrCopying() ) {
             this.copyingToNodes++;
+        } else {
+            //Only add in the case that not all data is already on the node
+            this.taskStats.add( new NodeAndStatWrapper( node, taskNodeStats ) );
         }
     }
 

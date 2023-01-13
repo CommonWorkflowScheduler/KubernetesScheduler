@@ -142,7 +142,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                         if ( inputsOfTask == null ) return null;
                         return getDataOnNode( task, inputsOfTask, allNodes );
                     } )
-                    .filter( Objects::nonNull )
+                    .filter( TaskStat::missingDataOnAnyNode )
                     .sequential()
                     .forEach( taskStats::add );
 

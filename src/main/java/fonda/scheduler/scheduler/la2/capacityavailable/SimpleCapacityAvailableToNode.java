@@ -93,7 +93,7 @@ public class SimpleCapacityAvailableToNode implements CapacityAvailableToNode {
             NodeWithAlloc node
     ) {
         final FileAlignment fileAlignmentForTaskAndNode = getFileAlignmentForTaskAndNode( node, task, poll.getInputsOfTask(), planedToCopy );
-        if ( fileAlignmentForTaskAndNode != null ) {
+        if ( fileAlignmentForTaskAndNode != null && fileAlignmentForTaskAndNode.copyFromSomewhere( node.getNodeLocation() ) ) {
             planedToCopy.addAlignment( fileAlignmentForTaskAndNode.getNodeFileAlignment(), task, node );
             nodeTaskAlignments.add( new NodeTaskFilesAlignment( node, task, fileAlignmentForTaskAndNode ) );
             availableByNodes.get( node ).subFromThis( task.getRequest() );
