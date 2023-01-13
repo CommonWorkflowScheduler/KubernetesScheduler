@@ -98,6 +98,7 @@ public class SimpleCapacityAvailableToNode implements CapacityAvailableToNode {
             nodeTaskAlignments.add( new NodeTaskFilesAlignment( node, task, fileAlignmentForTaskAndNode ) );
             availableByNodes.get( node ).subFromThis( task.getRequest() );
             currentlyCopyingTasksOnNode.compute( node.getNodeLocation(), ( nodeLocation, value ) -> value == null ? 1 : value + 1 );
+            poll.copyToNodeWithAvailableResources();
             return true;
         } else {
             return false;

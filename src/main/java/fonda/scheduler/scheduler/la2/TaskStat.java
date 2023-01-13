@@ -28,6 +28,13 @@ public class TaskStat implements Comparable<TaskStat> {
     private boolean finished = false;
     private int indexToCompare = 0;
 
+    @Getter
+    private boolean copyToNodeWithAvailableResources = false;
+
+    public void copyToNodeWithAvailableResources() {
+        this.copyToNodeWithAvailableResources = true;
+    }
+
     /**
      * Call this to sort the taskStats list
      */

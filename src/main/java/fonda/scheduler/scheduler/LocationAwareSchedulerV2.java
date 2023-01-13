@@ -157,6 +157,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                                     getMaxCopyTasksPerNode(),
                                                     currentlyCopyingTasksOnNode
                                                 );
+            taskStats.removeTasksThatHaveBeenStarted();
+
         }
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }

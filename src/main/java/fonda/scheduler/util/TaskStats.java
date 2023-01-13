@@ -22,4 +22,11 @@ public class TaskStats {
         return this.taskStats.values();
     }
 
+    /**
+     * This method will remove all tasks, that have set copyToNodeWithAvailableResources
+     */
+    public void removeTasksThatHaveBeenStarted() {
+        taskStats.entrySet().removeIf(entry -> entry.getValue().isCopyToNodeWithAvailableResources());
+    }
+
 }
