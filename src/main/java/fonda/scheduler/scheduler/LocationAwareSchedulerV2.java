@@ -127,10 +127,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     @Override
     void postScheduling( List<Task> unscheduledTasks, final Map<NodeWithAlloc, Requirements> availableByNode ) {
         final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode = getCurrentlyCopying().getCurrentlyCopyingTasksOnNode();
-        final List<NodeWithAlloc> allNodes = client.getAllNodes().stream().filter(
-                                                    node -> currentlyCopyingTasksOnNode
-                                                            .getOrDefault( node.getNodeLocation(), 0 ) < getMaxCopyTasksPerNode()
-                                            ).collect( Collectors.toList() );
+        final List<NodeWithAlloc> allNodes = client.getAllNodes();
         final List<NodeTaskFilesAlignment> nodeTaskFilesAlignments;
         synchronized ( copyLock ) {
             final TaskStats taskStats = new TaskStats();
