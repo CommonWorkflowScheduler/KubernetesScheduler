@@ -35,11 +35,9 @@ public abstract class Scheduler implements Informable {
     private boolean close;
     @Getter
     private final DAG dag;
-
     private final Object batchHelper = new Object();
     private int currentBatch = 0;
     private Batch currentBatchInstance = null;
-
     final KubernetesClient client;
     private final Set<Task> upcomingTasks = new HashSet<>();
     private final List<Task> unscheduledTasks = new ArrayList<>( 100 );
@@ -88,7 +86,7 @@ public abstract class Scheduler implements Informable {
         if( traceEnabled ) {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
-        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
+        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode( true ));
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
 
         //check if still possible...
@@ -129,7 +127,7 @@ public abstract class Scheduler implements Informable {
             scheduled++;
         }
         //Use instance object that does not contain yet scheduled tasks
-        postScheduling( unscheduledTasksCopy, getAvailableByNode() );
+        postScheduling( unscheduledTasksCopy, getAvailableByNode( false ) );
         return unscheduledTasks.size() - taskNodeAlignment.size() + failure;
     }
 
@@ -147,7 +145,7 @@ public abstract class Scheduler implements Informable {
 
 
     public boolean validSchedulePlan( List<NodeTaskAlignment> taskNodeAlignment ){
-        Map< NodeWithAlloc, Requirements> availableByNode = getAvailableByNode();
+        Map< NodeWithAlloc, Requirements> availableByNode = getAvailableByNode( false );
         for ( NodeTaskAlignment nodeTaskAlignment : taskNodeAlignment ) {
             final Requirements requirements = availableByNode.get(nodeTaskAlignment.node);
             if ( requirements == null ) {
@@ -486,20 +484,29 @@ public abstract class Scheduler implements Informable {
         return t;
     }
 
-    Map<NodeWithAlloc, Requirements> getAvailableByNode(){
+    Map<NodeWithAlloc, Requirements> getAvailableByNode( boolean logging ){
         Map<NodeWithAlloc, Requirements> availableByNode = new HashMap<>();
-        List<String> logInfo = new LinkedList<>();
-        logInfo.add("------------------------------------");
+        final List<String> logInfo;
+        if ( logging ){
+            logInfo = new LinkedList<>();
+            logInfo.add("------------------------------------");
+        } else {
+            logInfo = null;
+        }
         for (NodeWithAlloc item : getNodeList()) {
             if ( !item.isReady() ) {
                 continue;
             }
             final Requirements availableResources = item.getAvailableResources();
             availableByNode.put(item, availableResources);
-            logInfo.add("Node: " + item.getName() + " " + availableResources);
+            if ( logging ){
+                logInfo.add("Node: " + item.getName() + " " + availableResources);
+            }
         }
-        logInfo.add("------------------------------------");
-        log.info(String.join("\n", logInfo));
+        if ( logging ) {
+            logInfo.add("------------------------------------");
+            log.info(String.join("\n", logInfo));
+        }
         return availableByNode;
     }
 
