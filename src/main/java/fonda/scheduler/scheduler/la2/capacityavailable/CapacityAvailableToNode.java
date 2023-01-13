@@ -2,6 +2,7 @@ package fonda.scheduler.scheduler.la2.capacityavailable;
 
 import fonda.scheduler.model.NodeWithAlloc;
 import fonda.scheduler.model.Requirements;
+import fonda.scheduler.model.location.NodeLocation;
 import fonda.scheduler.util.NodeTaskFilesAlignment;
 import fonda.scheduler.util.TaskStats;
 import fonda.scheduler.util.copying.CurrentlyCopying;
@@ -16,7 +17,8 @@ public interface CapacityAvailableToNode {
             final CurrentlyCopying planedToCopy,
             final Map<NodeWithAlloc, Requirements> availableByNodes,
             final List<NodeWithAlloc> allNodes,
-            final int maxCopyingTaskPerNode
+            final int maxCopyingTaskPerNode,
+            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode
     );
 
 }

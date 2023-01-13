@@ -29,12 +29,12 @@ public class SimpleCapacityAvailableToNode implements CapacityAvailableToNode {
             final CurrentlyCopying planedToCopy,
             final Map<NodeWithAlloc, Requirements> availableByNodes,
             final List<NodeWithAlloc> allNodes,
-            final int maxCopyingTaskPerNode ) {
+            final int maxCopyingTaskPerNode,
+            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode
+    ) {
 
 
         List<NodeTaskFilesAlignment> nodeTaskAlignments = new LinkedList<>();
-
-        final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode = currentlyCopying.getCurrentlyCopyingTasksOnNode();
 
         //Remove available resources if a copy task is already running: this logic may not be optimal for more than 2 parallel copy tasks (unclear which task starts first)
         removeAvailableResources( taskStats, availableByNodes, allNodes );

@@ -148,7 +148,15 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
             final CurrentlyCopying planedToCopy = new CurrentlyCopying();
             //Fill the currently available resources as fast as possible: start the tasks with the least data missing on a node.
-            nodeTaskFilesAlignments = capacityAvailableToNode.createAlignmentForTasksWithEnoughCapacity( taskStats, planedToCopy, availableByNode, allNodes, getMaxCopyTasksPerNode() );
+            nodeTaskFilesAlignments = capacityAvailableToNode
+                                                .createAlignmentForTasksWithEnoughCapacity(
+                                                    taskStats,
+                                                    planedToCopy,
+                                                    availableByNode,
+                                                    allNodes,
+                                                    getMaxCopyTasksPerNode(),
+                                                    currentlyCopyingTasksOnNode
+                                                );
         }
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }
