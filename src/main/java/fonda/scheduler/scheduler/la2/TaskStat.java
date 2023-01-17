@@ -20,7 +20,6 @@ public class TaskStat implements Comparable<TaskStat> {
     private final Task task;
     @Getter
     private final TaskInputs inputsOfTask;
-    @Setter
     private TaskStatComparator comparator;
     private final List<NodeAndStatWrapper> taskStats = new ArrayList<>();
     @Getter
@@ -33,6 +32,26 @@ public class TaskStat implements Comparable<TaskStat> {
     @Getter
     private boolean copyToNodeWithAvailableResources = false;
 
+    /**
+     * @return number is the number of nodes, that are better for this task depending on the comparator.
+     */
+    public int getCurrentIndex() {
+        return indexToCompare;
+    }
+
+    /**
+     * @return number of nodes that have already all data or are copying remaining data to this node.
+     */
+    public int dataOnNodes() {
+        return completeOnNodes + copyingToNodes;
+    }
+
+    public void setComparator( TaskStatComparator comparator ) {
+        this.comparator = comparator;
+        this.indexToCompare = 0;
+        finish();
+    }
+
     public void copyToNodeWithAvailableResources() {
         this.copyToNodeWithAvailableResources = true;
     }
@@ -44,7 +63,7 @@ public class TaskStat implements Comparable<TaskStat> {
     /**
      * Call this to sort the taskStats list
      */
-    public void finish() {
+    private void finish() {
         finished = true;
         taskStats.sort( comparator.getComparator() );
     }

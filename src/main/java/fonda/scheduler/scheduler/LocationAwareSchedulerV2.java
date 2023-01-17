@@ -11,12 +11,10 @@ import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.data.TaskInputsNodes;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
 import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
-import fonda.scheduler.scheduler.la2.MinCopyingComparator;
-import fonda.scheduler.scheduler.la2.MinSizeComparator;
-import fonda.scheduler.scheduler.la2.TaskStat;
-import fonda.scheduler.scheduler.la2.TaskStatComparator;
+import fonda.scheduler.scheduler.la2.*;
 import fonda.scheduler.scheduler.la2.capacityavailable.CapacityAvailableToNode;
 import fonda.scheduler.scheduler.la2.capacityavailable.SimpleCapacityAvailableToNode;
+import fonda.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostData;
 import fonda.scheduler.scheduler.la2.copystrategy.CopyRunner;
 import fonda.scheduler.scheduler.la2.copystrategy.ShellCopy;
 import fonda.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
@@ -51,7 +49,10 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private final CapacityAvailableToNode capacityAvailableToNode;
 
+    private final CopyInAdvanceNodeWithMostData copyInAdvance;
+
     private final TaskStatComparator phaseTwoComparator;
+    private final TaskStatComparator phaseThreeComparator;
 
     private final int copySameTaskInParallel;
 
@@ -80,8 +81,10 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         readyToRunToNode.setLogger( logCopyTask );
         this.copyRunner = new ShellCopy( client, this, logCopyTask );
         this.copySameTaskInParallel = 2;
-        capacityAvailableToNode = new SimpleCapacityAvailableToNode( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
-        phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
+        this.capacityAvailableToNode = new SimpleCapacityAvailableToNode( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
+        this.phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
+        this.phaseThreeComparator = new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE );
+        this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
     }
 
     @Override
@@ -117,7 +120,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 .stream()
                 .filter( td -> !td.getNodesWithAllData().isEmpty() )
                 .collect( Collectors.toList() );
-        final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode(taskWithAllData, availableByNode);
+        final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode( taskWithAllData, availableByNode );
         final ScheduleObject scheduleObject = new ScheduleObject( (List) alignment );
         scheduleObject.setCheckStillPossible( true );
         scheduleObject.setStopSubmitIfOneFails( true );
@@ -158,6 +161,16 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                                 );
             taskStats.removeTasksThatHaveBeenStarted();
 
+            taskStats.setComparator( phaseThreeComparator );
+            //Generate copy tasks for tasks that cannot yet run.
+            copyInAdvance.createAlignmentForTasksWithEnoughCapacity(
+                    nodeTaskFilesAlignments,
+                    taskStats,
+                    planedToCopy,
+                    allNodes,
+                    getMaxCopyTasksPerNode(),
+                    currentlyCopyingTasksOnNode
+            );
         }
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }
@@ -395,7 +408,6 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 }
             }
         }
-        taskStats.finish();
         return taskStats;
     }
 
