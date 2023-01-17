@@ -55,6 +55,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     private final TaskStatComparator phaseThreeComparator;
 
     private final int copySameTaskInParallel;
+    private final int maxHeldCopyTaskReady;
 
     /**
      * This lock is used to synchronize the creation of the copy tasks and the finishing.
@@ -85,6 +86,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
         this.phaseThreeComparator = new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE );
         this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
+        this.maxHeldCopyTaskReady = config.maxHeldCopyTaskReady == null ? 3 : config.maxHeldCopyTaskReady;
     }
 
     @Override
@@ -169,6 +171,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     planedToCopy,
                     allNodes,
                     getMaxCopyTasksPerNode(),
+                    maxHeldCopyTaskReady,
                     currentlyCopyingTasksOnNode
             );
         }

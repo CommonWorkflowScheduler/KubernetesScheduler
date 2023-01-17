@@ -24,6 +24,7 @@ public class SchedulerConfig {
     public final Integer maxCopyTasksPerNode;
 
     public final Integer maxWaitingCopyTasksPerNode;
+    public final Integer maxHeldCopyTaskReady;
 
     @ToString
     public static class LocalClaim {

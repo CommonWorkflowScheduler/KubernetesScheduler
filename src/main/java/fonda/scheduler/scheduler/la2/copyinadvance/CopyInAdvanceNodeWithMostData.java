@@ -31,11 +31,12 @@ public class CopyInAdvanceNodeWithMostData extends CreateCopyTasks {
             final CurrentlyCopying planedToCopy,
             final List<NodeWithAlloc> allNodes,
             final int maxCopyingTaskPerNode,
+            final int maxHeldCopyTaskReady,
             final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode )
     {
         final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats() );
         removeTasksThatAreCopiedMoreThanXTimeCurrently( stats, copySameTaskInParallel );
-        removeTasksThatAreReadyOnXNodes( stats, 3 );
+        removeTasksThatAreReadyOnXNodes( stats, maxHeldCopyTaskReady );
 
         while( !stats.isEmpty() ) {
             final TaskStat poll = stats.poll();
