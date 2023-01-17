@@ -41,6 +41,7 @@ public class LaListener implements MyExecListner {
                 Thread.sleep( (long) (100 * Math.pow( 2, trial )) );
             } catch ( InterruptedException e ) {
                 e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
             trial++;
         }
@@ -70,9 +71,15 @@ public class LaListener implements MyExecListner {
     @Override
     public void onExit( int exitCode, Status reason ) {
         finished = true;
-        log.info( name + " was finished exitCode = {}, reason = {}", exitCode, reason );
-        log.debug( name + " Exec Output: {} ", out );
-        log.debug( name + " Exec Error Output: {} ", error );
+        if ( exitCode != 0 ) {
+            log.info( name + " was finished exitCode = {}, reason = {}", exitCode, reason );
+            log.info( name + " Exec Output: {} ", out );
+            log.info( name + " Exec Error Output: {} ", error );
+        } else {
+            log.info( name + " was finished successfully" );
+            log.debug( name + " Exec Output: {} ", out );
+            log.debug( name + " Exec Error Output: {} ", error );
+        }
         scheduler.copyTaskFinished( copyTask, exitCode == 0 );
         close();
         logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "finished(" + exitCode + ")" );
