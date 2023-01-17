@@ -91,9 +91,9 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
             return Collections.emptyList();
         }
 
-        for ( NodeWithAlloc node : memUsed.keySet() ) {
-            model.addLessOrEqual( memUsed.get( node ), availableByNode.get( node ).getRam().longValue() );
-            model.addLessOrEqual( cpuUsed.get( node ), availableByNode.get( node ).getCpu().multiply( MILLION ).longValue() );
+        for ( Map.Entry<NodeWithAlloc, LinearExprBuilder> entry : memUsed.entrySet() ) {
+            model.addLessOrEqual( entry.getValue(), availableByNode.get( entry.getKey() ).getRam().longValue() );
+            model.addLessOrEqual( cpuUsed.get( entry.getKey() ), availableByNode.get( entry.getKey() ).getCpu().multiply( MILLION ).longValue() );
         }
 
         model.maximize( objective );
