@@ -10,7 +10,6 @@ import fonda.scheduler.model.taskinputs.SymlinkInput;
 import fonda.scheduler.model.taskinputs.TaskInputs;
 import fonda.scheduler.scheduler.data.TaskInputsNodes;
 import fonda.scheduler.scheduler.filealignment.InputAlignment;
-import fonda.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
 import fonda.scheduler.scheduler.la2.*;
 import fonda.scheduler.scheduler.la2.capacityavailable.CapacityAvailableToNode;
 import fonda.scheduler.scheduler.la2.capacityavailable.SimpleCapacityAvailableToNode;
@@ -308,71 +307,6 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
         inputs.sortData();
         return new CopyTask( inputs, inputFiles, filesForCurrentNode, alignment.task );
-    }
-
-    Tuple<NodeWithAlloc, FileAlignment> calculateBestNode( final DataOnNode taskData, CurrentlyCopying planedToCopy ) {
-        FileAlignment bestAlignment = null;
-        NodeWithAlloc bestNode = null;
-        final Set<NodeWithAlloc> matchingNodes = taskData.getNodes();
-        int triedNodes = 0;
-        int noAlignmentFound = 0;
-        int couldStopFetching = 0;
-        final List<Double> costs = traceEnabled ? new LinkedList<>() : null;
-        for ( final NodeWithAlloc node : matchingNodes) {
-
-            final CurrentlyCopyingOnNode currentlyCopying = getCurrentlyCopying().get(node.getNodeLocation());
-            final CurrentlyCopyingOnNode currentlyPlanedToCopy = planedToCopy.get(node.getNodeLocation());
-            FileAlignment fileAlignment = null;
-            try {
-                fileAlignment = inputAlignment.getInputAlignment(
-                        taskData.getTask(),
-                        taskData.getInputsOfTask(),
-                        node,
-                        currentlyCopying,
-                        currentlyPlanedToCopy,
-                        bestAlignment == null ? Double.MAX_VALUE : bestAlignment.getCost()
-                );
-
-                if ( fileAlignment == null ){
-                    couldStopFetching++;
-                } else {
-                    log.info( "Task: {}, node: {}, bestWeight: {}, currentWeight: {}",
-                            taskData.getTask().getConfig().getName(),
-                            node.getNodeLocation(),
-                            bestAlignment == null ? null : bestAlignment.getWorth(),
-                            fileAlignment.getWorth()
-                    );
-
-                    if (
-                            //Anything to copy?
-                            fileAlignment.copyFromSomewhere( node.getNodeLocation() ) &&
-                            //Not set or better than current best
-                                    ( bestAlignment == null || bestAlignment.getWorth() > fileAlignment.getWorth() ) ) {
-                        bestAlignment = fileAlignment;
-                        bestNode = node;
-                        log.info( "Best alignment for task: {} costs: {}", taskData.getTask().getConfig().getRunName(), fileAlignment.getCost() );
-                    }
-                }
-            } catch ( NoAligmentPossibleException e ){
-                noAlignmentFound++;
-                log.info( "Task: {} - {}", taskData.getTask().getConfig().getName() , e.getMessage() );
-            }
-            if ( traceEnabled ) {
-                triedNodes++;
-                final Double thisRoundCost = fileAlignment == null
-                        ? null
-                        : fileAlignment.getCost();
-                costs.add( thisRoundCost );
-            }
-        }
-
-        if ( bestAlignment == null ) {
-            return null;
-        }
-
-        //logCopyTask.log( taskData.getTask().getConfig().getName() + " " + bestAlignment );
-
-        return new Tuple<>( bestNode, bestAlignment );
     }
 
 
