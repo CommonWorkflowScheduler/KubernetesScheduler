@@ -218,10 +218,10 @@ def waitForFiles(syncFilePath, files, startTime):
 
 def loadConfig():
     log.info("Load config")
-    log.info( "Parse: --" + sys.argv[3] + "--" )
-    config = json.loads(sys.argv[3])
-    os.makedirs(config["syncDir"], exist_ok=True)
-    return config
+    with open(sys.argv[3]) as jsonFile:
+        config = json.load(jsonFile)
+        os.makedirs(config["syncDir"], exist_ok=True)
+        return config
 
 
 def registerSignal(syncFile):

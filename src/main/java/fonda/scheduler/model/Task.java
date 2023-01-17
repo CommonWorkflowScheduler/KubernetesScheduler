@@ -62,9 +62,15 @@ public class Task {
     @Setter
     private boolean copiesDataToNode = false;
 
+    private final AtomicInteger copyTaskId = new AtomicInteger(0);
+
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
         this.process = dag.getByProcess( config.getTask() );
+    }
+
+    public int getCurrentCopyTaskId() {
+        return copyTaskId.getAndIncrement();
     }
 
     public String getWorkingDir(){
