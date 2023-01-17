@@ -75,7 +75,7 @@ public class TaskStat implements Comparable<TaskStat> {
             this.copyingToNodes++;
         } else {
             //Only add in the case that not all data is already on the node
-            this.taskStats.add( new NodeAndStatWrapper( node, taskNodeStats ) );
+            this.taskStats.add( new NodeAndStatWrapper( node, taskNodeStats, task ) );
         }
     }
 
@@ -109,6 +109,7 @@ public class TaskStat implements Comparable<TaskStat> {
     public static class NodeAndStatWrapper {
         private final NodeWithAlloc node;
         private final TaskNodeStats taskNodeStats;
+        private final Task task;
     }
 
 
