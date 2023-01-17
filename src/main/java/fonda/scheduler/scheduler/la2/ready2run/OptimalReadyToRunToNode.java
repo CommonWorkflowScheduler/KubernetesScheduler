@@ -104,6 +104,9 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
         logger.log( message );
         log.info("Total packed value: " + solver.objectiveValue());
         log.info( String.valueOf( solve ) );
+        if ( solve == CpSolverStatus.MODEL_INVALID ) {
+            return Collections.emptyList();
+        }
 
         return taskNodeBoolVars.stream()
                 .filter( taskNodeBoolVar -> solver.booleanValue( taskNodeBoolVar.getBoolVar() ) )
