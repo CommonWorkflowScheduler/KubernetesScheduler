@@ -11,7 +11,10 @@ public class FileSizeRankScore extends FileSizeScore {
 
     @Override
     public long getScore( TaskInputsNodes taskInputsNodes ) {
-        return super.getScore( taskInputsNodes ) + taskInputsNodes.getTask().getProcess().getRank() * 100_000_000_000L;
+        //Add one to avoid becoming zero
+        final int rank = taskInputsNodes.getTask().getProcess().getRank() + 1;
+        final long rankFactor = 100_000_000_000_000L * rank; // long would allow a rank of 92233
+        return super.getScore( taskInputsNodes ) + rankFactor ;
     }
 
 }
