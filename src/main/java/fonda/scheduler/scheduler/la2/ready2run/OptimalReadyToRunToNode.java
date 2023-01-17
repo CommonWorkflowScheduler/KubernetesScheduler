@@ -35,9 +35,6 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
 
     /**
      * Creates an optimal alignment for tasks with all data on node.
-     * @param taskWithAllData
-     * @param availableByNode
-     * @return
      */
     @Override
     public List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
@@ -46,6 +43,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
     ) {
 
         if ( taskWithAllData.isEmpty() || availableByNode.isEmpty() ){
+            log.info( "No tasks can be scheduled on any node. (No node has all data)" );
             return Collections.emptyList();
         }
 
@@ -88,6 +86,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
         }
 
         if ( taskNodeBoolVars.isEmpty() ) {
+            log.info( "No tasks can be scheduled on any node. Not enough resources available." );
             return Collections.emptyList();
         }
 
