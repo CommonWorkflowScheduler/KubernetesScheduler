@@ -20,6 +20,7 @@ public class Inputs {
     public final String syncDir;
     public final String hash;
     public final Map<String,List<String>> waitForFilesOfTask = new ConcurrentHashMap<>();
+    public final int speed;
 
     public void waitForTask( Map<String, Task> waitForTask ){
         for (Map.Entry<String, Task> e : waitForTask.entrySet()) {

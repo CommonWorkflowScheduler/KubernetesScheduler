@@ -80,7 +80,7 @@ public class LocationAwareScheduler extends SchedulerWithDaemonSet {
                             .sum()
             );
         }
-        return new NodeTaskFilesAlignment(result.getA(), task, result.getB());
+        return new NodeTaskFilesAlignment(result.getA(), task, result.getB(), 100 );
     }
 
     /**

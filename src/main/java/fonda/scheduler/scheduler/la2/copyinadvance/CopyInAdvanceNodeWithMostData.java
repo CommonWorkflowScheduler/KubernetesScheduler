@@ -36,8 +36,9 @@ public class CopyInAdvanceNodeWithMostData extends CreateCopyTasks {
             final List<NodeWithAlloc> allNodes,
             final int maxCopyingTaskPerNode,
             final int maxHeldCopyTaskReady,
-            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode )
-    {
+            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
+            int prio
+    ) {
         final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats() );
         removeTasksThatAreCopiedMoreThanXTimeCurrently( stats, copySameTaskInParallel );
 
@@ -52,7 +53,7 @@ public class CopyInAdvanceNodeWithMostData extends CreateCopyTasks {
 
             //Check if the node has still enough resources to run the task
             if ( currentlyCopyingTasksOnNode.getOrDefault( node.getNodeLocation(), 0 ) < maxCopyingTaskPerNode ) {
-                if ( createFileAlignment( planedToCopy, nodeTaskFilesAlignments, currentlyCopyingTasksOnNode, poll, task, node ) ) {
+                if ( createFileAlignment( planedToCopy, nodeTaskFilesAlignments, currentlyCopyingTasksOnNode, poll, task, node, prio ) ) {
                     cannotAdd = false;
                     log.info( "Start copy task with {} missing bytes", poll.getBestStats().getTaskNodeStats().getSizeRemaining() );
                 } else {

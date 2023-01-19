@@ -116,7 +116,7 @@ def closeFTP(ftp):
         log.exception(UNEXPECTED_ERROR)
 
 
-def downloadFile(ftp, filename, size, index, node, syncFile):
+def downloadFile(ftp, filename, size, index, node, syncFile, speed):
     global errors
     log.info("Download %s [%s/%s] - %s", node, str(index).rjust(len(str(size))), str(size), filename)
     try:
@@ -124,7 +124,23 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
         clearLocation(filename)
         Path(filename[:filename.rindex("/")]).mkdir(parents=True, exist_ok=True)
         start = time.time()
-        ftp.retrbinary('RETR %s' % filename, open(filename, 'wb').write, 102400)
+        with open(filename, 'wb') as file:
+            if speed == 100:
+                ftp.retrbinary('RETR %s' % filename, file.write, 102400)
+            else:
+                timer = {"t": time.time_ns()}
+
+                def callback(data):
+                    now = time.time_ns()
+                    diff = now - timer["t"]
+                    file.write(data)
+                    timeToSleep = (diff * (100 / speed) - diff) / 1_000_000_000
+                    # sleep at least 10ms
+                    if timeToSleep > 0.01:
+                        time.sleep(timeToSleep)
+                        timer["t"] = time.time_ns()
+
+                ftp.retrbinary('RETR %s' % filename, callback, 102400)
         end = time.time()
         sizeInMB = os.path.getsize(filename) / 1000000
         delta = (end - start)
@@ -152,7 +168,7 @@ def downloadFile(ftp, filename, size, index, node, syncFile):
     return 0, 0
 
 
-def download(node, currentIP, files, dns, execution, syncFile):
+def download(node, currentIP, files, dns, execution, syncFile, speed):
     ftp = None
     size = len(files)
     global CLOSE
@@ -164,7 +180,7 @@ def download(node, currentIP, files, dns, execution, syncFile):
             currentIP = None
         filename = files[0]
         index = size - len(files) + 1
-        result = downloadFile(ftp, filename, size, index, node, syncFile)
+        result = downloadFile(ftp, filename, size, index, node, syncFile, speed)
         if result is None:
             ftp = None
             continue
@@ -246,7 +262,7 @@ def generateSymlinks(symlinks):
                 log.warning("File exists: %s -> %s", src, dst)
 
 
-def downloadAllData(data, dns, execution, syncFile):
+def downloadAllData(data, dns, execution, syncFile, speed):
     global trace
     throughput = []
     with ThreadPoolExecutor(max_workers=max(10, len(data))) as executor:
@@ -255,7 +271,7 @@ def downloadAllData(data, dns, execution, syncFile):
             files = d["files"]
             node = d["node"]
             currentIP = d["currentIP"]
-            futures.append(executor.submit(download, node, currentIP, files, dns, execution, syncFile))
+            futures.append(executor.submit(download, node, currentIP, files, dns, execution, syncFile, speed))
         lastNum = -1
         while len(futures) > 0:
             if lastNum != len(futures):
@@ -293,7 +309,7 @@ def finishedDownload(dns, execution, taskname):
     try:
         dns = dns + "downloadtask/" + execution
         log.info("Request: %s", dns)
-        urllib.request.urlopen(dns, taskname.encode( "utf-8" ))
+        urllib.request.urlopen(dns, taskname.encode("utf-8"))
     except BaseException as err:
         log.exception(err)
         myExit(100)
@@ -321,7 +337,7 @@ def run():
         syncFile.write('##SYMLINKS##\n')
         syncFile.flush()
         startTimeDownload = time.time()
-        downloadAllData(data, dns, execution, syncFile)
+        downloadAllData(data, dns, execution, syncFile, config["speed"])
         trace["scheduler_init_download_runtime"] = int((time.time() - startTimeDownload) * 1000)
         if CLOSE:
             log.debug("Closed with code %s", str(EXIT))
@@ -330,16 +346,16 @@ def run():
         syncFile.write('##FINISHED##\n')
         registerSignal2()
 
-    #finishedDownload(dns, execution, taskname)
+    # finishedDownload(dns, execution, taskname)
 
-    #startTimeDependingTasks = time.time()
-    #waitForDependingTasks(config["waitForFilesOfTask"], startTime, config["syncDir"])
-    #trace["scheduler_init_depending_tasks_runtime"] = int((time.time() - startTimeDependingTasks) * 1000)
-    #log.info("Waited for all tasks")
+    # startTimeDependingTasks = time.time()
+    # waitForDependingTasks(config["waitForFilesOfTask"], startTime, config["syncDir"])
+    # trace["scheduler_init_depending_tasks_runtime"] = int((time.time() - startTimeDependingTasks) * 1000)
+    # log.info("Waited for all tasks")
 
-    #runtime = int((time.time() - startTime) * 1000)
-    #trace["scheduler_init_runtime"] = runtime
-    #writeTrace(trace)
+    # runtime = int((time.time() - startTime) * 1000)
+    # trace["scheduler_init_runtime"] = runtime
+    # writeTrace(trace)
 
 
 if __name__ == '__main__':

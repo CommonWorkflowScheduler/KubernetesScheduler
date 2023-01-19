@@ -211,7 +211,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     this.getDns(),
                     getExecution(),
                     this.localWorkDir + "/sync/",
-                    alignment.task.getConfig().getRunName()
+                    alignment.task.getConfig().getRunName(),
+                    100
             );
 
             for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.getNodeFileAlignment().entrySet()) {

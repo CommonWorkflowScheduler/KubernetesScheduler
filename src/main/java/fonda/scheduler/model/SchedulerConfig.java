@@ -25,6 +25,7 @@ public class SchedulerConfig {
 
     public final Integer maxWaitingCopyTasksPerNode;
     public final Integer maxHeldCopyTaskReady;
+    public final Integer prioPhaseThree;
 
     @ToString
     public static class LocalClaim {

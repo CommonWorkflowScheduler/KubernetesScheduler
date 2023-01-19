@@ -27,7 +27,8 @@ public abstract class CapacityAvailableToNode extends CreateCopyTasks {
             final Map<NodeWithAlloc, Requirements> availableByNodes,
             final List<NodeWithAlloc> allNodes,
             final int maxCopyingTaskPerNode,
-            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode
+            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
+            int prio
     );
 
 }

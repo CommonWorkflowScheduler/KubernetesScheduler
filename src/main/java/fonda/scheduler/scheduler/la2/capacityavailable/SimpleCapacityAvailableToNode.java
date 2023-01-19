@@ -32,7 +32,8 @@ public class SimpleCapacityAvailableToNode extends CapacityAvailableToNode {
             final Map<NodeWithAlloc, Requirements> availableByNodes,
             final List<NodeWithAlloc> allNodes,
             final int maxCopyingTaskPerNode,
-            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode
+            final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
+            final int prio
     ) {
 
 
@@ -56,7 +57,7 @@ public class SimpleCapacityAvailableToNode extends CapacityAvailableToNode {
             if ( currentlyCopyingTasksOnNode.getOrDefault( node.getNodeLocation(), 0 ) < maxCopyingTaskPerNode
                     &&
                     availableByNodes.get( node ).higherOrEquals( task.getRequest() ) ) {
-                if ( createFileAlignment( planedToCopy, nodeTaskAlignments, currentlyCopyingTasksOnNode, poll, task, node ) ) {
+                if ( createFileAlignment( planedToCopy, nodeTaskAlignments, currentlyCopyingTasksOnNode, poll, task, node, prio ) ) {
                     cannotAdd = false;
                     availableByNodes.get( node ).subFromThis( task.getRequest() );
                 } else {

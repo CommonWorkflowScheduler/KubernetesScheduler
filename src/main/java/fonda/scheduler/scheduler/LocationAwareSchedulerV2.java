@@ -57,6 +57,12 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     private final int maxHeldCopyTaskReady;
 
     /**
+     * This value must be between 1 and 100.
+     * 100 means that the data will be copied with full speed.
+     */
+    private final int prioPhaseThree;
+
+    /**
      * This lock is used to synchronize the creation of the copy tasks and the finishing.
      * Otherwise, it could happen that:
      * 1. Copy tasks checks for data already on the node
@@ -86,6 +92,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.phaseThreeComparator = new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE );
         this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.maxHeldCopyTaskReady = config.maxHeldCopyTaskReady == null ? 3 : config.maxHeldCopyTaskReady;
+        this.prioPhaseThree = config.prioPhaseThree == null ? 70 : config.prioPhaseThree;
     }
 
     @Override
@@ -158,7 +165,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                                     availableByNode,
                                                     allNodes,
                                                     getMaxCopyTasksPerNode(),
-                                                    currentlyCopyingTasksOnNode
+                                                    currentlyCopyingTasksOnNode,
+                                                    100
                                                 );
             taskStats.removeTasksThatHaveBeenStarted();
 
@@ -171,7 +179,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     allNodes,
                     getMaxCopyTasksPerNode(),
                     maxHeldCopyTaskReady,
-                    currentlyCopyingTasksOnNode
+                    currentlyCopyingTasksOnNode,
+                    prioPhaseThree
             );
         }
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
@@ -276,7 +285,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 this.getDns(),
                 getExecution(),
                 this.localWorkDir + "/sync/",
-                alignment.task.getConfig().getRunName()
+                alignment.task.getConfig().getRunName(),
+                alignment.prio
         );
 
         for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.getNodeFileAlignment().entrySet()) {

@@ -55,12 +55,13 @@ public abstract class CreateCopyTasks {
             Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
             TaskStat poll,
             Task task,
-            NodeWithAlloc node
+            NodeWithAlloc node,
+            int prio
     ) {
         final FileAlignment fileAlignmentForTaskAndNode = getFileAlignmentForTaskAndNode( node, task, poll.getInputsOfTask(), planedToCopy );
         if ( fileAlignmentForTaskAndNode != null && fileAlignmentForTaskAndNode.copyFromSomewhere( node.getNodeLocation() ) ) {
             planedToCopy.addAlignment( fileAlignmentForTaskAndNode.getNodeFileAlignment(), task, node );
-            nodeTaskAlignments.add( new NodeTaskFilesAlignment( node, task, fileAlignmentForTaskAndNode ) );
+            nodeTaskAlignments.add( new NodeTaskFilesAlignment( node, task, fileAlignmentForTaskAndNode, prio ) );
             currentlyCopyingTasksOnNode.compute( node.getNodeLocation(), ( nodeLocation, value ) -> value == null ? 1 : value + 1 );
             poll.copyToNodeWithAvailableResources();
             return true;
@@ -70,7 +71,7 @@ public abstract class CreateCopyTasks {
     }
 
     protected void removeTasksThatAreCopiedMoreThanXTimeCurrently( SortedList<TaskStat> taskStats, int maxParallelTasks ) {
-        taskStats.removeIf( elem -> currentlyCopying.getNumberOfNodesForTask( elem.getTask() ) == maxParallelTasks );
+        taskStats.removeIf( elem -> currentlyCopying.getNumberOfNodesForTask( elem.getTask() ) >= maxParallelTasks );
     }
 
 }
