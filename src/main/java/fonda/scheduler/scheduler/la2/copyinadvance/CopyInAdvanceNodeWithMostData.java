@@ -25,6 +25,10 @@ public class CopyInAdvanceNodeWithMostData extends CreateCopyTasks {
         super( currentlyCopying, inputAlignment, copySameTaskInParallel );
     }
 
+
+    /**
+     * Do not filter maxHeldCopyTaskReady, that could lead to starving if another node has resources.
+     */
     public void createAlignmentForTasksWithEnoughCapacity(
             final List<NodeTaskFilesAlignment> nodeTaskFilesAlignments,
             final TaskStats taskStats,
@@ -36,7 +40,6 @@ public class CopyInAdvanceNodeWithMostData extends CreateCopyTasks {
     {
         final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats() );
         removeTasksThatAreCopiedMoreThanXTimeCurrently( stats, copySameTaskInParallel );
-        removeTasksThatAreReadyOnXNodes( stats, maxHeldCopyTaskReady );
 
         while( !stats.isEmpty() ) {
             final TaskStat poll = stats.poll();
@@ -64,10 +67,6 @@ public class CopyInAdvanceNodeWithMostData extends CreateCopyTasks {
                 stats.add( poll );
             }
         }
-    }
-
-    protected void removeTasksThatAreReadyOnXNodes( SortedList<TaskStat> taskStats, int maxHeldReady ) {
-        taskStats.removeIf( elem -> elem.dataOnNodes() == maxHeldReady );
     }
 
 }
