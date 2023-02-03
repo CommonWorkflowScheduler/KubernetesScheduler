@@ -1,4 +1,5 @@
 # Common Workflow Scheduler for Kubernetes
+[![DOI](https://zenodo.org/badge/596122315.svg)](https://zenodo.org/badge/latestdoi/596122315)
 
 In this repository, you will find the Common Workflow Scheduler for Kubernetes proposed in the paper "**How Workflow Engines Should Talk to Resource Managers: A Proposal for a Common Workflow Scheduling Interface**."
 
