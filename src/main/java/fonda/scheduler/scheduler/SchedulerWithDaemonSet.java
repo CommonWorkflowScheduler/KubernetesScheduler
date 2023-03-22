@@ -134,30 +134,32 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         finishedTasks.parallelStream().forEach( finishedTask -> {
             try{
                 freeLocations( finishedTask.getInputFiles() );
-                final Integer exitCode = finishedTask.getPod().getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode();
-                log.info( "Pod finished with exitCode: {}", exitCode );
-                //Init failure
-                final Path workdir = Paths.get(finishedTask.getWorkingDir());
-                if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
-                    log.info( "Task " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and outfiles" );
-                } else {
-                    final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
-                            workdir,
-                            finishedTask.getNode().getNodeLocation(),
-                            !finishedTask.wasSuccessfullyExecuted(),
-                            finishedTask
-                    );
-                    for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
-                        if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
-                            hierarchyWrapper.addFile(
-                                    newAndUpdatedFile.getPath(),
-                                    ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
-                            );
-                        } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
-                            hierarchyWrapper.addSymlink(
-                                    newAndUpdatedFile.getPath(),
-                                    ((SymlinkOutput) newAndUpdatedFile).getDst()
-                            );
+                if ( !"DeadlineExceeded".equals( finishedTask.getPod().getStatus().getReason() ) ) { //If Deadline exceeded, task cannot write oufiles and containerStatuses.terminated is not available
+                    final Integer exitCode = finishedTask.getPod().getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode();
+                    log.info( "Pod finished with exitCode: {}", exitCode );
+                    //Init failure
+                    final Path workdir = Paths.get(finishedTask.getWorkingDir());
+                    if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
+                        log.info( "Task " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and outfiles" );
+                    } else {
+                        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
+                                workdir,
+                                finishedTask.getNode().getNodeLocation(),
+                                !finishedTask.wasSuccessfullyExecuted(),
+                                finishedTask
+                        );
+                        for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
+                            if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
+                                hierarchyWrapper.addFile(
+                                        newAndUpdatedFile.getPath(),
+                                        ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
+                                );
+                            } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
+                                hierarchyWrapper.addSymlink(
+                                        newAndUpdatedFile.getPath(),
+                                        ((SymlinkOutput) newAndUpdatedFile).getDst()
+                                );
+                            }
                         }
                     }
                 }

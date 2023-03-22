@@ -578,7 +578,10 @@ public abstract class Scheduler implements Informable {
                     }
                     break;
                 case MODIFIED:
-                    if (!pod.getStatus().getContainerStatuses().isEmpty() && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null) {
+                    if ( "DeadlineExceeded".equals( pod.getStatus().getReason() ) || //Task ran out of time
+                            ( !pod.getStatus().getContainerStatuses().isEmpty() &&
+                                    pod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null )
+                    ) {
                         scheduler.onPodTermination(pwa);
                     } else {
                         final Task task = scheduler.getTaskByPod(pwa);
