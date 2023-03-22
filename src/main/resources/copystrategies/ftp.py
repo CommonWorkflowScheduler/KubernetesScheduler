@@ -17,7 +17,14 @@ exitIfFileWasNotFound = True
 CLOSE = False
 UNEXPECTED_ERROR = "Unexpected error"
 EXIT = 0
-log.basicConfig(format='%(levelname)s: %(message)s', level=log.DEBUG)
+log.basicConfig(
+    format='%(levelname)s: %(message)s',
+    level=log.DEBUG,
+    handlers=[
+        log.FileHandler(".command.init.log"),
+        log.StreamHandler()
+    ]
+)
 trace = {}
 traceFilePath = ".command.scheduler.trace"
 errors = 0

@@ -142,9 +142,9 @@ def downloadFile(ftp, filename, size, index, node, syncFile, speed):
 
                 ftp.retrbinary('RETR %s' % filename, callback, 102400)
         end = time.time()
-        sizeInMB = os.path.getsize(filename) / 1000000
+        sizeInMB = os.path.getsize(filename) / 1048576
         delta = (end - start)
-        log.info("Speed: %.3f Mbit/s", sizeInMB / delta)
+        log.info("Speed: %.3f Mb/s", sizeInMB / delta)
         return sizeInMB, delta
     except ftplib.error_perm as err:
         errors += 1
