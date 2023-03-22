@@ -367,11 +367,11 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
             try ( BufferedWriter writer = new BufferedWriter( new FileWriter( alignment.task.getWorkingDir() + '/' + ".command.symlinks" ) ) ) {
                 writer.write( "create_symlink() {" );
                 writer.newLine();
-                writer.write( "  rm -rf \"$2\"" );
+                writer.write( "  rm -rf \"$2\" || true" );
                 writer.newLine();
-                writer.write( "  mkdir -p \"$(dirname \"$2\")\"" );
+                writer.write( "  mkdir -p \"$(dirname \"$2\")\" || true" );
                 writer.newLine();
-                writer.write( "  ln -s \"$1\" \"$2\"" );
+                writer.write( "  ln -s \"$1\" \"$2\" || true" );
                 writer.newLine();
                 writer.write( "}" );
                 writer.newLine();
