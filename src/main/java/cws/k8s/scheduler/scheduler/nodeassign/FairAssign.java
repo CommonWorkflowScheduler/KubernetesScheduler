@@ -4,6 +4,7 @@ import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
 import cws.k8s.scheduler.model.Requirements;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.model.tracing.TraceRecord;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,9 +25,12 @@ public class FairAssign extends NodeAssign {
             log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
             NodeWithAlloc bestNode = null;
             Double bestScore = null;
+            final List<Double> costs = new LinkedList<>();
             final BigDecimal podRequest = pod.getRequest().getCpu();
             for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
+                int triedOnNodes = 0;
                 if ( scheduler.canSchedulePodOnNode( e.getValue(), pod, e.getKey() ) ) {
+                    triedOnNodes++;
                     final BigDecimal maxValue = e.getKey().getMaxResources().getCpu();
                     //how much is available if we assign this pod
                     final BigDecimal newValue = e.getValue().getCpu().subtract( podRequest );
@@ -36,7 +40,12 @@ public class FairAssign extends NodeAssign {
                         bestScore = score;
                         bestNode = e.getKey();
                     }
+                    costs.add( score );
                 }
+                final TraceRecord traceRecord = task.getTraceRecord();
+                traceRecord.setSchedulerNodesTried( triedOnNodes );
+                traceRecord.setSchedulerBestCost( bestScore );
+                traceRecord.setSchedulerNodesCost( costs );
             }
             if ( bestNode != null ) {
                 alignment.add( new NodeTaskAlignment( bestNode, task ) );

@@ -45,9 +45,19 @@ public class PrioritizeAssignScheduler extends Scheduler {
             final List<Task> unscheduledTasks,
             final Map<NodeWithAlloc, Requirements> availableByNode
     ){
-
+        long start = System.currentTimeMillis();
+        if ( traceEnabled ) {
+            int index = 1;
+            for ( Task unscheduledTask : unscheduledTasks ) {
+                unscheduledTask.getTraceRecord().setSchedulerPlaceInQueue( index++ );
+            }
+        }
         prioritize.sortTasks( unscheduledTasks );
         List<NodeTaskAlignment> alignment = nodeAssigner.getTaskNodeAlignment(unscheduledTasks, availableByNode);
+        long timeDelta = System.currentTimeMillis() - start;
+        for ( Task unscheduledTask : unscheduledTasks ) {
+            unscheduledTask.getTraceRecord().setSchedulerTimeToSchedule( (int) timeDelta );
+        }
 
         final ScheduleObject scheduleObject = new ScheduleObject(alignment);
         scheduleObject.setCheckStillPossible( false );

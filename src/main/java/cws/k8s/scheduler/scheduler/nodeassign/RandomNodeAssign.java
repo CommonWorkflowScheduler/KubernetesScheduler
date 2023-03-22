@@ -21,9 +21,11 @@ public class RandomNodeAssign extends NodeAssign {
             log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
             Collections.shuffle( entries );
             boolean assigned = false;
+            int nodesTried = 0;
             for ( Map.Entry<NodeWithAlloc, Requirements> e : entries ) {
                 final NodeWithAlloc node = e.getKey();
                 if ( scheduler.canSchedulePodOnNode( availableByNode.get( node ), pod, node ) ) {
+                    nodesTried++;
                     alignment.add(new NodeTaskAlignment( node, task));
                     availableByNode.get( node ).subFromThis(pod.getRequest());
                     log.info("--> " + node.getName());
@@ -31,6 +33,7 @@ public class RandomNodeAssign extends NodeAssign {
                     break;
                 }
             }
+            task.getTraceRecord().setSchedulerNodesTried( nodesTried );
             if ( !assigned ) {
                 log.trace( "No node with enough resources for {}", pod.getName() );
             }
