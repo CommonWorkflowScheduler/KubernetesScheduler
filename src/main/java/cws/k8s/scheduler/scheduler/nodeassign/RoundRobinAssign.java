@@ -28,8 +28,10 @@ public class RoundRobinAssign extends NodeAssign implements Informable {
         for ( final Task task : unscheduledTasks ) {
             final PodWithAge pod = task.getPod();
             log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
+            int nodesTried = 0;
             synchronized ( this ) {
                 int firstTrial = nextNode;
+                nodesTried++;
                 do {
                     final NodeWithAlloc node = nodes.get( nextNode );
                     log.info( "Next node: " + node.getName() + "--( " + nextNode + " )" );
@@ -42,6 +44,7 @@ public class RoundRobinAssign extends NodeAssign implements Informable {
                     }
                 } while ( nextNode != firstTrial );
             }
+            task.getTraceRecord().setSchedulerNodesTried( nodesTried );
         }
         return alignment;
     }
