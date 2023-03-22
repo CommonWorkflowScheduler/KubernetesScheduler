@@ -120,9 +120,9 @@ public class TaskData implements Comparable<TaskData> {
         if ( nodeDataTuples.isEmpty() ) {
             value = Double.MIN_VALUE;
         } else if ( size == 0 ) {
-            value = 1;
+            value = Double.MAX_VALUE;
         } else {
-            value = nodeDataTuples.get(0).getSizeInBytes() / size;
+            value = size;//nodeDataTuples.get(0).getSizeInBytes() / size;
         }
     }
 
