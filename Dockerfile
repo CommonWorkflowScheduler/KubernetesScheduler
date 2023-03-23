@@ -11,8 +11,8 @@ RUN mvn package --no-transfer-progress -DskipTests -Dmaven.repo.local=/mvn/.m2nr
 FROM openjdk:17-alpine
 WORKDIR /app
 RUN addgroup -S javagroup && adduser -S javauser -G javagroup && mkdir data
-COPY --from=build /build/target/k8s-scheduler*.jar k8s-scheduler.jar
+COPY --from=build /build/target/cws-k8s-scheduler*.jar cws-k8s-scheduler.jar
 RUN chown -R javauser:javagroup /app
 USER javauser
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/k8s-scheduler.jar"]
+ENTRYPOINT ["java","-jar","/app/cws-k8s-scheduler.jar"]
