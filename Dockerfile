@@ -1,9 +1,9 @@
 FROM maven:3.8.3-jdk-11-slim AS build
 WORKDIR /build
 COPY pom.xml pom.xml
-RUN mvn dependency:go-offline -B -Dmaven.repo.local=/mvn/.m2nrepo/repository
+RUN mvn dependency:go-offline --no-transfer-progress -Dmaven.repo.local=/mvn/.m2nrepo/repository
 COPY src/ src/
-RUN mvn package -DskipTests -Dmaven.repo.local=/mvn/.m2nrepo/repository
+RUN mvn package --no-transfer-progress -DskipTests -Dmaven.repo.local=/mvn/.m2nrepo/repository
 
 #
 # Package stage
