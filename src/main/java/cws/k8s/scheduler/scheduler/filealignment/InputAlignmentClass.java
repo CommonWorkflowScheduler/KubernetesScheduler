@@ -42,10 +42,6 @@ abstract class InputAlignmentClass implements InputAlignment {
     /**
      * Check if another scheduled task is already copying a required file
      *
-     * @param currentlyCopying
-     * @param path
-     * @param locations
-     * @return
      */
     private Tuple<LocationWrapper,Task> alreadyCopying( CurrentlyCopyingOnNode currentlyCopying, String path, List<LocationWrapper> locations, String debug ){
         if ( currentlyCopying != null && currentlyCopying.isCurrentlyCopying( path )  ){
@@ -53,7 +49,7 @@ abstract class InputAlignmentClass implements InputAlignment {
             final Location copyFrom = copySource.getLocation();
             for ( LocationWrapper locationWrapper : locations ) {
                 if ( locationWrapper.getLocation() == copyFrom ) {
-                    return new Tuple(locationWrapper,copySource.getTask());
+                    return new Tuple<>(locationWrapper,copySource.getTask());
                 }
             }
             throw new NoAligmentPossibleException( "Node is a already copying file: " + path + " but in an incompatible version." );
