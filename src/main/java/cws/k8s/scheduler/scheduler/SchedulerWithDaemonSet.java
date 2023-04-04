@@ -90,7 +90,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      * Mark all locationWrappers as used
-     * @param locationWrappers
      */
     void useLocations( List<LocationWrapper> locationWrappers ){
         locationWrappers.parallelStream().forEach( LocationWrapper::use );
@@ -98,7 +97,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      * Mark all locationWrappers as unused
-     * @param locationWrappers
      */
     void freeLocations( List<LocationWrapper> locationWrappers ){
         locationWrappers.parallelStream().forEach( LocationWrapper::free );
@@ -134,13 +132,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         finishedTasks.parallelStream().forEach( finishedTask -> {
             try{
                 freeLocations( finishedTask.getInputFiles() );
-                if ( !"DeadlineExceeded".equals( finishedTask.getPod().getStatus().getReason() ) ) { //If Deadline exceeded, task cannot write oufiles and containerStatuses.terminated is not available
+                if ( !"DeadlineExceeded".equals( finishedTask.getPod().getStatus().getReason() ) ) { //If Deadline exceeded, task cannot write out files and containerStatuses.terminated is not available
                     final Integer exitCode = finishedTask.getPod().getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode();
                     log.info( "Pod finished with exitCode: {}", exitCode );
                     //Init failure
                     final Path workdir = Paths.get(finishedTask.getWorkingDir());
                     if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
-                        log.info( "Task " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and outfiles" );
+                        log.info( "Task " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and out files" );
                     } else {
                         final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                                 workdir,
@@ -173,8 +171,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      * Register that file is copied to node
-     * @param nodeLocation
-     * @param toAdd
      */
     void addToCopyingToNode( Task task, NodeLocation nodeLocation, CurrentlyCopyingOnNode toAdd ){
         if ( nodeLocation == null ) {
@@ -185,8 +181,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      * Remove that file is copied to node
-     * @param nodeLocation
-     * @param toRemove
      */
     void removeFromCopyingToNode( Task task, NodeLocation nodeLocation, CurrentlyCopyingOnNode toRemove ) {
         if (nodeLocation == null) {
@@ -197,7 +191,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      *
-     * @param alignment
      * @return null if the task cannot be scheduled
      */
     WriteConfigResult writeInitConfig( NodeTaskFilesAlignment alignment ) {
@@ -328,12 +321,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      * Register a new local file
-     * @param path
-     * @param size
-     * @param timestamp
-     * @param locationWrapperID
-     * @param overwrite
-     * @param node
      */
     public void addFile( String path, long size, long timestamp, long locationWrapperID, boolean overwrite, String node ){
         final NodeLocation location = NodeLocation.getLocation( node == null ? workflowEngineNode : node );
@@ -422,8 +409,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     /**
      * Remove all Nodes with a location contained in taskInputs.excludedNodes
-     * @param matchingNodes
-     * @param taskInputs
      */
     void filterNotMatchingNodesForTask(Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
         final Iterator<NodeWithAlloc> iterator = matchingNodes.iterator();
