@@ -9,7 +9,6 @@ import cws.k8s.scheduler.model.location.hierachy.*;
 import cws.k8s.scheduler.model.taskinputs.PathFileLocationTriple;
 import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
-import fonda.scheduler.model.location.hierachy.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;

@@ -2,7 +2,6 @@ package cws.k8s.scheduler.model;
 
 import cws.k8s.scheduler.model.location.Location;
 import cws.k8s.scheduler.model.location.hierachy.*;
-import fonda.scheduler.model.location.hierachy.*;
 import cws.k8s.scheduler.model.taskinputs.PathFileLocationTriple;
 import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
