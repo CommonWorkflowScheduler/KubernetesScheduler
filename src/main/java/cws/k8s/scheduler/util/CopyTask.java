@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CopyTask {
 
     @Getter(AccessLevel.NONE)
-    private static AtomicLong copyTaskId = new AtomicLong(0);
-    private long id = copyTaskId.getAndIncrement();
+    private static final AtomicLong copyTaskId = new AtomicLong(0);
+    private final long id = copyTaskId.getAndIncrement();
     private final Inputs inputs;
     private final LinkedList<TaskInputFileLocationWrapper> inputFiles;
     private final CurrentlyCopyingOnNode filesForCurrentNode;

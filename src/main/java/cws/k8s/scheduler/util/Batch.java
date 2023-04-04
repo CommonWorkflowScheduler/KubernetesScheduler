@@ -21,7 +21,7 @@ public class Batch {
     private Set<Task> unready = new HashSet<>();
     private int tasksInBatch = -1;
 
-    private long createTime = System.currentTimeMillis();
+    private final long createTime = System.currentTimeMillis();
 
     private long closeTime;
 
