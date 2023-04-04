@@ -49,7 +49,6 @@ public class TaskInputs {
 
     /**
      * Calculates the data on a node and returns whether all data is on the location
-     * @param loc
      * @return boolean: true if all files are on location, Long: data on location
      */
     public Tuple<Boolean,Long> calculateDataOnNodeAdditionalInfo( Location loc ) {
@@ -67,7 +66,6 @@ public class TaskInputs {
 
     /**
      * Calculates the data on a node and returns whether all data is on the location
-     * @param loc
      * @return the size remaining and the amount of data currently copying. Null if the task cannot run on this node.
      */
     public TaskNodeStats calculateMissingData( Location loc, CurrentlyCopyingOnNode currentlyCopying ) {
