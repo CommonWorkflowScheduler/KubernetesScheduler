@@ -179,9 +179,7 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
 
     /**
      * This method is used to find all possible LocationWrappers of a file for a specific task.
-     * @param task
      * @return a list of all LocationWrapper of this file that could be used and a list of all Locations that are in use and are not in a version that this task could use.
-     * @throws NoAlignmentFoundException
      */
     public MatchingLocationsPair getFilesForTask( Task task ) throws NoAlignmentFoundException {
         LocationWrapper[] locationsRef = this.locations;
