@@ -7,8 +7,6 @@ public class Origin extends NotProcess {
 
     /**
      * Only public for tests
-     * @param label
-     * @param uid
      */
     public Origin(String label, int uid) {
         super(label, uid);
