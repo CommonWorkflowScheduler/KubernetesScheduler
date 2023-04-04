@@ -33,7 +33,7 @@ abstract class InputAlignmentClass implements InputAlignment {
     private final double weightForIndividualNode;
 
     public InputAlignmentClass( double weightForIndividualNode ) {
-        if ( weightForIndividualNode < 0 && weightForIndividualNode > 1 ) {
+        if ( weightForIndividualNode < 0 || weightForIndividualNode > 1 ) {
             throw new IllegalArgumentException( "Weight for single source must be between 0 and 1" );
         }
         this.weightForIndividualNode = weightForIndividualNode;
