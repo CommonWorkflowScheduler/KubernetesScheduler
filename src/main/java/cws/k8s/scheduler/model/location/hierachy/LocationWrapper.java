@@ -76,7 +76,6 @@ public class LocationWrapper {
 
     /**
      * Any task currently reading or writing to this file
-     * @return
      */
     public boolean isInUse(){
         return inUse > 0;
