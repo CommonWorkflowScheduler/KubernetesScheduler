@@ -31,8 +31,8 @@ public final class DateParser {
     }
 
     public static FileTime fileTimeFromString(String date ) {
-        final Long millisFromSring = millisFromString( date );
-        return millisFromSring == null ? null : FileTime.fromMillis( millisFromSring );
+        final Long millisFromString = millisFromString( date );
+        return millisFromString == null ? null : FileTime.fromMillis( millisFromString );
     }
 
 }
