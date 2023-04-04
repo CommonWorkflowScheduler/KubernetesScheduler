@@ -7,7 +7,7 @@ public class TaskState {
 
     @Getter
     @Setter
-    private State state = State.RECEIVED_CONFIG;;
+    private State state = State.RECEIVED_CONFIG;
 
     @Getter
     private String error;
