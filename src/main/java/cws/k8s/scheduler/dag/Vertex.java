@@ -29,7 +29,7 @@ public abstract class Vertex {
     public void removeInbound( Edge e ) {
         final boolean remove = in.remove(e);
         if ( !remove ) {
-            throw new IllegalStateException("Edge " + e + " not found in " + this);
+            throw new IllegalStateException( notFoundWarning( e ) );
         }
         removeInboundIntern( e );
     }
@@ -37,7 +37,7 @@ public abstract class Vertex {
     public void removeInboundIntern( Edge e ) {
         final boolean remove = e.getFrom().out.remove(e);
         if ( !remove ) {
-            throw new IllegalStateException("Edge " + e + " not found in " + this);
+            throw new IllegalStateException( notFoundWarning( e ) );
         }
         final Set<Process> ancestors = e.getFrom().getAncestors();
         if ( e.getFrom().getType() == Type.PROCESS ) {
@@ -63,7 +63,7 @@ public abstract class Vertex {
     public void removeOutbound( Edge e ) {
         final boolean remove = out.remove(e);
         if ( !remove ) {
-            throw new IllegalStateException("Edge " + e + " not found in " + this);
+            throw new IllegalStateException( notFoundWarning( e ) );
         }
         removeOutboundIntern( e );
     }
@@ -136,22 +136,26 @@ public abstract class Vertex {
     }
 
     void informDeletedDescendent() {
-        int rank = 0;
+        int newRank = 0;
         if ( !out.isEmpty() ) {
             for ( Edge edge : out ) {
                 final Vertex to = edge.getTo();
                 final int toRank = to.incRank( to.getRank() );
-                if ( toRank > rank ) {
-                    rank = toRank;
+                if ( toRank > newRank ) {
+                    newRank = toRank;
                 }
             }
         }
-        if ( rank != getRank() ) {
-            setRank( rank );
+        if ( newRank != rank ) {
+            rank = newRank;
             for ( Edge edge : in ) {
                 edge.getFrom().informDeletedDescendent();
             }
         }
+    }
+
+    private String notFoundWarning( Edge e ) {
+        return "Edge " + e + " not found in " + this;
     }
 
 }
