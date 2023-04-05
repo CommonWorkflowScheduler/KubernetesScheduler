@@ -13,8 +13,6 @@ public class InputParam<T> {
 
     /**
      * Only for testing
-     * @param name
-     * @param value
      */
     public InputParam( String name, T value ) {
         this.name = name;
