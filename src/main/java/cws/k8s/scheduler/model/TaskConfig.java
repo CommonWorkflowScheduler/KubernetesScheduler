@@ -1,6 +1,8 @@
 package cws.k8s.scheduler.model;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.LinkedList;
@@ -40,14 +42,11 @@ public class TaskConfig {
 
     @Getter
     @ToString
+    @NoArgsConstructor( access = AccessLevel.PRIVATE, force = true )
     public static class Input {
 
         private final String name;
         private final Object value;
 
-        private Input() {
-            this.value = null;
-            name = null;
-        }
     }
 }
