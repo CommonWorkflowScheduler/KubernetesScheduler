@@ -126,8 +126,6 @@ public abstract class Vertex {
 
     /**
      * For processes add one, otherwise return the input
-     * @param rank
-     * @return
      */
     abstract int incRank( int rank );
 

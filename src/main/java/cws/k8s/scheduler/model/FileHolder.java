@@ -17,9 +17,6 @@ public class FileHolder {
 
     /**
      * Only for testing
-     * @param storePath
-     * @param sourceObj
-     * @param stageName
      */
     public FileHolder( String storePath, String sourceObj, String stageName ) {
         this.storePath = storePath;

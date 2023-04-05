@@ -31,10 +31,6 @@ public class DAGTest {
 
     /**
      * otherIds [edge id, destination id]
-     * @param dag
-     * @param idA
-     * @param otherIds
-     * @return
      */
     private HashSet<Edge> setFrom(DAG dag, int idA, int[]... otherIds){
         return Arrays.stream(otherIds).map(p -> {

@@ -18,10 +18,6 @@ public class TaskInput {
 
     /**
      * Only for testing
-     * @param booleanInputs
-     * @param numberInputs
-     * @param stringInputs
-     * @param fileInputs
      */
     TaskInput(List<InputParam<Boolean>> booleanInputs, List<InputParam<Number>> numberInputs, List<InputParam<String>> stringInputs, List<InputParam<FileHolder>> fileInputs) {
         this.booleanInputs = booleanInputs;

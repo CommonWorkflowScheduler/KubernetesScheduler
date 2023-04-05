@@ -83,8 +83,6 @@ public class Process extends Vertex {
 
     /**
      * Only public for tests
-     * @param label
-     * @param uid
      */
     public Process(String label, int uid) {
         super(label, uid);

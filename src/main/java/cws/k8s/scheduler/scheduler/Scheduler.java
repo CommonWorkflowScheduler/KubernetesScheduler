@@ -81,8 +81,6 @@ public abstract class Scheduler implements Informable {
     /* Abstract methods */
 
     /**
-     *
-     * @param unscheduledTasks
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
@@ -133,7 +131,6 @@ public abstract class Scheduler implements Informable {
 
     /**
      * Call this method in case of any scheduling problems
-     * @param task
      */
     void undoTaskScheduling( Task task ){}
 
@@ -219,7 +216,6 @@ public abstract class Scheduler implements Informable {
 
     /**
      * Synchronize calls via batchHelper
-     * @param batch
      */
     private void tryToScheduleBatch( Batch batch ){
         if ( batch.canSchedule() ){
@@ -291,9 +287,6 @@ public abstract class Scheduler implements Informable {
 
     /**
      * Chooses best param for a task
-     * @param taskname
-     * @param name
-     * @return
      */
     public Map<String, Object> getSchedulerParams( String taskname, String name ){
         return new HashMap<>();
@@ -314,10 +307,6 @@ public abstract class Scheduler implements Informable {
      * Checks if a node fulfills all requirements for a pod. This means: <br>
      * - enough resources available <br>
      * - Affinities match
-     * @param availableByNode
-     * @param pod
-     * @param node
-     * @return
      */
     public boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
         if ( availableByNode == null ) {
@@ -354,9 +343,6 @@ public abstract class Scheduler implements Informable {
 
     /**
      * You may extend this method
-     * @param pod
-     * @param node
-     * @return
      */
     boolean canPodBeScheduled( PodWithAge pod, NodeWithAlloc node ){
         return node.canSchedule( pod );
@@ -427,8 +413,6 @@ public abstract class Scheduler implements Informable {
     }
 
     /**
-     * @param pod
-     * @param state
      * @return returns the task, if the state was changed
      */
     Task changeStateOfTask(Pod pod, State state){
@@ -489,9 +473,6 @@ public abstract class Scheduler implements Informable {
 
     /**
      * Filters all nodes, that have enough resources and fulfill the affinities
-     * @param availableByNode
-     * @param task
-     * @return
      */
     public Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
         Set<NodeWithAlloc> result = new HashSet<>();

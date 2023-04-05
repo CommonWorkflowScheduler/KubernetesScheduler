@@ -19,8 +19,6 @@ public class InputEdge {
 
     /**
      * Just for testing
-     * @param from
-     * @param to
      */
     public InputEdge( int uid, int from, int to) {
         this.uid = uid;

@@ -12,8 +12,6 @@ public class DAG {
 
     /**
      * not private for testing
-     * @param uid
-     * @return
      */
     Vertex getByUid( int uid ){
         final Vertex vertex = vertices.get(uid);
@@ -59,7 +57,6 @@ public class DAG {
 
     /**
      * This method removes vertices from the DAG plus the edges.
-     * @param verticesIds
      */
     public void removeVertices( int... verticesIds ){
         synchronized ( this.vertices ) {

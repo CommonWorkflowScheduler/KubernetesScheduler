@@ -26,7 +26,6 @@ public class TaskConfig {
 
     /**
      * Only for testing
-     * @param task
      */
     public TaskConfig(String task) {
         this.task = task;
