@@ -107,8 +107,8 @@ public class SchedulerRestController {
         switch ( strategy.toLowerCase() ){
             default: {
                 final String[] split = strategy.split( "-" );
-                Prioritize prioritize = null;
-                NodeAssign assign = null;
+                Prioritize prioritize;
+                NodeAssign assign;
                 if ( split.length <= 2 ) {
                     switch ( split[0].toLowerCase() ) {
                         case "fifo": prioritize = new FifoPrioritize(); break;
