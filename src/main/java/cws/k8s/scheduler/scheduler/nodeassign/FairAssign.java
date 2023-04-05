@@ -27,8 +27,8 @@ public class FairAssign extends NodeAssign {
             Double bestScore = null;
             final List<Double> costs = new LinkedList<>();
             final BigDecimal podRequest = pod.getRequest().getCpu();
+            int triedOnNodes = 0;
             for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
-                int triedOnNodes = 0;
                 if ( scheduler.canSchedulePodOnNode( e.getValue(), pod, e.getKey() ) ) {
                     triedOnNodes++;
                     final BigDecimal maxValue = e.getKey().getMaxResources().getCpu();
@@ -42,12 +42,13 @@ public class FairAssign extends NodeAssign {
                     }
                     costs.add( score );
                 }
+            }
+            if ( bestNode != null ) {
                 final TraceRecord traceRecord = task.getTraceRecord();
+                traceRecord.foundAlignment();
                 traceRecord.setSchedulerNodesTried( triedOnNodes );
                 traceRecord.setSchedulerBestCost( bestScore );
                 traceRecord.setSchedulerNodesCost( costs );
-            }
-            if ( bestNode != null ) {
                 alignment.add( new NodeTaskAlignment( bestNode, task ) );
                 availableByNode.get( bestNode ).subFromThis( pod.getRequest() );
                 log.info( "--> " + bestNode.getName() );
