@@ -1,6 +1,7 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.model.Task;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
@@ -8,15 +9,11 @@ import java.util.List;
 import java.util.function.Function;
 
 @Slf4j
+@RequiredArgsConstructor
 public class TaskprocessingThread extends Thread {
 
     private final List<Task> unprocessedTasks;
     private final Function<List<Task>, Integer> function;
-
-    public TaskprocessingThread(List<Task> unprocessedTasks, Function<List<Task>, Integer> function ) {
-        this.unprocessedTasks = unprocessedTasks;
-        this.function = function;
-    }
 
     @Override
     public void run() {

@@ -7,14 +7,10 @@ public class TaskState {
 
     @Getter
     @Setter
-    private State state;
+    private State state = State.RECEIVED_CONFIG;
 
     @Getter
     private String error;
-
-    public TaskState() {
-        this.state = State.RECEIVED_CONFIG;
-    }
 
     public void error (String error){
         this.state = State.ERROR;

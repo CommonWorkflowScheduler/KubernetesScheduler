@@ -3,12 +3,14 @@ package cws.k8s.scheduler.util;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+@RequiredArgsConstructor
 public class Batch {
 
     @Getter
@@ -22,10 +24,6 @@ public class Batch {
     private long createTime = System.currentTimeMillis();
 
     private long closeTime;
-
-    public Batch(int id) {
-        this.id = id;
-    }
 
     public void close( int tasksInBatch ){
         this.closed = true;
