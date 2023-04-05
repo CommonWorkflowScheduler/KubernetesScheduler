@@ -72,7 +72,7 @@ public class TraceRecord {
 
     @Getter
     @Setter
-    /*Time delta between a task was submitted and the batch became scheduable*/
+    /*Time delta between a task was submitted and the batch became schedulable*/
     private Integer schedulerDeltaSubmittedBatchEnd = null;
 
     public void writeRecord( String tracePath ) throws IOException {
