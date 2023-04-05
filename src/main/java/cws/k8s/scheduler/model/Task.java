@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class Task {
 
-    private static AtomicInteger idCounter = new AtomicInteger(0);
+    private static final AtomicInteger idCounter = new AtomicInteger(0);
 
     @Getter
     private final int id = idCounter.getAndIncrement();
