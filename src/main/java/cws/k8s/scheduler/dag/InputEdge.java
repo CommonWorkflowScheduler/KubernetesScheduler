@@ -9,7 +9,7 @@ import lombok.*;
 public class InputEdge {
 
     private final int uid;
-    private final String label;
+    private final String label = null;
     private final int from;
     private final int to;
 
