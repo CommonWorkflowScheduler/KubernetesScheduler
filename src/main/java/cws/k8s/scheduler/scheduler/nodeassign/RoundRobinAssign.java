@@ -56,7 +56,7 @@ public class RoundRobinAssign extends NodeAssign implements Informable {
     @Override
     public void newNode( NodeWithAlloc node ) {
         synchronized ( this ) {
-            if ( nodes != null & !nodes.contains( node ) ) {
+            if ( nodes != null && !nodes.contains( node ) ) {
                 nodes.add( node );
             }
         }
