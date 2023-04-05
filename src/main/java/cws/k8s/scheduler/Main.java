@@ -15,8 +15,11 @@ import java.util.Date;
 @Slf4j
 public class Main {
 
-    @Autowired
-    BuildProperties buildProperties;
+    private final BuildProperties buildProperties;
+
+    Main( @Autowired BuildProperties buildProperties ) {
+        this.buildProperties = buildProperties;
+    }
 
     public static void main(String[] args) {
         if( System.getenv( "SCHEDULER_NAME" ) == null || System.getenv( "SCHEDULER_NAME" ).isEmpty() ){

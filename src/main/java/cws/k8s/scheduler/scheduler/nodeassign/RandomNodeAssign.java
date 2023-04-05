@@ -30,6 +30,7 @@ public class RandomNodeAssign extends NodeAssign {
                     availableByNode.get( node ).subFromThis(pod.getRequest());
                     log.info("--> " + node.getName());
                     assigned = true;
+                    task.getTraceRecord().foundAlignment();
                     break;
                 }
             }

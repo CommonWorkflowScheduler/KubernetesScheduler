@@ -215,7 +215,7 @@ public abstract class Scheduler implements Informable {
             }
         } else {
             Batch batch = task.getBatch();
-            batch.informScheduable( task );
+            batch.informSchedulable( task );
             synchronized (batchHelper) {
                 tryToScheduleBatch( batch );
             }

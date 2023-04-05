@@ -40,17 +40,11 @@ public class SchedulerConfig {
     }
 
     @ToString
+    @NoArgsConstructor(access = AccessLevel.PRIVATE,force = true)
     public static class VolumeClaim {
         public final String mountPath;
         public final String claimName;
         public final String subPath;
-
-        private VolumeClaim(){
-            this.mountPath = null;
-            this.claimName = null;
-            this.subPath = null;
-        }
-
     }
 
 }

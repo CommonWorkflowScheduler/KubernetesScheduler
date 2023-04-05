@@ -48,7 +48,7 @@ public class Batch {
 
     }
 
-    public void informScheduable( Task task ){
+    public void informSchedulable( Task task ){
         synchronized ( unready ){
             final boolean remove = unready.remove(task);
             if ( remove ) {

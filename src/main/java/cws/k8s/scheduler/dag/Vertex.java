@@ -29,7 +29,7 @@ public abstract class Vertex {
     public void removeInbound( Edge e ) {
         final boolean remove = in.remove(e);
         if ( !remove ) {
-            throw new IllegalStateException( notFoundWarning(e) );
+            throw new IllegalStateException( notFoundWarning( e ) );
         }
         removeInboundIntern( e );
     }
@@ -37,7 +37,7 @@ public abstract class Vertex {
     public void removeInboundIntern( Edge e ) {
         final boolean remove = e.getFrom().out.remove(e);
         if ( !remove ) {
-            throw new IllegalStateException( notFoundWarning(e) );
+            throw new IllegalStateException( notFoundWarning( e ) );
         }
         final Set<Process> ancestors = e.getFrom().getAncestors();
         if ( e.getFrom().getType() == Type.PROCESS ) {
@@ -63,7 +63,7 @@ public abstract class Vertex {
     public void removeOutbound( Edge e ) {
         final boolean remove = out.remove(e);
         if ( !remove ) {
-            throw new IllegalStateException( notFoundWarning(e) );
+            throw new IllegalStateException( notFoundWarning( e ) );
         }
         removeOutboundIntern( e );
     }

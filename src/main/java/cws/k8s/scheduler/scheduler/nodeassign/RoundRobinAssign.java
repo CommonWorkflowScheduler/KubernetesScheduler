@@ -40,6 +40,7 @@ public class RoundRobinAssign extends NodeAssign implements Informable {
                         alignment.add( new NodeTaskAlignment( node, task ) );
                         availableByNode.get( node ).subFromThis( pod.getRequest() );
                         log.info( "--> " + node.getName() );
+                        task.getTraceRecord().foundAlignment();
                         break;
                     }
                 } while ( nextNode != firstTrial );
