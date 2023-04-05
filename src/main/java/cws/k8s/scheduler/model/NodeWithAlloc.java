@@ -134,11 +134,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     @Override
     public int compareTo(NodeWithAlloc o) {
-        if(getMetadata().getName().equals(o.getMetadata().getName())) {
-            return 0;
-        } else {
-            return -1;
-        }
+        return getMetadata().getName().compareTo( o.getMetadata().getName() );
     }
 
     public boolean canScheduleNewPod(){
