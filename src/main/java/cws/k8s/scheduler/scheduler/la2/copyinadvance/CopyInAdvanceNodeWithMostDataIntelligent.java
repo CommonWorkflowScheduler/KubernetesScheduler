@@ -19,6 +19,11 @@ import java.util.Map;
 @Slf4j
 public class CopyInAdvanceNodeWithMostDataIntelligent extends CopyInAdvance {
 
+    /**
+     * Try to distribute the tasks evenly on the nodes. More important tasks can be on x more nodes. (x = TASKS_READY_FACTOR)
+     */
+    private final int TASKS_READY_FACTOR = 1;
+
     public CopyInAdvanceNodeWithMostDataIntelligent(
             CurrentlyCopying currentlyCopying,
             InputAlignment inputAlignment,
@@ -43,31 +48,43 @@ public class CopyInAdvanceNodeWithMostDataIntelligent extends CopyInAdvance {
         final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats() );
         removeTasksThatAreCopiedMoreThanXTimeCurrently( stats, copySameTaskInParallel );
 
+        int readyOnNodes = 0;
+        //Outer loop to only process tasks that are not yet ready on enough nodes
         while( !stats.isEmpty() ) {
-            final TaskStat poll = stats.poll();
+            LinkedList<TaskStat> tasksReadyOnMoreNodes = new LinkedList<>();
+            while( !stats.isEmpty() ) {
+                final TaskStat poll = stats.poll();
 
-            final TaskStat.NodeAndStatWrapper bestStats = poll.getBestStats();
-            final Task task = poll.getTask();
-            final NodeWithAlloc node = bestStats.getNode();
+                if ( poll.dataOnNodes() + TASKS_READY_FACTOR > readyOnNodes ) {
+                    tasksReadyOnMoreNodes.add( poll );
+                    continue;
+                }
 
-            final boolean cannotAdd;
+                final TaskStat.NodeAndStatWrapper bestStats = poll.getBestStats();
+                final Task task = poll.getTask();
+                final NodeWithAlloc node = bestStats.getNode();
 
-            //Check if the node has still enough resources to run the task
-            if ( currentlyCopyingTasksOnNode.getOrDefault( node.getNodeLocation(), 0 ) < maxCopyingTaskPerNode ) {
-                if ( createFileAlignment( planedToCopy, nodeTaskFilesAlignments, currentlyCopyingTasksOnNode, poll, task, node, prio ) ) {
-                    cannotAdd = false;
-                    log.info( "Start copy task with {} missing bytes", poll.getBestStats().getTaskNodeStats().getSizeRemaining() );
+                final boolean cannotAdd;
+
+                //Check if the node has still enough resources to run the task
+                if ( currentlyCopyingTasksOnNode.getOrDefault( node.getNodeLocation(), 0 ) < maxCopyingTaskPerNode ) {
+                    if ( createFileAlignment( planedToCopy, nodeTaskFilesAlignments, currentlyCopyingTasksOnNode, poll, task, node, prio ) ) {
+                        cannotAdd = false;
+                        log.info( "Start copy task with {} missing bytes", poll.getBestStats().getTaskNodeStats().getSizeRemaining() );
+                    } else {
+                        cannotAdd = true;
+                    }
                 } else {
                     cannotAdd = true;
                 }
-            } else {
-                cannotAdd = true;
+                //if not enough resources or too many tasks are running, mark next node as to compare and add again into the list
+                if ( cannotAdd && poll.increaseIndexToCompare() ) {
+                    //Only re-add if still other opportunities exist
+                    stats.add( poll );
+                }
             }
-            //if not enough resources or too many tasks are running, mark next node as to compare and add again into the list
-            if ( cannotAdd && poll.increaseIndexToCompare() ) {
-                //Only re-add if still other opportunities exist
-                stats.add( poll );
-            }
+            stats.addAll( tasksReadyOnMoreNodes );
+            readyOnNodes++;
         }
     }
 
