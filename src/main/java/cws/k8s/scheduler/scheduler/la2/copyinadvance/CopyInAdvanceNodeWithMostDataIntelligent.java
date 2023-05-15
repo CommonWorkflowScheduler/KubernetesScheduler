@@ -1,5 +1,7 @@
 package cws.k8s.scheduler.scheduler.la2.copyinadvance;
 
+import cws.k8s.scheduler.model.NodeWithAlloc;
+import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.scheduler.filealignment.InputAlignment;
 import cws.k8s.scheduler.scheduler.la2.CreateCopyTasks;
@@ -8,17 +10,16 @@ import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
 import cws.k8s.scheduler.util.SortedList;
 import cws.k8s.scheduler.util.TaskStats;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
-import cws.k8s.scheduler.model.NodeWithAlloc;
-import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
-public class CopyInAdvanceNodeWithMostData extends CopyInAdvance {
+public class CopyInAdvanceNodeWithMostDataIntelligent extends CopyInAdvance {
 
-    public CopyInAdvanceNodeWithMostData(
+    public CopyInAdvanceNodeWithMostDataIntelligent(
             CurrentlyCopying currentlyCopying,
             InputAlignment inputAlignment,
             int copySameTaskInParallel ) {
@@ -71,3 +72,4 @@ public class CopyInAdvanceNodeWithMostData extends CopyInAdvance {
     }
 
 }
+

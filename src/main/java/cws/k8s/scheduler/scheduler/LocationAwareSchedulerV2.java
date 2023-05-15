@@ -2,6 +2,8 @@ package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.scheduler.la2.*;
+import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvance;
+import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostDataIntelligent;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
 import cws.k8s.scheduler.client.KubernetesClient;
@@ -48,7 +50,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private final CapacityAvailableToNode capacityAvailableToNode;
 
-    private final CopyInAdvanceNodeWithMostData copyInAdvance;
+    private final CopyInAdvance copyInAdvance;
 
     private final TaskStatComparator phaseTwoComparator;
     private final TaskStatComparator phaseThreeComparator;
@@ -90,7 +92,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.capacityAvailableToNode = new SimpleCapacityAvailableToNode( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
         this.phaseThreeComparator = new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE );
-        this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
+        this.copyInAdvance = new CopyInAdvanceNodeWithMostDataIntelligent( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.maxHeldCopyTaskReady = config.maxHeldCopyTaskReady == null ? 3 : config.maxHeldCopyTaskReady;
         this.prioPhaseThree = config.prioPhaseThree == null ? 70 : config.prioPhaseThree;
     }
