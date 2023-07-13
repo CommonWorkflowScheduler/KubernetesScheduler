@@ -110,8 +110,6 @@ spec:
       name: vol-1
     - mountPath: /data
       name: vol-2
-  nodeSelector: 
-    cwsscheduler: 'true'
   securityContext:
     runAsUser: 0
   serviceAccount: cwsaccount # use the account created before
