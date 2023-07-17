@@ -152,7 +152,7 @@ public abstract class Scheduler implements Informable {
             requirements.subFromThis(nodeTaskAlignment.task.getPod().getRequest());
         }
         for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
-            if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) {
+            if ( ! e.getValue().higherOrEquals( ImmutableRequirements.ZERO ) ) {
                 log.info( "Node {} has not enough resources. Available: {}, After assignment it would be: {}", e.getKey().getMetadata().getName(), e.getKey().getAvailableResources(), e.getValue() );
                 return false;
             }

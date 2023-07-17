@@ -11,8 +11,6 @@ public class Requirements implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final Requirements ZERO = new Requirements();
-
     @Getter
     private BigDecimal cpu;
     @Getter
@@ -31,6 +29,13 @@ public class Requirements implements Serializable, Cloneable {
         this.cpu = this.cpu.add(requirements.cpu);
         this.ram = this.ram.add(requirements.ram);
         return this;
+    }
+
+    public Requirements add( Requirements requirements ){
+        return new Requirements(
+                this.cpu.add(requirements.cpu),
+                this.ram.add(requirements.ram)
+        );
     }
 
     public Requirements addRAMtoThis( BigDecimal ram ){
@@ -56,13 +61,52 @@ public class Requirements implements Serializable, Cloneable {
         );
     }
 
+    public Requirements multiply( BigDecimal factor ){
+        return new Requirements(
+                this.cpu.multiply(factor),
+                this.ram.multiply(factor)
+        );
+    }
+
+    public Requirements multiplyToThis( BigDecimal factor ){
+        this.cpu = this.cpu.multiply(factor);
+        this.ram = this.ram.multiply(factor);
+        return this;
+    }
+
     public boolean higherOrEquals( Requirements requirements ){
         return this.cpu.compareTo( requirements.cpu ) >= 0
                 && this.ram.compareTo( requirements.ram ) >= 0;
     }
 
+    /**
+     * Always returns a mutable copy of this object
+     * @return
+     */
     @Override
     public Requirements clone() {
         return new Requirements( this.cpu, this.ram );
+    }
+
+    public boolean smaller( Requirements request ) {
+        return this.cpu.compareTo( request.cpu ) < 0
+                && this.ram.compareTo( request.ram ) < 0;
+    }
+
+    public boolean smallerEquals( Requirements request ) {
+        return this.cpu.compareTo( request.cpu ) <= 0
+                && this.ram.compareTo( request.ram ) <= 0;
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if ( obj == null ) {
+            return false;
+        }
+        if ( !(obj instanceof Requirements) ) {
+            return false;
+        }
+        return this.getRam().equals( ((Requirements)obj).getRam() )
+                && this.getCpu().equals( ((Requirements)obj).getCpu() );
     }
 }

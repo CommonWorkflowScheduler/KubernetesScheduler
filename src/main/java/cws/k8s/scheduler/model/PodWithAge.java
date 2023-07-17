@@ -27,7 +27,7 @@ public class PodWithAge extends Pod {
     }
 
     public Requirements getRequest(){
-        return this
+        return new ImmutableRequirements( this
                 .getSpec().getContainers().stream()
                 .filter( x -> x.getResources() != null
                         && x.getResources().getRequests() != null )
@@ -36,7 +36,7 @@ public class PodWithAge extends Pod {
                                 x.getResources().getRequests().get("cpu") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("cpu")),
                                 x.getResources().getRequests().get("memory") == null ? null : Quantity.getAmountInBytes(x.getResources().getRequests().get("memory"))
                         )
-                ).reduce( new Requirements(), Requirements::addToThis );
+                ).reduce( new Requirements(), Requirements::addToThis ) );
     }
 
     public String getName(){

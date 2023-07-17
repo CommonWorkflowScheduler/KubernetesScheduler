@@ -55,7 +55,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         BigDecimal maxCpu = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("cpu"));
         BigDecimal maxRam = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("memory"));
 
-        maxResources = new Requirements( maxCpu, maxRam);
+        maxResources = new ImmutableRequirements( maxCpu, maxRam);
 
         assignedPods = new HashMap<>();
 
