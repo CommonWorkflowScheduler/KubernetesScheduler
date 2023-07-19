@@ -1,8 +1,8 @@
 package cws.k8s.scheduler.util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
-import java.util.ListIterator;
 
 public class SortedList<T extends Comparable<T>> extends LinkedList<T> {
 
@@ -13,21 +13,11 @@ public class SortedList<T extends Comparable<T>> extends LinkedList<T> {
 
     @Override
     public boolean add( T elem ) {
-        final ListIterator<T> iterator = this.listIterator();
-        while ( iterator.hasNext() ) {
-            final Comparable<T> next = iterator.next();
-            if ( next.compareTo( elem ) > 0 ) {
-                if ( iterator.hasPrevious() ) {
-                    iterator.previous();
-                    iterator.add( elem );
-                } else {
-                    //first element of list
-                    super.addFirst( elem );
-                }
-                return true;
-            }
+        int insertionIndex = Collections.binarySearch(this, elem );
+        if (insertionIndex < 0) {
+            insertionIndex = -(insertionIndex + 1);
         }
-        iterator.add( elem );
+        super.add( insertionIndex, elem );
         return true;
     }
 
