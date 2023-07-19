@@ -121,7 +121,7 @@ public class SchedulerRestController {
         switch ( strategy.toLowerCase() ){
             case "lav1" :
                 if ( !config.locationAware ) {
-                    return new ResponseEntity<>( "LA scheduler only work if location aware", HttpStatus.BAD_REQUEST );
+                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
                 }
                 if ( costFunction == null ) {
                     costFunction = new MinSizeCost( 0 );
@@ -130,7 +130,7 @@ public class SchedulerRestController {
                 break;
             case "lav2" :
                 if ( !config.locationAware ) {
-                    return new ResponseEntity<>( "LA scheduler only work if location aware", HttpStatus.BAD_REQUEST );
+                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
                 }
                 if ( costFunction == null ) {
                     costFunction = new MinSizeCost( 0 );
