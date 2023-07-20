@@ -2,6 +2,10 @@ package cws.k8s.scheduler.scheduler.la2;
 
 import java.util.Comparator;
 
+/**
+ * This comparator first prioritizes tasks with a higher rank.
+ * If two tasks have the same rank, the comparator that is passed to the constructor is used.
+ */
 public class RankAndMinCopyingComparator extends MinCopyingComparator {
 
     public RankAndMinCopyingComparator( Comparator<TaskStat.NodeAndStatWrapper> comparator ) {

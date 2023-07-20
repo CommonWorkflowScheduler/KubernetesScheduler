@@ -7,6 +7,10 @@ import lombok.RequiredArgsConstructor;
 import java.io.File;
 import java.nio.file.Path;
 
+/**
+ * This class calculates the sum if the file sizes to process.
+ * It sums up the data in the shared filesystem and the data on the local node.
+ */
 @RequiredArgsConstructor
 public class FileSizeScore implements CalculateScore {
 

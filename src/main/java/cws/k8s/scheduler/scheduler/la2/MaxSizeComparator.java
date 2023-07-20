@@ -6,6 +6,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.Comparator;
 
+/**
+ * This comparator prioritizes tasks with a larger size. Exception is when two tasks have the same size, then the
+ * option where fewer data is copied is preferred.
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MaxSizeComparator implements Comparator<TaskStat.NodeAndStatWrapper> {
 

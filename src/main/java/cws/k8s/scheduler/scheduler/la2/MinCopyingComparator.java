@@ -2,6 +2,12 @@ package cws.k8s.scheduler.scheduler.la2;
 
 import java.util.Comparator;
 
+/**
+ * This comparator first prioritizes tasks that are on fewer nodes yet.
+ * If two tasks are on the same number of nodes, the task that is currently copying to fewer nodes is preferred.
+ * If two tasks are on the same number of nodes and are copying to the same number of nodes, the comparator
+ * that is passed to the constructor is used.
+ */
 public class MinCopyingComparator extends TaskStatComparator {
 
     public MinCopyingComparator( Comparator<TaskStat.NodeAndStatWrapper> comparator ) {
