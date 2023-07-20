@@ -1,6 +1,7 @@
 package cws.k8s.scheduler.scheduler.la2.copyinadvance;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
+import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.scheduler.filealignment.InputAlignment;
 import cws.k8s.scheduler.scheduler.la2.CreateCopyTasks;
@@ -25,7 +26,7 @@ public abstract class CopyInAdvance extends CreateCopyTasks {
             final int maxCopyingTaskPerNode,
             final int maxHeldCopyTaskReady,
             final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
-            int prio
-    );
+            int prio,
+            Map<NodeWithAlloc, List<Task>> readyTasksPerNode );
 
 }

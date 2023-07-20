@@ -2,7 +2,6 @@ package cws.k8s.scheduler.scheduler.la2.copyinadvance;
 
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.scheduler.filealignment.InputAlignment;
-import cws.k8s.scheduler.scheduler.la2.CreateCopyTasks;
 import cws.k8s.scheduler.scheduler.la2.TaskStat;
 import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
 import cws.k8s.scheduler.util.SortedList;
@@ -37,13 +36,14 @@ public class CopyInAdvanceNodeWithMostData extends CopyInAdvance {
             final int maxCopyingTaskPerNode,
             final int maxHeldCopyTaskReady,
             final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
-            int prio
-    ) {
+            int prio,
+            Map<NodeWithAlloc, List<Task>> readyTasksPerNode ) {
         final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats() );
         removeTasksThatAreCopiedMoreThanXTimeCurrently( stats, copySameTaskInParallel );
 
         while( !stats.isEmpty() ) {
             final TaskStat poll = stats.poll();
+            long start = System.currentTimeMillis();
 
             final TaskStat.NodeAndStatWrapper bestStats = poll.getBestStats();
             final Task task = poll.getTask();
@@ -67,6 +67,7 @@ public class CopyInAdvanceNodeWithMostData extends CopyInAdvance {
                 //Only re-add if still other opportunities exist
                 stats.add( poll );
             }
+            task.getTraceRecord().addSchedulerTimeDeltaPhaseThree( (int) (System.currentTimeMillis() - start) );
         }
     }
 
