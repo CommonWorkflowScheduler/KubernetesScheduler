@@ -64,19 +64,20 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
         int index = 0;
         for ( TaskInputsNodes taskInputsNodes : taskWithAllData ) {
             List<Literal> onlyOnOneNode = new ArrayList<>();
+            final long score = calculateScore.getScore( taskInputsNodes );
+            final Requirements request = taskInputsNodes.getTask().getRequest();
+            final long ram = request.getRam().longValue();
+            final long cpu = request.getCpu().multiply( MILLION ).longValue();
             for ( NodeWithAlloc node : taskInputsNodes.getNodesWithAllData() ) {
                 final Requirements availableOnNode = availableByNode.get( node );
                 //Can schedule task on node?
-                if ( availableOnNode != null ) {
-                    final Requirements request = taskInputsNodes.getTask().getRequest();
-                    if ( availableOnNode.higherOrEquals( request ) ) {
+                if ( availableOnNode != null && availableOnNode.higherOrEquals( request ) ) {
                         final BoolVar boolVar = model.newBoolVar( "x_" + index + "_" + node );
                         onlyOnOneNode.add( boolVar );
-                        memUsed.get(node).addTerm( boolVar, request.getRam().longValue() );
-                        cpuUsed.get(node).addTerm( boolVar, request.getCpu().multiply( MILLION ).longValue() );
-                        objective.addTerm( boolVar, calculateScore.getScore( taskInputsNodes ) );
+                        memUsed.get(node).addTerm( boolVar, ram );
+                        cpuUsed.get(node).addTerm( boolVar, cpu );
+                        objective.addTerm( boolVar, score );
                         taskNodeBoolVars.add( new TaskNodeBoolVar( taskInputsNodes, node, boolVar ) );
-                    }
                 }
             }
             if ( !onlyOnOneNode.isEmpty() ) {
