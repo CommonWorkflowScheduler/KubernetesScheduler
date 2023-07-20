@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -143,6 +144,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         final List<NodeWithAlloc> allNodes = client.getAllNodes();
         allNodes.removeIf( x -> !x.isReady() );
         final List<NodeTaskFilesAlignment> nodeTaskFilesAlignments;
+        Map< NodeWithAlloc, List<Task> > readyTasksPerNode = new ConcurrentHashMap<>();
         synchronized ( copyLock ) {
             final TaskStats taskStats = new TaskStats();
             //Calculate the stats of available data for each task and node.
@@ -151,7 +153,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     .map( task -> {
                         final TaskInputs inputsOfTask = extractInputsOfData( task );
                         if ( inputsOfTask == null ) return null;
-                        return getDataOnNode( task, inputsOfTask, allNodes );
+                        return getDataOnNode( task, inputsOfTask, allNodes, readyTasksPerNode );
                     } )
                     .filter( TaskStat::missingDataOnAnyNode )
                     .sequential()
@@ -183,7 +185,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     getMaxCopyTasksPerNode(),
                     maxHeldCopyTaskReady,
                     currentlyCopyingTasksOnNode,
-                    prioPhaseThree
+                    prioPhaseThree,
+                    readyTasksPerNode
             );
         }
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
@@ -341,12 +344,14 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     /**
      * Calculate the remaining data on each node.
+     *
      * @param task
      * @param inputsOfTask
      * @param allNodes
+     * @param readyTasksPerNode
      * @return A wrapper containing the remaining data on each node, the nodes where all data is available, the inputs and the task.
      */
-    private TaskStat getDataOnNode( Task task, TaskInputs inputsOfTask, List<NodeWithAlloc> allNodes ) {
+    private TaskStat getDataOnNode( Task task, TaskInputs inputsOfTask, List<NodeWithAlloc> allNodes, Map<NodeWithAlloc, List<Task>> readyTasksPerNode ) {
         TaskStat taskStats = new TaskStat( task, inputsOfTask );
         final CurrentlyCopying currentlyCopying = getCurrentlyCopying();
         for ( NodeWithAlloc node : allNodes ) {
@@ -355,6 +360,13 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 final TaskNodeStats taskNodeStats = inputsOfTask.calculateMissingData( node.getNodeLocation(), currentlyCopyingOnNode );
                 if ( taskNodeStats != null ) {
                     taskStats.add( node, taskNodeStats );
+                    if ( taskNodeStats.allOnNodeOrCopying() ) {
+                        readyTasksPerNode.compute(node, (key, value) -> {
+                            final List<Task> tasks = value == null ? new LinkedList<>() : value;
+                            tasks.add(task);
+                            return tasks;
+                        });
+                    }
                 }
             }
         }
