@@ -6,6 +6,7 @@ import lombok.Setter;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -114,6 +115,16 @@ public class TraceRecord {
     /*Time delta between a task was submitted and the batch became schedulable*/
     private Integer schedulerDeltaSubmittedBatchEnd = null;
 
+    @Getter
+    private List<Integer> schedulerTimeDeltaPhaseThree = null;
+
+    public void addSchedulerTimeDeltaPhaseThree( Integer schedulerTimeDeltaPhaseThree ) {
+        if ( this.schedulerTimeDeltaPhaseThree == null ) {
+            this.schedulerTimeDeltaPhaseThree = new ArrayList<>();
+        }
+        this.schedulerTimeDeltaPhaseThree.add( schedulerTimeDeltaPhaseThree );
+    }
+
     public void writeRecord( String tracePath ) throws IOException {
 
         try ( BufferedWriter bw = new BufferedWriter( new FileWriter( tracePath ) ) ) {
@@ -143,7 +154,7 @@ public class TraceRecord {
             writeValue("scheduler_delta_batch_start_received", schedulerDeltaBatchStartReceived, bw);
             writeValue("scheduler_delta_batch_closed_batch_end", schedulerDeltaBatchClosedBatchEnd, bw);
             writeValue("scheduler_delta_submitted_batch_end", schedulerDeltaSubmittedBatchEnd, bw);
-
+            writeValue("scheduler_time_delta_phase_three", schedulerTimeDeltaPhaseThree, bw);
         }
 
     }
@@ -154,7 +165,7 @@ public class TraceRecord {
         }
     }
 
-    private void writeValue( String name, List<Double> value, BufferedWriter bw ) throws IOException {
+    private void writeValue( String name, List<? extends Number> value, BufferedWriter bw ) throws IOException {
         if ( value != null ) {
             final String collect = value.stream()
                     .map( x -> x==null ? "null" : x.toString() )
