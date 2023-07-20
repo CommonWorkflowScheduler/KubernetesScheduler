@@ -2,6 +2,7 @@ package cws.k8s.scheduler.scheduler.la2.ready2run;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.Requirements;
+import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.scheduler.data.TaskInputsNodes;
 import cws.k8s.scheduler.util.LogCopyTask;
 import cws.k8s.scheduler.util.NodeTaskLocalFilesAlignment;
@@ -27,14 +28,17 @@ public class RandomReadyToRunToNode implements ReadyToRunToNode {
 
     /**
      * Select the first node that fits the requirements.
+     *
      * @param taskWithAllData
      * @param availableByNode
+     * @param hierarchyWrapper
      * @return
      */
     @Override
     public List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
             List<TaskInputsNodes> taskWithAllData,
-            Map<NodeWithAlloc, Requirements> availableByNode
+            Map<NodeWithAlloc, Requirements> availableByNode,
+            HierarchyWrapper hierarchyWrapper
     ) {
         long start = System.currentTimeMillis();
         final List<NodeTaskLocalFilesAlignment> alignment = new LinkedList<>();

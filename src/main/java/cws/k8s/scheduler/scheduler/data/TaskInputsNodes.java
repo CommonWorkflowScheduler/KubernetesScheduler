@@ -2,10 +2,13 @@ package cws.k8s.scheduler.scheduler.data;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -17,4 +20,19 @@ public class TaskInputsNodes {
     private final Task task;
     private final List<NodeWithAlloc> nodesWithAllData;
     private final TaskInputs inputsOfTask;
+
+    public long getTaskSize( final HierarchyWrapper hierarchyWrapper ) {
+        final long filesInSharedFS = task.getConfig()
+                .getInputs()
+                .fileInputs
+                .parallelStream()
+                .filter( x -> {
+                    final Path path = Path.of( x.value.sourceObj );
+                    return !hierarchyWrapper.isInScope( path );
+                } )
+                .mapToLong( input -> new File( input.value.sourceObj ).length() )
+                .sum();
+
+        return filesInSharedFS + inputsOfTask.calculateAvgSize() + 1;
+    }
 }

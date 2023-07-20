@@ -131,7 +131,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 .stream()
                 .filter( td -> !td.getNodesWithAllData().isEmpty() )
                 .collect( Collectors.toList() );
-        final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode( taskWithAllData, availableByNode );
+        final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode( taskWithAllData, availableByNode, hierarchyWrapper );
         final ScheduleObject scheduleObject = new ScheduleObject( (List) alignment );
         scheduleObject.setCheckStillPossible( true );
         scheduleObject.setStopSubmitIfOneFails( true );
