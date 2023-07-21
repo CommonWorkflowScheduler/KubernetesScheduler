@@ -86,7 +86,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.maxCopyTasksPerNode = config.maxCopyTasksPerNode == null ? 1 : config.maxCopyTasksPerNode;
         this.maxWaitingCopyTasksPerNode = config.maxWaitingCopyTasksPerNode == null ? 1 : config.maxWaitingCopyTasksPerNode;
         this.readyToRunToNode = readyToRunToNode;
-        this.readyToRunToNode.init( new FileSizeRankScore( hierarchyWrapper ) );
+        final FileSizeRankScore calculateScore = new FileSizeRankScore();
+        this.readyToRunToNode.init(  calculateScore );
         readyToRunToNode.setLogger( logCopyTask );
         this.copyRunner = new ShellCopy( client, this, logCopyTask );
         this.copySameTaskInParallel = 2;
@@ -131,7 +132,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 .stream()
                 .filter( td -> !td.getNodesWithAllData().isEmpty() )
                 .collect( Collectors.toList() );
-        final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode( taskWithAllData, availableByNode, hierarchyWrapper );
+        final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode( taskWithAllData, availableByNode );
         final ScheduleObject scheduleObject = new ScheduleObject( (List) alignment );
         scheduleObject.setCheckStillPossible( true );
         scheduleObject.setStopSubmitIfOneFails( true );
@@ -409,4 +410,9 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         logCopyTask.close();
         super.close();
     }
+
+    Task createTask( TaskConfig conf ){
+        return new Task( conf, getDag(), hierarchyWrapper );
+    }
+
 }

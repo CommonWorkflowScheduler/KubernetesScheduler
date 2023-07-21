@@ -40,8 +40,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
     @Override
     public List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
             List<TaskInputsNodes> taskWithAllData,
-            Map<NodeWithAlloc, Requirements> availableByNode,
-            HierarchyWrapper hierarchyWrapper
+            Map<NodeWithAlloc, Requirements> availableByNode
     ) {
 
         if ( taskWithAllData.isEmpty() || availableByNode.isEmpty() ){
@@ -66,7 +65,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
         int index = 0;
         for ( TaskInputsNodes taskInputsNodes : taskWithAllData ) {
             List<Literal> onlyOnOneNode = new ArrayList<>();
-            final long score = calculateScore.getScore( taskInputsNodes.getTask(), taskInputsNodes.getTaskSize( hierarchyWrapper ) );
+            final long score = calculateScore.getScore( taskInputsNodes.getTask(), taskInputsNodes.getTaskSize() );
             final Requirements request = taskInputsNodes.getTask().getRequest();
             final long ram = request.getRam().longValue();
             final long cpu = request.getCpu().multiply( MILLION ).longValue();

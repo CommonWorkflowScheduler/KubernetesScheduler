@@ -31,14 +31,12 @@ public class RandomReadyToRunToNode implements ReadyToRunToNode {
      *
      * @param taskWithAllData
      * @param availableByNode
-     * @param hierarchyWrapper
      * @return
      */
     @Override
     public List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
             List<TaskInputsNodes> taskWithAllData,
-            Map<NodeWithAlloc, Requirements> availableByNode,
-            HierarchyWrapper hierarchyWrapper
+            Map<NodeWithAlloc, Requirements> availableByNode
     ) {
         long start = System.currentTimeMillis();
         final List<NodeTaskLocalFilesAlignment> alignment = new LinkedList<>();

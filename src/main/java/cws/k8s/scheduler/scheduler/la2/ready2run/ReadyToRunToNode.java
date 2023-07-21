@@ -19,8 +19,7 @@ public interface ReadyToRunToNode {
 
     List<NodeTaskLocalFilesAlignment> createAlignmentForTasksWithAllDataOnNode(
             List<TaskInputsNodes> taskWithAllData,
-            Map<NodeWithAlloc, Requirements> availableByNode,
-            HierarchyWrapper hierarchyWrapper
+            Map<NodeWithAlloc, Requirements> availableByNode
     );
 
 }

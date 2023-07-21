@@ -2,6 +2,7 @@ package cws.k8s.scheduler.model;
 
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.Process;
+import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
 import cws.k8s.scheduler.util.Batch;
@@ -11,8 +12,10 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 @Slf4j
 public class Task {
@@ -64,9 +67,16 @@ public class Task {
 
     private final AtomicInteger copyTaskId = new AtomicInteger(0);
 
+    private final HierarchyWrapper hierarchyWrapper;
+
     public Task( TaskConfig config, DAG dag ) {
+        this( config, dag, null );
+    }
+
+    public Task( TaskConfig config, DAG dag, HierarchyWrapper hierarchyWrapper ) {
         this.config = config;
         this.process = dag.getByProcess( config.getTask() );
+        this.hierarchyWrapper = hierarchyWrapper;
     }
 
     public int getCurrentCopyTaskId() {
@@ -108,14 +118,26 @@ public class Task {
 
     private long inputSize = -1;
 
+    /**
+     * Calculates the size of all input files in bytes in the shared filesystem.
+     * @return The sum of all input files in bytes.
+     */
     public long getInputSize(){
         synchronized ( this ) {
             if ( inputSize == -1 ) {
                 //calculate
-                inputSize = getConfig()
+                Stream<InputParam<FileHolder>> inputParamStream = getConfig()
                         .getInputs()
                         .fileInputs
-                        .parallelStream()
+                        .parallelStream();
+                //If LA Scheduling, filter out files that are not in sharedFS
+                if ( hierarchyWrapper != null ) {
+                    inputParamStream = inputParamStream.filter( x -> {
+                        final Path path = Path.of( x.value.sourceObj );
+                        return !hierarchyWrapper.isInScope( path );
+                    } );
+                }
+                inputSize = inputParamStream
                         .mapToLong( input -> new File(input.value.sourceObj).length() )
                         .sum();
             }

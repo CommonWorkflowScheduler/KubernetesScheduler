@@ -254,10 +254,13 @@ public abstract class Scheduler implements Informable {
         task.setPod( pod );
     }
 
-    /* External access to Tasks */
+    Task createTask( TaskConfig conf ){
+        return new Task( conf, dag );
+    }
 
+    /* External access to Tasks */
     public void addTask( int id, TaskConfig conf ) {
-        final Task task = new Task( conf, dag );
+        final Task task = createTask( conf );
         synchronized ( tasksByPodName ) {
             if ( !tasksByPodName.containsKey( conf.getRunName() ) ) {
                 tasksByPodName.put( conf.getRunName(), task );
