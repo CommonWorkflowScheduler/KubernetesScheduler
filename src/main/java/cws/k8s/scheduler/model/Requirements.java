@@ -1,5 +1,6 @@
 package cws.k8s.scheduler.model;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -7,6 +8,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 @ToString
+@EqualsAndHashCode
 public class Requirements implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
@@ -98,15 +100,4 @@ public class Requirements implements Serializable, Cloneable {
                 && this.ram.compareTo( request.ram ) <= 0;
     }
 
-    @Override
-    public boolean equals( Object obj ) {
-        if ( obj == null ) {
-            return false;
-        }
-        if ( !(obj instanceof Requirements) ) {
-            return false;
-        }
-        return this.getRam().equals( ((Requirements)obj).getRam() )
-                && this.getCpu().equals( ((Requirements)obj).getCpu() );
-    }
 }
