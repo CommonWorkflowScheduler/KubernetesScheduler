@@ -385,6 +385,7 @@ public abstract class Scheduler implements Informable {
 
         pod.getSpec().setNodeName( alignment.node.getMetadata().getName() );
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
+        log.info ( "Tristan Build" );
 
         alignment.task.submitted();
         if( traceEnabled ) {

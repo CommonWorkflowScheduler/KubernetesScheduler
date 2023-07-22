@@ -75,3 +75,4 @@ fabric.properties
 target
 
 pom-development.xml
+.vscode/settings.json
