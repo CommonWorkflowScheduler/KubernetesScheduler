@@ -23,7 +23,7 @@ public class ReadCsv {
         this.pathToCsv = pathToCsv;
     }
 
-    public void readAndProcessCsv(String[] args) {
+    public void readAndProcessCsv() {
         boolean isHeader = true; // Flag to check if there is a header
 
         try (BufferedReader br = new BufferedReader(new FileReader(pathToCsv))) {

@@ -3,6 +3,7 @@ package cws.k8s.scheduler.rest;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.InputEdge;
 import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.csv_reader.ReadCsv;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
@@ -99,6 +100,10 @@ public class SchedulerRestController {
 
         Scheduler scheduler;
 
+        String pathToCsv = config.additional.get("myconfig").asText();
+        ReadCsv readCsv = new ReadCsv(pathToCsv);
+
+        readCsv.readAndProcessCsv();
 
         if ( schedulerHolder.containsKey( execution ) ) {
             return noSchedulerFor( execution );
