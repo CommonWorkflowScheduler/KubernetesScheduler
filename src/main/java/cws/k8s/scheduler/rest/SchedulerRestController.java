@@ -3,10 +3,10 @@ package cws.k8s.scheduler.rest;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.InputEdge;
 import cws.k8s.scheduler.client.KubernetesClient;
-import cws.k8s.scheduler.csv_reader.ReadCsv;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
+import cws.k8s.scheduler.scheduler.NodeLabelAssign;
 import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
 import cws.k8s.scheduler.scheduler.Scheduler;
 import cws.k8s.scheduler.scheduler.prioritize.*;
@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @Slf4j
@@ -100,10 +102,21 @@ public class SchedulerRestController {
 
         Scheduler scheduler;
 
-        String pathToCsv = config.additional.get("myconfig").asText();
-        ReadCsv readCsv = new ReadCsv(pathToCsv);
+        //// MY STUFFF FOR TESTING
+        Scheduler scheduler2;
 
-        readCsv.readAndProcessCsv();
+        System.out.println("\n\nTristan\n");
+        System.out.println(config.toString());
+        System.out.println(config.additional.get("myconfig").get("taskA"));
+        System.out.println("\n\n");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("myconfig"),Map.class);
+
+        System.out.println(nodelabel.toString());
+
+        scheduler2 = new NodeLabelAssign( execution, client, namespace, config, nodelabel);
+        //// END MY STUFF
 
         if ( schedulerHolder.containsKey( execution ) ) {
             return noSchedulerFor( execution );
