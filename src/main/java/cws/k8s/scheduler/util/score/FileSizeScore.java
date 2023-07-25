@@ -6,6 +6,7 @@ public class FileSizeScore implements CalculateScore {
 
     @Override
     public long getScore( Task task, long size ) {
-        return size;
+        //add one to prefer two tasks which sum up to the same score otherwise
+        return size + 1;
     }
 }
