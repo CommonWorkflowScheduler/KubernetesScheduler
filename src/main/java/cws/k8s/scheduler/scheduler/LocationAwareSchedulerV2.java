@@ -157,7 +157,6 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                         if ( inputsOfTask == null ) return null;
                         return getDataOnNode( task, inputsOfTask, allNodes, readyTasksPerNode );
                     } )
-                    .filter( TaskStat::missingDataOnAnyNode )
                     .sequential()
                     .forEach( taskStats::add );
 
@@ -175,8 +174,6 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                                     currentlyCopyingTasksOnNode,
                                                     100
                                                 );
-            taskStats.removeTasksThatHaveBeenStarted();
-
             taskStats.setComparator( phaseThreeComparator );
             //Generate copy tasks for tasks that cannot yet run.
             copyInAdvance.createAlignmentForTasksWithEnoughCapacity(

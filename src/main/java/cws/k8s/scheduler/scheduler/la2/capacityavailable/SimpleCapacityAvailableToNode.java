@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class SimpleCapacityAvailableToNode extends CapacityAvailableToNode {
@@ -42,7 +43,7 @@ public class SimpleCapacityAvailableToNode extends CapacityAvailableToNode {
         //Remove available resources if a copy task is already running: this logic may not be optimal for more than 2 parallel copy tasks (unclear which task starts first)
         removeAvailableResources( taskStats, availableByNodes, allNodes );
         //Sort tasks by missing data: prefer tasks where the least data is missing on the node
-        final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats() );
+        final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats().stream().filter( TaskStat::missingDataOnAnyNode ).collect( Collectors.toList() ) );
         removeTasksThatAreCopiedMoreThanXTimeCurrently( stats, copySameTaskInParallel );
 
         while( !stats.isEmpty() ) {

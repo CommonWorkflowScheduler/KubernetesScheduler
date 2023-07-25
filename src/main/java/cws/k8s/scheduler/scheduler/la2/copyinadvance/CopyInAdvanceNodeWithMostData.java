@@ -43,6 +43,9 @@ public class CopyInAdvanceNodeWithMostData extends CopyInAdvance {
 
         while( !stats.isEmpty() ) {
             final TaskStat poll = stats.poll();
+            if ( !poll.missingDataOnAnyNode() || poll.isCopyToNodeWithAvailableResources() ) {
+                continue;
+            }
             long start = System.currentTimeMillis();
 
             final TaskStat.NodeAndStatWrapper bestStats = poll.getBestStats();

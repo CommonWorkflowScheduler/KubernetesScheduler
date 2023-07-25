@@ -48,7 +48,7 @@ public class CopyInAdvanceNodeWithMostDataIntelligent extends CopyInAdvance {
     ) {
         Map<NodeWithAlloc,NodeCache> cache = new HashMap<>();
         long startMethod = System.currentTimeMillis();
-        final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats() );
+        final SortedList<TaskStat> stats = new SortedList<>( taskStats.getTaskStats().stream().filter( x -> x.missingDataOnAnyNode() && !x.isCopyToNodeWithAvailableResources() ).collect( Collectors.toList()) );
         removeTasksThatAreCopiedMoreThanXTimeCurrently( stats, copySameTaskInParallel );
 
         int readyOnNodes = 0;
