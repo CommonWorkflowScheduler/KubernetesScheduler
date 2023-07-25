@@ -194,6 +194,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     }
 
     private void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
+        nodeTaskFilesAlignment.task.getTraceRecord().copyTask();
         final CopyTask copyTask = initializeCopyTask( nodeTaskFilesAlignment );
         //Files that will be copied
         reserveCopyTask( copyTask );

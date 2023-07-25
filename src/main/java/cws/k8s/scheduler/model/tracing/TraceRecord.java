@@ -118,6 +118,8 @@ public class TraceRecord {
     @Getter
     private List<Integer> schedulerTimeDeltaPhaseThree = null;
 
+    private int schedulerCopyTasks = 0;
+
     public void addSchedulerTimeDeltaPhaseThree( Integer schedulerTimeDeltaPhaseThree ) {
         if ( this.schedulerTimeDeltaPhaseThree == null ) {
             this.schedulerTimeDeltaPhaseThree = new ArrayList<>();
@@ -155,6 +157,7 @@ public class TraceRecord {
             writeValue("scheduler_delta_batch_closed_batch_end", schedulerDeltaBatchClosedBatchEnd, bw);
             writeValue("scheduler_delta_submitted_batch_end", schedulerDeltaSubmittedBatchEnd, bw);
             writeValue("scheduler_time_delta_phase_three", schedulerTimeDeltaPhaseThree, bw);
+            writeValue("scheduler_copy_tasks", schedulerCopyTasks, bw);
         }
 
     }
@@ -193,6 +196,10 @@ public class TraceRecord {
     public void tryToSchedule( long startSchedule ){
         this.startSchedule = startSchedule;
         schedulerTriedToSchedule++;
+    }
+
+    public void copyTask(){
+        schedulerCopyTasks++;
     }
 
 
