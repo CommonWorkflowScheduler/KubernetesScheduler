@@ -141,6 +141,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     @Override
     void postScheduling( List<Task> unscheduledTasks, final Map<NodeWithAlloc, Requirements> availableByNode ) {
+        long start = System.currentTimeMillis();
         final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode = getCurrentlyCopying().getCurrentlyCopyingTasksOnNode();
         final List<NodeWithAlloc> allNodes = client.getAllNodes();
         allNodes.removeIf( x -> !x.isReady() );
