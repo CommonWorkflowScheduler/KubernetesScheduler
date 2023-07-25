@@ -190,6 +190,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                     readyTasksPerNode
             );
         }
+        log.info( "Post Scheduling: Created {} copy tasks in {} ms", nodeTaskFilesAlignments.size(), System.currentTimeMillis() - start );
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }
 
