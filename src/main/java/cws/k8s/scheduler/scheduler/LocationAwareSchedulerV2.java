@@ -3,7 +3,7 @@ package cws.k8s.scheduler.scheduler;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.scheduler.la2.*;
 import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvance;
-import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostDataIntelligent;
+import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostData;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
 import cws.k8s.scheduler.client.KubernetesClient;
@@ -18,7 +18,6 @@ import cws.k8s.scheduler.scheduler.data.TaskInputsNodes;
 import cws.k8s.scheduler.scheduler.filealignment.InputAlignment;
 import cws.k8s.scheduler.scheduler.la2.capacityavailable.CapacityAvailableToNode;
 import cws.k8s.scheduler.scheduler.la2.capacityavailable.SimpleCapacityAvailableToNode;
-import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostData;
 import cws.k8s.scheduler.scheduler.la2.copystrategy.CopyRunner;
 import cws.k8s.scheduler.scheduler.la2.copystrategy.ShellCopy;
 import cws.k8s.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
@@ -94,7 +93,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.capacityAvailableToNode = new SimpleCapacityAvailableToNode( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
         this.phaseThreeComparator = new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE );
-        this.copyInAdvance = new CopyInAdvanceNodeWithMostDataIntelligent( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
+        this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.maxHeldCopyTaskReady = config.maxHeldCopyTaskReady == null ? 3 : config.maxHeldCopyTaskReady;
         this.prioPhaseThree = config.prioPhaseThree == null ? 70 : config.prioPhaseThree;
     }
