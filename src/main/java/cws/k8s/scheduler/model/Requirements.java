@@ -23,6 +23,16 @@ public class Requirements implements Serializable, Cloneable {
         this.ram = ram == null ? BigDecimal.ZERO : ram;
     }
 
+    /**
+     * Basically used for testing
+     * @param cpu
+     * @param ram
+     */
+    public Requirements( int cpu, int ram ) {
+        this.cpu = BigDecimal.valueOf(cpu);
+        this.ram = BigDecimal.valueOf(ram);
+    }
+
     public Requirements(){
         this( BigDecimal.ZERO, BigDecimal.ZERO );
     }
@@ -98,6 +108,11 @@ public class Requirements implements Serializable, Cloneable {
     public boolean smallerEquals( Requirements request ) {
         return this.cpu.compareTo( request.cpu ) <= 0
                 && this.ram.compareTo( request.ram ) <= 0;
+    }
+
+    public boolean atLeastOneBigger( Requirements request ) {
+        return this.cpu.compareTo( request.cpu ) > 0
+                || this.ram.compareTo( request.ram ) > 0;
     }
 
 }

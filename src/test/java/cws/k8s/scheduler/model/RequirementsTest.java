@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -164,4 +165,56 @@ class RequirementsTest {
         Requirements a = new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) );
         assertEquals( BigDecimal.valueOf( 6 ), a.getRam() );
     }
+
+
+    @Test
+    void atLeastOneBigger() {
+        Requirements a = new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) );
+        Requirements b = new Requirements( BigDecimal.valueOf( 3 ), BigDecimal.valueOf( 5 ) );
+        assertTrue( a.atLeastOneBigger( b ) );
+        assertFalse( b.atLeastOneBigger( a ) );
+        assertFalse( a.atLeastOneBigger( a ) );
+        assertFalse( b.atLeastOneBigger( b ) );
+
+        Requirements c = new Requirements( BigDecimal.valueOf( 6 ), BigDecimal.valueOf( 5 ) );
+        assertTrue( a.atLeastOneBigger( c ) );
+        assertTrue( c.atLeastOneBigger( a ) );
+        assertFalse( c.atLeastOneBigger( c ) );
+
+        Requirements d = new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) );
+        assertFalse( a.atLeastOneBigger( d ) );
+        assertFalse( d.atLeastOneBigger( a ) );
+        assertFalse( d.atLeastOneBigger( d ) );
+    }
+
+    @Test
+    void hashSetTest() {
+        Requirements a = new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) );
+        Requirements b = new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) );
+        final HashSet<Requirements> requirements = new HashSet<>();
+        requirements.add( a );
+        requirements.add( b );
+        assertEquals( 1, requirements.size() );
+        requirements.add( a.add( b ) );
+        assertEquals( 2, requirements.size() );
+        requirements.add( a.add( b ).sub( new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) ) ) );
+        assertEquals( 2, requirements.size() );
+    }
+
+    @Test
+    void equalsTest() {
+        Requirements a = new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) );
+        Requirements b = new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 6 ) );
+        assertEquals( a, b );
+        assertEquals( b, a );
+        assertEquals( a, a );
+        assertEquals( b, b );
+        assertNotEquals( null, a );
+        assertNotEquals( a, new Object() );
+        assertNotEquals( a, new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 7 ) ) );
+        assertNotEquals( a, new Requirements( BigDecimal.valueOf( 6 ), BigDecimal.valueOf( 6 ) ) );
+        assertNotSame( a, b );
+    }
+
+
 }
