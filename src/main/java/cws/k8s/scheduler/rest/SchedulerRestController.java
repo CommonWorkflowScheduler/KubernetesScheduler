@@ -107,7 +107,7 @@ public class SchedulerRestController {
 
         System.out.println("\n\nTristan\n");
         System.out.println(config.toString());
-        System.out.println(config.additional.get("myconfig").get("taskA"));
+        System.out.println(config.additional.get("myconfig").get("SRR838838"));
         System.out.println("\n\n");
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -158,8 +158,8 @@ public class SchedulerRestController {
             }
         }
 
-        schedulerHolder.put( execution, scheduler );
-        client.addInformable( scheduler );
+        schedulerHolder.put( execution, scheduler2 );
+        client.addInformable( scheduler2 );
 
         return new ResponseEntity<>( HttpStatus.OK );
 

@@ -5,8 +5,6 @@ import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.util.*;
 
 @Slf4j
@@ -42,8 +40,7 @@ public class NodeLabelAssign extends Scheduler {
 
         for ( Task unscheduledTask : unscheduledTasks ) {
 
-
-            final String taskLabel = unscheduledTask.getProcess().getLabel();
+            final String taskLabel = unscheduledTasks.get(0).getConfig().getInputs().getStringInputs().get(0).value;
             System.out.println("Task Label: " + taskLabel);
 
             if(nodelabel.containsKey(taskLabel)){
