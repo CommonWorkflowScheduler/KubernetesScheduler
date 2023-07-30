@@ -1,6 +1,7 @@
 package cws.k8s.scheduler.model;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
@@ -10,6 +11,7 @@ import java.util.List;
 /**
  * Only for testing
  */
+@Getter
 @RequiredArgsConstructor( access = AccessLevel.PACKAGE )
 public class TaskInput {
 

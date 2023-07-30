@@ -24,6 +24,11 @@ public class VertexDeserializer extends JsonDeserializer<Vertex> {
         final String label = labelNode instanceof NullNode ? null : ((TextNode) labelNode).asText();
         final int uid =  ((IntNode) treeNode.get("uid")).asInt();
 
+        System.out.println("\n\nLABELSTUFF");
+        System.out.println(treeNode.toString());
+        System.out.println("\n\n");
+
+
         if ( Type.PROCESS == type ) {
            return new Process( label, uid );
         } else if ( Type.OPERATOR == type ) {

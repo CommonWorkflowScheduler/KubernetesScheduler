@@ -116,6 +116,7 @@ public class SchedulerRestController {
         System.out.println(nodelabel.toString());
 
         scheduler2 = new NodeLabelAssign( execution, client, namespace, config, nodelabel);
+        
         //// END MY STUFF
 
         if ( schedulerHolder.containsKey( execution ) ) {
