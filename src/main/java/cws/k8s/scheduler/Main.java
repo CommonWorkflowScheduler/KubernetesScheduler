@@ -40,7 +40,7 @@ public class Main {
                 "Common Workflow Scheduler for Kubernetes " + version + " (" + dateString + ")",
                 "",
                 "If you use the Common Workflow Scheduler for research purposes, please cite the following:",
-                "Lehmann, Fabian, Jonathan Bader, Friedrich Tschirpke, Lauritz Thamsen, and Ulf Leser.",
+                "Lehmann Fabian, Jonathan Bader, Friedrich Tschirpke, Lauritz Thamsen, and Ulf Leser.",
                 "\"How Workflow Engines Should Talk to Resource Managers: A Proposal for a Common Workflow",
                 "Scheduling Interface.\" In 2023 IEEE/ACM 23rd International Symposium on Cluster, Cloud and",
                 "Internet Computing (CCGrid). Bangalore, India, 2023.",

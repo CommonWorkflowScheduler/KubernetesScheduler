@@ -127,16 +127,17 @@ spec:
 If you use this software or artifacts in a publication, please cite it as:
 
 #### Text
-Lehmann, Fabian, Jonathan Bader, Friedrich Tschirpke, Lauritz Thamsen, and Ulf Leser. **How Workflow Engines Should Talk to Resource Managers: A Proposal for a Common Workflow Scheduling Interface**. In 2023 23rd IEEE International Symposium on Cluster, Cloud and Internet Computing (CCGrid). Bangalore, India, 2023.
+Lehmann Fabian, Jonathan Bader, Friedrich Tschirpke, Lauritz Thamsen, and Ulf Leser. **How Workflow Engines Should Talk to Resource Managers: A Proposal for a Common Workflow Scheduling Interface**. In 2023 IEEE/ACM 23rd International Symposium on Cluster, Cloud and Internet Computing (CCGrid). Bangalore, India, 2023.
 
 #### BibTeX
 ```
 @inproceedings{lehmannHowWorkflowEngines2023,
  author = {Lehmann, Fabian and Bader, Jonathan and Tschirpke, Friedrich and Thamsen, Lauritz and Leser, Ulf},
- booktitle = {2023 23rd IEEE International Symposium on Cluster, Cloud and Internet Computing (CCGrid)},
+ booktitle = {2023 IEEE/ACM 23rd International Symposium on Cluster, Cloud and Internet Computing (CCGrid)},
  title = {How Workflow Engines Should Talk to Resource Managers: A Proposal for a Common Workflow Scheduling Interface},
  year = {2023},
- address = {{Bangalore, India}}
+ address = {{Bangalore, India}},
+ doi = {10.1109/CCGrid57682.2023.00025}
 }
 ```
 ---
