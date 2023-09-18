@@ -11,6 +11,7 @@ import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
 import cws.k8s.scheduler.scheduler.Scheduler;
 import cws.k8s.scheduler.scheduler.prioritize.*;
 import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
+import cws.k8s.scheduler.scheduler.nodeassign.LabelAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RoundRobinAssign;
@@ -103,31 +104,36 @@ public class SchedulerRestController {
         Scheduler scheduler;
 
         //// MY STUFFF FOR TESTING
-        Scheduler scheduler2;
+        // Scheduler scheduler2;
 
-        System.out.println("\n\nTristan\n");
-        System.out.println(config.toString());
-        System.out.println(config.additional.get("myconfig").get("SRR838838"));
-        System.out.println("\n\n");
+        // System.out.println("\n\nTristan\n");
+        // System.out.println(config.toString());
+        // System.out.println(config.additional.get("myconfig").get("SRR838838"));
+        // System.out.println("\n\n");
+
+        // System.out.println(nodelabel.toString());
+        
+        //// END MY STUFF
 
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("myconfig"),Map.class);
-
-        System.out.println(nodelabel.toString());
-
-        scheduler2 = new NodeLabelAssign( execution, client, namespace, config, nodelabel);
-        
-        //// END MY STUFF
 
         if ( schedulerHolder.containsKey( execution ) ) {
             return noSchedulerFor( execution );
         }
 
         switch ( strategy.toLowerCase() ){
+            case "nodelabelassign": // Add your custom strategy
+                Prioritize prioritize;
+                NodeAssign labelassign;
+                NodeAssign assign;
+                prioritize = new RankMaxPrioritize();
+                labelassign = new LabelAssign(nodelabel);
+                assign = new FairAssign();
+                scheduler = new NodeLabelAssign(execution, client, namespace, config, prioritize, labelassign, assign);
+                break;
             default: {
                 final String[] split = strategy.split( "-" );
-                Prioritize prioritize;
-                NodeAssign assign;
                 if ( split.length <= 2 ) {
                     switch ( split[0].toLowerCase() ) {
                         case "fifo": prioritize = new FifoPrioritize(); break;
@@ -158,8 +164,10 @@ public class SchedulerRestController {
             }
         }
 
-        schedulerHolder.put( execution, scheduler2 );
-        client.addInformable( scheduler2 );
+        // System.out.print("\n\nScheduler");
+        // scheduler.toString();
+        schedulerHolder.put( execution, scheduler );
+        client.addInformable( scheduler );
 
         return new ResponseEntity<>( HttpStatus.OK );
 

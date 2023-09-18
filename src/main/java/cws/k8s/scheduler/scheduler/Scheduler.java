@@ -385,7 +385,6 @@ public abstract class Scheduler implements Informable {
 
         pod.getSpec().setNodeName( alignment.node.getMetadata().getName() );
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
-        log.info ( "Tristan Build" );
 
         alignment.task.submitted();
         if( traceEnabled ) {
@@ -469,20 +468,6 @@ public abstract class Scheduler implements Informable {
         }
         logInfo.add("------------------------------------");
         log.info(String.join("\n", logInfo));
-
-
-        log.info("\n\nunscheduledTasks size: ");
-        System.out.println(unscheduledTasks.size() + "\n\n");
-        System.out.println(unscheduledTasks.get(0).getProcess().getLabel());
-        System.out.println(unscheduledTasks.toString());
-        System.out.println(unscheduledTasks.get(0).toString());
-        System.out.println(unscheduledTasks.get(0).getProcess().toString());
-        System.out.println(unscheduledTasks.get(0).getConfig().getInputs().getStringInputs().toString());
-        System.out.println(unscheduledTasks.get(0).getConfig().getInputs().getStringInputs().get(0).toString());
-        System.out.println(unscheduledTasks.get(0).getConfig().getInputs().getStringInputs().get(0).value);
-
-        System.out.println("\n\n\n");
-
 
         return availableByNode;
     }
