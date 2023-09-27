@@ -9,6 +9,11 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -60,6 +65,23 @@ public class Task {
         return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode() == 0;
     }
 
+    public BigDecimal getNfPeakRss() {
+        final String nfTracePath = getWorkingDir() + '/' + ".command.trace";
+    	try {
+    		Path path = Paths.get(nfTracePath);
+    		List<String> allLines = Files.readAllLines(path);
+    	    for (String a: allLines) {
+    	    	if (a.startsWith("peak_rss")) {
+    	    		BigDecimal peakRss = new BigDecimal(a.substring(9));
+    	    		return peakRss.multiply(BigDecimal.valueOf(1024l));
+    	    	}
+    	    }
+        } catch ( Exception e ){
+            log.warn( "Cannot read nf .command.trace file in " + nfTracePath, e );
+        }
+    	return BigDecimal.ZERO;
+    }
+    
     public void writeTrace(){
         try {
             final String tracePath = getWorkingDir() + '/' + ".command.scheduler.trace";

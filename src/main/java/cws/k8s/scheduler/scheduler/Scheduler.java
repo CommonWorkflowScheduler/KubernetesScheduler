@@ -1,15 +1,20 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.dag.DAG;
+import cws.k8s.scheduler.memory.MemoryOptimizer;
+import cws.k8s.scheduler.memory.Observation;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Binding;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
@@ -55,6 +60,8 @@ public abstract class Scheduler implements Informable {
 
     final boolean traceEnabled;
 
+    final MemoryOptimizer memoryOptimizer;
+    
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
         this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + execution;
@@ -76,6 +83,8 @@ public abstract class Scheduler implements Informable {
         log.info("Start watching");
         watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
         log.info("Watching");
+        
+        memoryOptimizer = new MemoryOptimizer();
     }
 
     /* Abstract methods */
@@ -84,11 +93,90 @@ public abstract class Scheduler implements Informable {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
+    	log.debug("schedule");
+
         long startSchedule = System.currentTimeMillis();
         if( traceEnabled ) {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
-        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
+        
+        // Change ResourceRequests here
+        synchronized(unscheduledTasks) {
+        	log.debug("--- unscheduledTasks BEGIN ---");
+            for (Task t : unscheduledTasks) {
+            	log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
+            	            	
+            	Pod pod = client.pods().inNamespace(t.getPod().getMetadata().getNamespace()).withName(t.getPod().getName()).item();
+
+            	/*
+            	Map<String, Quantity> limits = pod.getSpec().getContainers().get(0).getResources().getLimits();
+            	limits.replace("memory", new Quantity("375Mi"));
+            	pod.getSpec().getContainers().get(0).getResources().setLimits(limits);
+            	            	
+            	Map<String, Quantity> requests = pod.getSpec().getContainers().get(0).getResources().getRequests();
+            	requests.replace("memory", new Quantity("375Mi"));
+            	pod.getSpec().getContainers().get(0).getResources().setRequests(requests);
+
+            	client.pods().inNamespace(namespace).createOrReplace(pod);
+            	*/
+            	
+            	// query suggestion
+            	String suggestion = memoryOptimizer.querySuggestion(t.getConfig().getTask());
+            	if (suggestion != null) {
+                	// 1. patch kubernetes value
+                	String namespace = t.getPod().getMetadata().getNamespace();
+                	String podname = t.getPod().getName();
+                	log.debug("namespace: {}, podname: {}", namespace, podname);
+                	String patch = "kind: Pod\n"
+                			+ "apiVersion: v1\n"
+                			+ "metadata:\n"
+                			+ "  name: PODNAME\n"
+                			+ "  namespace: NAMESPACE\n"
+                			+ "spec:\n"
+                			+ "  containers:\n"
+                			+ "    - name: PODNAME\n"
+                			+ "      resources:\n"
+                			+ "        limits:\n"
+                			+ "          memory: LIMIT\n"
+                			+ "        requests:\n"
+                			+ "          memory: REQUEST\n"
+                			+ "\n";
+                	patch = patch.replaceAll("NAMESPACE", namespace);
+                	patch = patch.replaceAll("PODNAME", podname);
+                	patch = patch.replaceAll("LIMIT", suggestion);
+                	patch = patch.replaceAll("REQUEST", suggestion);
+                	log.debug(patch);
+
+                	client.pods().inNamespace(namespace).withName(podname).patch(patch);
+
+                	// 2. patch cws value
+                	List<Container> l = t.getPod().getSpec().getContainers();
+                	for (Container c : l) {
+                		ResourceRequirements req = c.getResources();
+                    	Map<String, Quantity> limits = req.getLimits();
+                    	limits.replace("memory", new Quantity(suggestion));
+                    	Map<String, Quantity> requests = req.getRequests();
+                    	requests.replace("memory", new Quantity(suggestion));
+                    	log.debug("container: {}", req);
+                	}
+
+                	
+                	/*
+                	InputStream patchStream = new ByteArrayInputStream(patch.getBytes());
+                	Pod patchedPod = client.pods().load(patchStream).item();
+                	client.pods().inNamespace(namespace).createOrReplace(patchedPod);
+    */            	
+                	log.debug("2 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
+
+                	//client.pods().inNamespace("memstress-namespace").withName("nf-bla").edit().getSpec().getContainers().get(0).getResources().setLimits("memory", new Quantity("375Mi"));
+            	}
+            	
+            	
+            }
+        	log.debug("--- unscheduledTasks END ---");
+        }
+        
+        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode()); // PrioSched -> Fair, Random, RoundRobin
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
 
         //check if still possible...
@@ -158,6 +246,7 @@ public abstract class Scheduler implements Informable {
     );
 
     int terminateTasks( final List<Task> finishedTasks ) {
+    	log.debug("terminateTasks");
         for (Task finishedTask : finishedTasks) {
             taskWasFinished( finishedTask );
         }
@@ -188,9 +277,30 @@ public abstract class Scheduler implements Informable {
             unfinishedTasks.remove( task );
         }
         task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
+        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, wasted={}" ,
+        		task.getConfig().getTask(),
+        		task.getConfig().getName(),
+        		task.wasSuccessfullyExecuted(), 
+        		task.getInputSize(), 
+        		task.getPod().getRequest().getRam(),
+        		task.getNfPeakRss(),
+        		task.getPod().getRequest().getRam().subtract(task.getNfPeakRss())
+        );
+        memoryOptimizer.addObservation(new Observation(
+        		task.getConfig().getTask(),
+        		task.getConfig().getName(),
+        		task.wasSuccessfullyExecuted(), 
+        		task.getInputSize(), 
+        		task.getPod().getRequest().getRam(),
+        		null,
+        		task.getNfPeakRss(),
+        		task.getPod().getRequest().getRam().subtract(task.getNfPeakRss()))
+        		);
     }
 
     public void schedulePod(PodWithAge pod ) {
+    	log.debug("schedulePod {}", pod.getName());
+
         Task task = changeStateOfTask( pod, State.UNSCHEDULED );
         //If null, task was already unscheduled
         if ( task == null ) {
@@ -218,6 +328,7 @@ public abstract class Scheduler implements Informable {
      * Synchronize calls via batchHelper
      */
     private void tryToScheduleBatch( Batch batch ){
+    	log.debug("tryToScheduleBatch");
         if ( batch.canSchedule() ){
             synchronized (unscheduledTasks){
                 final List<Task> tasksToScheduleAndDestroy = batch.getTasksToScheduleAndDestroy();
@@ -231,6 +342,7 @@ public abstract class Scheduler implements Informable {
     }
 
     void taskWasScheduled(Task task ) {
+    	log.debug("taskWasScheduled");
         synchronized (unscheduledTasks){
             unscheduledTasks.remove( task );
         }
@@ -238,6 +350,7 @@ public abstract class Scheduler implements Informable {
     }
 
     void taskWasScheduledSetState( Task task ){
+    	log.debug("taskWasScheduledSetState");
         task.getState().setState( State.PREPARED );
     }
 
@@ -249,6 +362,7 @@ public abstract class Scheduler implements Informable {
     /* External access to Tasks */
 
     public void addTask( int id, TaskConfig conf ) {
+    	log.debug("addTask {}", id);
         final Task task = new Task( conf, dag );
         synchronized ( tasksByPodName ) {
             if ( !tasksByPodName.containsKey( conf.getRunName() ) ) {
@@ -332,10 +446,13 @@ public abstract class Scheduler implements Informable {
     }
 
     public void newNode(NodeWithAlloc node) {
+    	log.debug("newNode {}", node.getName());
         informResourceChange();
     }
 
-    public void removedNode(NodeWithAlloc node) {}
+    public void removedNode(NodeWithAlloc node) {
+    	log.debug("removedNode {}", node.getName());
+    }
 
     List<NodeWithAlloc> getNodeList(){
         return client.getAllNodes();
@@ -349,6 +466,7 @@ public abstract class Scheduler implements Informable {
     }
 
     boolean assignTaskToNode( NodeTaskAlignment alignment ){
+    	log.debug("assignTaskToNode");
 
         final File nodeFile = new File(alignment.task.getWorkingDir() + '/' + ".command.node");
 
