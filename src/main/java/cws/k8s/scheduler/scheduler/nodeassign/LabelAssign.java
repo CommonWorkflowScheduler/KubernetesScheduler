@@ -29,32 +29,27 @@ public class LabelAssign extends NodeAssign {
             String taskName = null; 
             String taskLabel = null;        
 
-            // try this else do another assign approach 
             try {
-                // taskLabel = task.getConfig().getInputs().getStringInputs().get(0).value;
                 taskName = task.getConfig().getName();
-                taskLabel = taskName.split("~")[1];
+                taskLabel = taskName.split("~")[1]; 
+                // ~ is used for a special case in which subtasks from one process in nextflow are generated
+                // the labels in the nextflow config have to be named like this: ~label~
 
-                log.info("Label for task: " + task.getConfig().getName() + " == " + taskLabel);
+                log.info("Label for task: " + task.getConfig().getName() + " : " + taskLabel);
             } catch ( Exception e ){
                 log.warn( "Cannot find a label for task: " + task.getConfig().getName(), e );
                 continue;
             }            
-
-            // System.out.println("Task Label: " + taskLabel);
 
             final PodWithAge pod = task.getPod();
             log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
 
             if(nodelabel.containsKey(taskLabel)){
                 String nodeName = nodelabel.get(taskLabel);
-                // System.out.println("\n\nTask Node Name: " + nodeName);
 
                 for ( Map.Entry<NodeWithAlloc, Requirements> e : entries ) {
                     final NodeWithAlloc node = e.getKey();
 
-                    // System.out.println("Node Name: " + node.getName());
-                    // System.out.println("Equals? " + nodeName + " == " + node.getName() + "    " + (nodeName.equals(node.getName())));
                     if(nodeName.equals(node.getName())){
                         System.out.println("Aligned Pod to node: " + node.getName());
                         alignment.add( new NodeTaskAlignment( node, task ) );
@@ -66,7 +61,7 @@ public class LabelAssign extends NodeAssign {
                 }
             } else 
             {
-                log.info( "Task Label: " + taskLabel + " doesn't exist in config file. Please edit your config file.");
+                log.info( "Task Label: " + taskLabel + " doesn't exist in config file.");
             }
         }
         return alignment;

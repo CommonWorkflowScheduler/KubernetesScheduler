@@ -103,18 +103,6 @@ public class SchedulerRestController {
 
         Scheduler scheduler;
 
-        //// MY STUFFF FOR TESTING
-        // Scheduler scheduler2;
-
-        // System.out.println("\n\nTristan\n");
-        // System.out.println(config.toString());
-        // System.out.println(config.additional.get("myconfig").get("SRR838838"));
-        // System.out.println("\n\n");
-
-        // System.out.println(nodelabel.toString());
-        
-        //// END MY STUFF
-
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("myconfig"),Map.class);
 
@@ -123,7 +111,7 @@ public class SchedulerRestController {
         }
 
         switch ( strategy.toLowerCase() ){
-            case "nodelabelassign": // Add your custom strategy
+            case "nodelabelassign":  
                 Prioritize prioritize;
                 NodeAssign labelassign;
                 NodeAssign assign;
@@ -164,8 +152,6 @@ public class SchedulerRestController {
             }
         }
 
-        // System.out.print("\n\nScheduler");
-        // scheduler.toString();
         schedulerHolder.put( execution, scheduler );
         client.addInformable( scheduler );
 
