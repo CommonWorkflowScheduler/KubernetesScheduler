@@ -72,6 +72,21 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         return this.nodeHolder.size();
     }
 
+    public void assignPodToNode( PodWithAge pod, String node ) {
+        final NodeWithAlloc nodeWithAlloc = nodeHolder.get( node );
+        final Binding build = new BindingBuilder()
+                .withNewMetadata().withName( pod.getName() ).endMetadata()
+                .withNewTarget()
+                .withKind( nodeWithAlloc.getKind() )
+                .withApiVersion( nodeWithAlloc.getApiVersion() )
+                .withName( node ).endTarget()
+                .build();
+        bindings()
+                .inNamespace( pod.getMetadata().getNamespace() )
+                .resource( build )
+                .create();
+    }
+
     public List<NodeWithAlloc> getAllNodes(){
         return new ArrayList<>(this.nodeHolder.values());
     }
@@ -100,24 +115,6 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 .inNamespace(pod.getMetadata().getNamespace())
                 .resource( pod )
                 .create();
-    }
-
-    public void assignPodToNode( PodWithAge pod, String node ) {
-        Binding b1 = new Binding();
-
-        ObjectMeta om = new ObjectMeta();
-        om.setName( pod.getMetadata().getName());
-        om.setNamespace( pod.getMetadata().getNamespace());
-        b1.setMetadata(om);
-
-        ObjectReference objectReference = new ObjectReference();
-        objectReference.setApiVersion("v1");
-        objectReference.setKind("Node");
-        objectReference.setName( node );
-
-        b1.setTarget(objectReference);
-
-        bindings().create(b1);
     }
 
     public void assignPodToNodeAndRemoveInit( PodWithAge pod, String node ) {

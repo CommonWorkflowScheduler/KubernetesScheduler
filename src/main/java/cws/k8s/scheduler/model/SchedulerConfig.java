@@ -1,10 +1,12 @@
 package cws.k8s.scheduler.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.List;
+import java.util.Map;
 
 @ToString
 @NoArgsConstructor(access = AccessLevel.PRIVATE,force = true)
@@ -26,6 +28,8 @@ public class SchedulerConfig {
     public final Integer maxWaitingCopyTasksPerNode;
     public final Integer maxHeldCopyTaskReady;
     public final Integer prioPhaseThree;
+
+    public final Map<String, JsonNode> additional;
 
     @ToString
     public static class LocalClaim {
