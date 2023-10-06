@@ -2,10 +2,7 @@ package cws.k8s.scheduler.client;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
-import io.fabric8.kubernetes.api.model.ContainerStatus;
-import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
@@ -67,6 +64,21 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     public int getNumberOfNodes(){
         return this.nodeHolder.size();
+    }
+
+    public void assignPodToNode( PodWithAge pod, String node ) {
+        final NodeWithAlloc nodeWithAlloc = nodeHolder.get( node );
+        final Binding build = new BindingBuilder()
+                .withNewMetadata().withName( pod.getName() ).endMetadata()
+                .withNewTarget()
+                .withKind( nodeWithAlloc.getKind() )
+                .withApiVersion( nodeWithAlloc.getApiVersion() )
+                .withName( node ).endTarget()
+                .build();
+        bindings()
+                .inNamespace( pod.getMetadata().getNamespace() )
+                .resource( build )
+                .create();
     }
 
     public List<NodeWithAlloc> getAllNodes(){
