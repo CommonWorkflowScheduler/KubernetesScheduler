@@ -6,8 +6,9 @@ import cws.k8s.scheduler.util.MyExecListner;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayOutputStream;
@@ -25,8 +26,10 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         for( Node node : this.nodes().list().getItems() ){
             nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node,this) );
         }
-        this.pods().inAnyNamespace().watch( new PodWatcher( this ) );
-        this.nodes().watch( new NodeWatcher( this ) );
+        final SharedIndexInformer<Pod> podSharedIndexInformer = this.pods().inAnyNamespace().inform( new PodHandler( this ) );
+        podSharedIndexInformer.start();
+        final SharedIndexInformer<Node> nodeSharedIndexInformer = this.nodes().inform( new NodeHandler( this ) );
+        nodeSharedIndexInformer.start();
     }
 
     public void addInformable( Informable informable ){
@@ -144,73 +147,63 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         listener.setOut( out );
     }
 
-
-    static class NodeWatcher implements Watcher<Node>{
+    static class NodeHandler implements ResourceEventHandler<Node>{
 
         private final KubernetesClient kubernetesClient;
 
-        public NodeWatcher(KubernetesClient kubernetesClient) {
+        public NodeHandler(KubernetesClient kubernetesClient) {
             this.kubernetesClient = kubernetesClient;
         }
 
         @Override
-        public void eventReceived(Action action, Node node) {
+        public void onAdd( Node node ) {
             boolean change = false;
             NodeWithAlloc processedNode = null;
-            switch (action) {
-                case ADDED:
-                    log.info("New Node {} was added", node.getMetadata().getName());
-                    synchronized ( kubernetesClient.nodeHolder ){
-                        if ( ! kubernetesClient.nodeHolder.containsKey( node.getMetadata().getName() ) ){
-                            processedNode = new NodeWithAlloc(node,kubernetesClient);
-                            kubernetesClient.nodeHolder.put( node.getMetadata().getName(), processedNode );
-                            change = true;
-                        }
-                    }
-                    if ( change ) {
-                        kubernetesClient.informAllNewNode( processedNode );
-                    }
-                    break;
-                case DELETED:
-                    log.info("Node {} was deleted", node.getMetadata().getName());
-                    synchronized ( kubernetesClient.nodeHolder ){
-                        if ( kubernetesClient.nodeHolder.containsKey( node.getMetadata().getName() ) ){
-                            processedNode  = kubernetesClient.nodeHolder.remove( node.getMetadata().getName() );
-                            change = true;
-                        }
-                    }
-                    if ( change ) {
-                        kubernetesClient.informAllRemovedNode( processedNode );
-                    }
-                    break;
-                case ERROR:
-                    log.info("Node {} has an error", node.getMetadata().getName());
-                    //todo deal with error
-                    break;
-                case MODIFIED:
-                    log.info("Node {} was modified", node.getMetadata().getName());
-                    //todo deal with changed state
-                    break;
-                default: log.warn("No implementation for {}", action);
+            log.info("New Node {} was added", node.getMetadata().getName());
+            synchronized ( kubernetesClient.nodeHolder ){
+                if ( ! kubernetesClient.nodeHolder.containsKey( node.getMetadata().getName() ) ){
+                    processedNode = new NodeWithAlloc(node,kubernetesClient);
+                    kubernetesClient.nodeHolder.put( node.getMetadata().getName(), processedNode );
+                    change = true;
+                }
+            }
+            if ( change ) {
+                kubernetesClient.informAllNewNode( processedNode );
             }
         }
 
         @Override
-        public void onClose(WatcherException cause) {
-            log.info( "Watcher was closed" );
-        }
-    }
-
-    static class PodWatcher implements Watcher<Pod> {
-
-        private final KubernetesClient kubernetesClient;
-
-        public PodWatcher(KubernetesClient kubernetesClient) {
-            this.kubernetesClient = kubernetesClient;
+        public void onUpdate( Node oldObj, Node newObj ) {
+            //todo deal with changed state
         }
 
         @Override
-        public void eventReceived(Action action, Pod pod) {
+        public void onDelete( Node node, boolean deletedFinalStateUnknown ) {
+            boolean change = false;
+            NodeWithAlloc processedNode = null;
+            log.info("Node {} was deleted", node.getMetadata().getName());
+            synchronized ( kubernetesClient.nodeHolder ){
+                if ( kubernetesClient.nodeHolder.containsKey( node.getMetadata().getName() ) ){
+                    processedNode  = kubernetesClient.nodeHolder.remove( node.getMetadata().getName() );
+                    change = true;
+                }
+            }
+            if ( change ) {
+                kubernetesClient.informAllRemovedNode( processedNode );
+            }
+        }
+
+    }
+
+    static class PodHandler implements ResourceEventHandler<Pod> {
+
+        private final KubernetesClient kubernetesClient;
+
+        public PodHandler(KubernetesClient kubernetesClient) {
+            this.kubernetesClient = kubernetesClient;
+        }
+
+        public void eventReceived( Watcher.Action action, Pod pod) {
             String nodeName = pod.getSpec().getNodeName();
             if( nodeName != null ){
                 NodeWithAlloc node = kubernetesClient.nodeHolder.get( pod.getSpec().getNodeName() );
@@ -240,10 +233,19 @@ public class KubernetesClient extends DefaultKubernetesClient  {
             }
         }
 
+        @Override
+        public void onAdd( Pod pod ) {
+            eventReceived( Watcher.Action.ADDED, pod );
+        }
 
         @Override
-        public void onClose(WatcherException cause) {
-            log.info( "Watcher was closed" );
+        public void onUpdate( Pod oldPod, Pod newPod ) {
+            eventReceived( Watcher.Action.MODIFIED, newPod );
+        }
+
+        @Override
+        public void onDelete( Pod pod, boolean deletedFinalStateUnknown ) {
+            eventReceived( Watcher.Action.DELETED, pod );
         }
 
     }
