@@ -31,6 +31,10 @@ public class TaskStat implements Comparable<TaskStat> {
     @Getter
     private boolean copyToNodeWithAvailableResources = false;
 
+    public boolean canStartSomewhere() {
+        return !taskStats.isEmpty();
+    }
+
     /**
      * @return number is the number of nodes, that are better for this task depending on the comparator.
      */
@@ -116,8 +120,11 @@ public class TaskStat implements Comparable<TaskStat> {
 
     @Override
     public int compareTo( @NotNull TaskStat o ) {
-        if ( indexToCompare >= taskStats.size() || o.indexToCompare >= o.taskStats.size() ) {
-            throw new IllegalStateException( "Cannot compare tasks that have no stats" );
+        if ( indexToCompare >= taskStats.size() ) {
+            throw new IllegalStateException( "Cannot compare task " + task.getConfig().getName() + " size = " + taskStats.size() + " indexToCompare = " + indexToCompare);
+        }
+        if ( o.indexToCompare >= o.taskStats.size() ) {
+            throw new IllegalStateException( "Cannot compare task " + o.task.getConfig().getName() + " size = " + o.taskStats.size() + " indexToCompare = " + o.indexToCompare );
         }
         return comparator.compare( this, o );
     }
