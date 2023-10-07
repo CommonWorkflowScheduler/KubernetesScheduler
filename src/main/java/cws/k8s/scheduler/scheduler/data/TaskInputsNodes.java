@@ -2,7 +2,6 @@ package cws.k8s.scheduler.scheduler.data;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.Task;
-import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

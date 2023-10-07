@@ -5,7 +5,6 @@ import cws.k8s.scheduler.scheduler.la2.TaskStatComparator;
 import cws.k8s.scheduler.model.Task;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TaskStats {
 
