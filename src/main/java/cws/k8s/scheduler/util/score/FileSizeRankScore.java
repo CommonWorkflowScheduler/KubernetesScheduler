@@ -1,8 +1,6 @@
 package cws.k8s.scheduler.util.score;
 
 import cws.k8s.scheduler.model.Task;
-import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
-import cws.k8s.scheduler.scheduler.data.TaskInputsNodes;
 
 public class FileSizeRankScore extends FileSizeScore {
 
