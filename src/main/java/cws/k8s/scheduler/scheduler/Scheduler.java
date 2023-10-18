@@ -3,6 +3,7 @@ package cws.k8s.scheduler.scheduler;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.memory.MemoryOptimizer;
 import cws.k8s.scheduler.memory.Observation;
+import cws.k8s.scheduler.memory.TaskScaler;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
@@ -61,6 +62,7 @@ public abstract class Scheduler implements Informable {
     final boolean traceEnabled;
 
     final MemoryOptimizer memoryOptimizer;
+    final TaskScaler taskScaler;
     
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
@@ -85,6 +87,7 @@ public abstract class Scheduler implements Informable {
         log.info("Watching");
         
         memoryOptimizer = new MemoryOptimizer();
+        taskScaler = new TaskScaler(client, memoryOptimizer);
     }
 
     /* Abstract methods */
@@ -101,80 +104,7 @@ public abstract class Scheduler implements Informable {
         }
         
         // Change ResourceRequests here
-        synchronized(unscheduledTasks) {
-        	log.debug("--- unscheduledTasks BEGIN ---");
-            for (Task t : unscheduledTasks) {
-            	log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
-            	            	
-            	Pod pod = client.pods().inNamespace(t.getPod().getMetadata().getNamespace()).withName(t.getPod().getName()).item();
-
-            	/*
-            	Map<String, Quantity> limits = pod.getSpec().getContainers().get(0).getResources().getLimits();
-            	limits.replace("memory", new Quantity("375Mi"));
-            	pod.getSpec().getContainers().get(0).getResources().setLimits(limits);
-            	            	
-            	Map<String, Quantity> requests = pod.getSpec().getContainers().get(0).getResources().getRequests();
-            	requests.replace("memory", new Quantity("375Mi"));
-            	pod.getSpec().getContainers().get(0).getResources().setRequests(requests);
-
-            	client.pods().inNamespace(namespace).createOrReplace(pod);
-            	*/
-            	
-            	// query suggestion
-            	String suggestion = memoryOptimizer.querySuggestion(t.getConfig().getTask());
-            	if (suggestion != null) {
-                	// 1. patch kubernetes value
-                	String namespace = t.getPod().getMetadata().getNamespace();
-                	String podname = t.getPod().getName();
-                	log.debug("namespace: {}, podname: {}", namespace, podname);
-                	String patch = "kind: Pod\n"
-                			+ "apiVersion: v1\n"
-                			+ "metadata:\n"
-                			+ "  name: PODNAME\n"
-                			+ "  namespace: NAMESPACE\n"
-                			+ "spec:\n"
-                			+ "  containers:\n"
-                			+ "    - name: PODNAME\n"
-                			+ "      resources:\n"
-                			+ "        limits:\n"
-                			+ "          memory: LIMIT\n"
-                			+ "        requests:\n"
-                			+ "          memory: REQUEST\n"
-                			+ "\n";
-                	patch = patch.replaceAll("NAMESPACE", namespace);
-                	patch = patch.replaceAll("PODNAME", podname);
-                	patch = patch.replaceAll("LIMIT", suggestion);
-                	patch = patch.replaceAll("REQUEST", suggestion);
-                	log.debug(patch);
-
-                	client.pods().inNamespace(namespace).withName(podname).patch(patch);
-
-                	// 2. patch cws value
-                	List<Container> l = t.getPod().getSpec().getContainers();
-                	for (Container c : l) {
-                		ResourceRequirements req = c.getResources();
-                    	Map<String, Quantity> limits = req.getLimits();
-                    	limits.replace("memory", new Quantity(suggestion));
-                    	Map<String, Quantity> requests = req.getRequests();
-                    	requests.replace("memory", new Quantity(suggestion));
-                    	log.debug("container: {}", req);
-                	}
-
-                	
-                	/*
-                	InputStream patchStream = new ByteArrayInputStream(patch.getBytes());
-                	Pod patchedPod = client.pods().load(patchStream).item();
-                	client.pods().inNamespace(namespace).createOrReplace(patchedPod);
-    */            	
-                	log.debug("2 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
-
-                	//client.pods().inNamespace("memstress-namespace").withName("nf-bla").edit().getSpec().getContainers().get(0).getResources().setLimits("memory", new Quantity("375Mi"));
-            	}
-            	
-            	
-            }
-        	log.debug("--- unscheduledTasks END ---");
-        }
+        //taskScaler.modify(unscheduledTasks);
         
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode()); // PrioSched -> Fair, Random, RoundRobin
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
