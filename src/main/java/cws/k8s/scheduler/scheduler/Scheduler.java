@@ -1,21 +1,15 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.dag.DAG;
-import cws.k8s.scheduler.memory.MemoryOptimizer;
-import cws.k8s.scheduler.memory.Observation;
-import cws.k8s.scheduler.memory.TaskScaler;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Binding;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
@@ -61,8 +55,8 @@ public abstract class Scheduler implements Informable {
 
     final boolean traceEnabled;
 
-    final MemoryOptimizer memoryOptimizer;
-    final TaskScaler taskScaler;
+    final cws.k8s.scheduler.memory.MemoryOptimizer memoryOptimizer;
+    final cws.k8s.scheduler.memory.TaskScaler taskScaler;
     
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
@@ -86,8 +80,8 @@ public abstract class Scheduler implements Informable {
         watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
         log.info("Watching");
         
-        memoryOptimizer = new MemoryOptimizer();
-        taskScaler = new TaskScaler(client, memoryOptimizer);
+        memoryOptimizer = new cws.k8s.scheduler.memory.MemoryOptimizer();
+        taskScaler = new cws.k8s.scheduler.memory.TaskScaler(client, memoryOptimizer);
     }
 
     /* Abstract methods */
@@ -96,8 +90,6 @@ public abstract class Scheduler implements Informable {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
-    	log.debug("schedule");
-
         long startSchedule = System.currentTimeMillis();
         if( traceEnabled ) {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
@@ -106,7 +98,7 @@ public abstract class Scheduler implements Informable {
         // Change ResourceRequests here
         //taskScaler.modify(unscheduledTasks);
         
-        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode()); // PrioSched -> Fair, Random, RoundRobin
+        final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
 
         //check if still possible...
@@ -176,7 +168,6 @@ public abstract class Scheduler implements Informable {
     );
 
     int terminateTasks( final List<Task> finishedTasks ) {
-    	log.debug("terminateTasks");
         for (Task finishedTask : finishedTasks) {
             taskWasFinished( finishedTask );
         }
@@ -216,7 +207,7 @@ public abstract class Scheduler implements Informable {
         		task.getNfPeakRss(),
         		task.getPod().getRequest().getRam().subtract(task.getNfPeakRss())
         );
-        memoryOptimizer.addObservation(new Observation(
+        memoryOptimizer.addObservation(new cws.k8s.scheduler.memory.Observation(
         		task.getConfig().getTask(),
         		task.getConfig().getName(),
         		task.wasSuccessfullyExecuted(), 
@@ -229,8 +220,6 @@ public abstract class Scheduler implements Informable {
     }
 
     public void schedulePod(PodWithAge pod ) {
-    	log.debug("schedulePod {}", pod.getName());
-
         Task task = changeStateOfTask( pod, State.UNSCHEDULED );
         //If null, task was already unscheduled
         if ( task == null ) {
@@ -258,7 +247,6 @@ public abstract class Scheduler implements Informable {
      * Synchronize calls via batchHelper
      */
     private void tryToScheduleBatch( Batch batch ){
-    	log.debug("tryToScheduleBatch");
         if ( batch.canSchedule() ){
             synchronized (unscheduledTasks){
                 final List<Task> tasksToScheduleAndDestroy = batch.getTasksToScheduleAndDestroy();
@@ -272,7 +260,6 @@ public abstract class Scheduler implements Informable {
     }
 
     void taskWasScheduled(Task task ) {
-    	log.debug("taskWasScheduled");
         synchronized (unscheduledTasks){
             unscheduledTasks.remove( task );
         }
@@ -280,7 +267,6 @@ public abstract class Scheduler implements Informable {
     }
 
     void taskWasScheduledSetState( Task task ){
-    	log.debug("taskWasScheduledSetState");
         task.getState().setState( State.PREPARED );
     }
 
@@ -292,7 +278,6 @@ public abstract class Scheduler implements Informable {
     /* External access to Tasks */
 
     public void addTask( int id, TaskConfig conf ) {
-    	log.debug("addTask {}", id);
         final Task task = new Task( conf, dag );
         synchronized ( tasksByPodName ) {
             if ( !tasksByPodName.containsKey( conf.getRunName() ) ) {
@@ -376,13 +361,10 @@ public abstract class Scheduler implements Informable {
     }
 
     public void newNode(NodeWithAlloc node) {
-    	log.debug("newNode {}", node.getName());
         informResourceChange();
     }
 
-    public void removedNode(NodeWithAlloc node) {
-    	log.debug("removedNode {}", node.getName());
-    }
+    public void removedNode(NodeWithAlloc node) {}
 
     List<NodeWithAlloc> getNodeList(){
         return client.getAllNodes();
@@ -396,7 +378,6 @@ public abstract class Scheduler implements Informable {
     }
 
     boolean assignTaskToNode( NodeTaskAlignment alignment ){
-    	log.debug("assignTaskToNode");
 
         final File nodeFile = new File(alignment.task.getWorkingDir() + '/' + ".command.node");
 
