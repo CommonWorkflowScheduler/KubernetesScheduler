@@ -506,6 +506,9 @@ public abstract class Scheduler implements Informable {
         watcher.close();
         schedulingThread.interrupt();
         this.close = true;
+        
+        // save statistics after the workflow is completed
+        taskScaler.afterWorkflow();
     }
 
     static class PodWatcher implements Watcher<Pod> {

@@ -110,6 +110,10 @@ public class TaskScaler {
         	log.debug("--- unscheduledTasks END ---");
         }
 	}
+	
+	public void afterWorkflow() {
+		log.debug("afterWorkflow");
+	}
 
 	/** After some testing, this was found to be the only reliable way to patch
 	 * a pod using the Kubernetes client.
