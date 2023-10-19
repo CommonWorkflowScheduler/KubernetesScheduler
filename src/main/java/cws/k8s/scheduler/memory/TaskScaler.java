@@ -17,6 +17,7 @@
 
 package cws.k8s.scheduler.memory;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +28,11 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import lombok.extern.slf4j.Slf4j;
 
-/**
+/** The TaskScaler offers the interfaces that are used by the Scheduler
  * 
+ * It will collect the resource usage results of tasks and change future tasks.
+ * 
+ * @author Florian Friederici
  */
 @Slf4j
 public class TaskScaler {
@@ -36,12 +40,42 @@ public class TaskScaler {
     final KubernetesClient client;
     final MemoryOptimizer memoryOptimizer;
 
-	public TaskScaler(KubernetesClient client, MemoryOptimizer memoryOptimizer) {
+	public TaskScaler(KubernetesClient client) {
 		this.client = client;
-		this.memoryOptimizer = memoryOptimizer;
+		this.memoryOptimizer = new cws.k8s.scheduler.memory.MemoryOptimizer();
 	}
 
-	public void modify(final List<Task> unscheduledTasks) {
+	/** After a task was finished, this method shall be called to collect the 
+	 * tasks resource usage
+	 * 
+	 * @param task
+	 */
+	public void afterTaskFinished(Task task) {
+		BigDecimal peakRss = getNfPeakRss(task);
+		
+        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, wasted={}" ,
+        		task.getConfig().getTask(),
+        		task.getConfig().getName(),
+        		task.wasSuccessfullyExecuted(), 
+        		task.getInputSize(), 
+        		task.getPod().getRequest().getRam(),
+        		peakRss,
+        		task.getPod().getRequest().getRam().subtract(peakRss)
+        );
+        memoryOptimizer.addObservation(new cws.k8s.scheduler.memory.Observation(
+        		task.getConfig().getTask(),
+        		task.getConfig().getName(),
+        		task.wasSuccessfullyExecuted(), 
+        		task.getInputSize(), 
+        		task.getPod().getRequest().getRam(),
+        		null,
+        		peakRss,
+        		task.getPod().getRequest().getRam().subtract(peakRss))
+        		);
+
+	}
+	
+	public void beforeTasksScheduled(final List<Task> unscheduledTasks) {
         synchronized(unscheduledTasks) {
         	log.debug("--- unscheduledTasks BEGIN ---");
             for (Task t : unscheduledTasks) {
@@ -112,5 +146,30 @@ public class TaskScaler {
 
     	client.pods().inNamespace(namespace).withName(podname).patch(patch);
 	}
+	
+    /** Nextflow writes a trace file, when run with "-with-trace" on command 
+     * line, or "trace.enabled = true" in the configuration file.
+     * 
+     * This method will get the peak resident set size (RSS) from there, and
+     * return it in BigDecimal format.
+     *  
+     * @return The peak RSS value that this task has used
+     */
+    private BigDecimal getNfPeakRss(Task task) {
+        final String nfTracePath = task.getWorkingDir() + '/' + ".command.trace";
+    	try {
+    		java.nio.file.Path path = java.nio.file.Paths.get(nfTracePath);
+    		java.util.List<String> allLines = java.nio.file.Files.readAllLines(path);
+    	    for (String a: allLines) {
+    	    	if (a.startsWith("peak_rss")) {
+    	    		BigDecimal peakRss = new BigDecimal(a.substring(9));
+    	    		return peakRss.multiply(BigDecimal.valueOf(1024l));
+    	    	}
+    	    }
+        } catch ( Exception e ){
+            log.warn( "Cannot read nf .command.trace file in " + nfTracePath, e );
+        }
+    	return BigDecimal.ZERO;
+    }
 	
 }
