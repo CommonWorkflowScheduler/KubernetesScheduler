@@ -59,7 +59,7 @@ public class Task {
     public boolean wasSuccessfullyExecuted(){
         return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode() == 0;
     }
-    
+
     public void writeTrace(){
         try {
             final String tracePath = getWorkingDir() + '/' + ".command.scheduler.trace";
