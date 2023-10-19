@@ -55,7 +55,6 @@ public abstract class Scheduler implements Informable {
 
     final boolean traceEnabled;
 
-    final cws.k8s.scheduler.memory.MemoryOptimizer memoryOptimizer;
     final cws.k8s.scheduler.memory.TaskScaler taskScaler;
     
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
@@ -80,8 +79,7 @@ public abstract class Scheduler implements Informable {
         watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
         log.info("Watching");
         
-        memoryOptimizer = new cws.k8s.scheduler.memory.MemoryOptimizer();
-        taskScaler = new cws.k8s.scheduler.memory.TaskScaler(client, memoryOptimizer);
+        taskScaler = new cws.k8s.scheduler.memory.TaskScaler(client);
     }
 
     /* Abstract methods */
@@ -95,8 +93,8 @@ public abstract class Scheduler implements Informable {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
         
-        // Change ResourceRequests here
-        //taskScaler.modify(unscheduledTasks);
+        // change resource requests and limits here
+        taskScaler.beforeTasksScheduled(unscheduledTasks);
         
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
@@ -198,25 +196,9 @@ public abstract class Scheduler implements Informable {
             unfinishedTasks.remove( task );
         }
         task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
-        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, wasted={}" ,
-        		task.getConfig().getTask(),
-        		task.getConfig().getName(),
-        		task.wasSuccessfullyExecuted(), 
-        		task.getInputSize(), 
-        		task.getPod().getRequest().getRam(),
-        		task.getNfPeakRss(),
-        		task.getPod().getRequest().getRam().subtract(task.getNfPeakRss())
-        );
-        memoryOptimizer.addObservation(new cws.k8s.scheduler.memory.Observation(
-        		task.getConfig().getTask(),
-        		task.getConfig().getName(),
-        		task.wasSuccessfullyExecuted(), 
-        		task.getInputSize(), 
-        		task.getPod().getRequest().getRam(),
-        		null,
-        		task.getNfPeakRss(),
-        		task.getPod().getRequest().getRam().subtract(task.getNfPeakRss()))
-        		);
+        
+        // this will collect the result of the task execution for future scaling
+        taskScaler.afterTaskFinished(task);
     }
 
     public void schedulePod(PodWithAge pod ) {
