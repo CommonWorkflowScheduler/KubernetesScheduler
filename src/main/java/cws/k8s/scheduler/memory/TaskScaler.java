@@ -18,6 +18,9 @@
 package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +45,20 @@ public class TaskScaler {
 
 	public TaskScaler(KubernetesClient client) {
 		this.client = client;
-		this.memoryOptimizer = new cws.k8s.scheduler.memory.MemoryOptimizer();
+		String optimizer = System.getenv( "OPTIMIZER" );
+		if (optimizer==null) {
+			optimizer = "none";
+		}
+		switch (optimizer) {
+		case "simple":
+			log.debug("using SimpleOptimizer");
+			this.memoryOptimizer = new SimpleOptimizer();
+			break;
+		case "none":
+		default:
+			log.debug("using NoneOptimizer");
+			this.memoryOptimizer = new NoneOptimizer();
+		}
 	}
 
 	/** After a task was finished, this method shall be called to collect the 
@@ -162,8 +178,8 @@ public class TaskScaler {
     private BigDecimal getNfPeakRss(Task task) {
         final String nfTracePath = task.getWorkingDir() + '/' + ".command.trace";
     	try {
-    		java.nio.file.Path path = java.nio.file.Paths.get(nfTracePath);
-    		java.util.List<String> allLines = java.nio.file.Files.readAllLines(path);
+    		Path path = Paths.get(nfTracePath);
+    		List<String> allLines = Files.readAllLines(path);
     	    for (String a: allLines) {
     	    	if (a.startsWith("peak_rss")) {
     	    		BigDecimal peakRss = new BigDecimal(a.substring(9));

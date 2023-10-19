@@ -17,14 +17,6 @@
 
 package cws.k8s.scheduler.memory;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * The MemoryOptimizer has two important interfaces:
  * 
@@ -38,46 +30,21 @@ import lombok.extern.slf4j.Slf4j;
  * @author Florian Friederici
  *
  */
-@Slf4j
-public class MemoryOptimizer {
-
-	List<Observation> observations;
-	Map<String, BigDecimal> suggestions;
-
-	public MemoryOptimizer() {
-		observations = new ArrayList<>();
-		suggestions = new HashMap<>();
-	}
+interface MemoryOptimizer {
 	
-	public void addObservation(Observation o) {
-		log.debug("addObservation");
-		this.observations.add(o);
-		
-		if (o.success) {
-			// decrease suggestion
-			if (suggestions.containsKey(o.task)) {
-				BigDecimal sug = ( o.peakRss.add(suggestions.get(o.task)) ).divide(new BigDecimal(2));
-				suggestions.replace(o.task, sug);
-			} else {
-				suggestions.put(o.task, o.peakRss.multiply(new BigDecimal(1.1)));
-			}
-		} else {
-			// increase suggestion
-			if (suggestions.containsKey(o.task)) {
-				BigDecimal sug = suggestions.get(o.task).multiply(new BigDecimal(2));
-				suggestions.replace(o.task, sug);
-			} else {
-				suggestions.put(o.task, o.ramRequest.multiply(new BigDecimal(2)));
-			}
-		}
-		
-	}
+	/** input observation into the MemoryOptimizer, to be used to learn memory
+	 * usage of tasks to create suggestions
+	 * 
+	 * @param o the observation that was made
+	 */
+	void addObservation(Observation o);
 	
-	public String querySuggestion(String task) {
-		if (suggestions.containsKey(task)) {
-			return suggestions.get(task).toPlainString();
-		} else {
-			return null;
-		}
-	}
+	/** ask the MemoryOptimizer for a suggestion on how much memory should be
+	 * assigned to the task.
+	 * 
+	 * @param task the task to get a suggestion form
+	 * @return null, if no suggestion possible, otherwise the value to be used
+	 */
+	String querySuggestion(String task);
+
 }

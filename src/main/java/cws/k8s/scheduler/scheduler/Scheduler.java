@@ -55,6 +55,7 @@ public abstract class Scheduler implements Informable {
 
     final boolean traceEnabled;
 
+    // TaskScaler will observe tasks and modify their memory assignments
     final cws.k8s.scheduler.memory.TaskScaler taskScaler;
     
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
@@ -79,6 +80,7 @@ public abstract class Scheduler implements Informable {
         watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
         log.info("Watching");
         
+        // create a new TaskScaler for each Scheduler instance
         taskScaler = new cws.k8s.scheduler.memory.TaskScaler(client);
     }
 
@@ -93,7 +95,7 @@ public abstract class Scheduler implements Informable {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
         
-        // change resource requests and limits here
+        // change memory resource requests and limits here
         taskScaler.beforeTasksScheduled(unscheduledTasks);
         
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
