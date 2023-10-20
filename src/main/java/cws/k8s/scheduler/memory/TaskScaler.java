@@ -77,14 +77,24 @@ public class TaskScaler {
     public void afterTaskFinished(Task task) {
         BigDecimal peakRss = getNfPeakRss(task);
 
+        // @formatter:off
         log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, wasted={}",
-                task.getConfig().getTask(), task.getConfig().getName(), task.wasSuccessfullyExecuted(),
-                task.getInputSize(), task.getPod().getRequest().getRam(), peakRss,
+                task.getConfig().getTask(), 
+                task.getConfig().getName(), 
+                task.wasSuccessfullyExecuted(),
+                task.getInputSize(), 
+                task.getPod().getRequest().getRam(), 
+                peakRss,
                 task.getPod().getRequest().getRam().subtract(peakRss));
-        memoryPredictor.addObservation(new Observation(task.getConfig().getTask(), task.getConfig().getName(),
-                task.wasSuccessfullyExecuted(), task.getInputSize(), task.getPod().getRequest().getRam(), null, peakRss,
+        memoryPredictor.addObservation(new Observation(task.getConfig().getTask(), 
+                task.getConfig().getName(),
+                task.wasSuccessfullyExecuted(), 
+                task.getInputSize(), 
+                task.getPod().getRequest().getRam(), 
+                null, 
+                peakRss,
                 task.getPod().getRequest().getRam().subtract(peakRss)));
-
+        // @formatter:on
     }
 
     public void beforeTasksScheduled(final List<Task> unscheduledTasks) {
@@ -139,10 +149,22 @@ public class TaskScaler {
         String namespace = t.getPod().getMetadata().getNamespace();
         String podname = t.getPod().getName();
         log.debug("namespace: {}, podname: {}", namespace, podname);
-        String patch = "kind: Pod\n" + "apiVersion: v1\n" + "metadata:\n" + "  name: PODNAME\n"
-                + "  namespace: NAMESPACE\n" + "spec:\n" + "  containers:\n" + "    - name: PODNAME\n"
-                + "      resources:\n" + "        limits:\n" + "          memory: LIMIT\n" + "        requests:\n"
-                + "          memory: REQUEST\n" + "\n";
+        // @formatter:off
+        String patch = "kind: Pod\n"
+                + "apiVersion: v1\n"
+                + "metadata:\n"
+                + "  name: PODNAME\n"
+                + "  namespace: NAMESPACE\n"
+                + "spec:\n"
+                + "  containers:\n"
+                + "    - name: PODNAME\n"
+                + "      resources:\n"
+                + "        limits:\n"
+                + "          memory: LIMIT\n"
+                + "        requests:\n"
+                + "          memory: REQUEST\n"
+                + "\n";
+        // @formatter:on
         patch = patch.replaceAll("NAMESPACE", namespace);
         patch = patch.replaceAll("PODNAME", podname);
         patch = patch.replaceAll("LIMIT", suggestion);
