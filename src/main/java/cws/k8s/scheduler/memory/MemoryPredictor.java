@@ -17,6 +17,8 @@
 
 package cws.k8s.scheduler.memory;
 
+import cws.k8s.scheduler.model.Task;
+
 /**
  * The MemoryPredictor has two important interfaces:
  * 
@@ -45,6 +47,6 @@ interface MemoryPredictor {
      * @param task the task to get a suggestion form
      * @return null, if no suggestion possible, otherwise the value to be used
      */
-    String querySuggestion(String task);
+    String querySuggestion(Task task);
 
 }

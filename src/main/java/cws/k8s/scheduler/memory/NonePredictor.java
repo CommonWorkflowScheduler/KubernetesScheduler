@@ -17,6 +17,7 @@
 
 package cws.k8s.scheduler.memory;
 
+import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -35,7 +36,7 @@ public class NonePredictor implements MemoryPredictor {
     }
 
     @Override
-    public String querySuggestion(String task) {
+    public String querySuggestion(Task task) {
         log.debug("NonePredictor.querySuggestion({})", task);
         return null;
     }

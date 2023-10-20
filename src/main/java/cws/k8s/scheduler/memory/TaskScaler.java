@@ -69,8 +69,8 @@ public class TaskScaler {
     }
 
     /**
-     * After a task was finished, this method shall be called to collect the tasks
-     * resource usage
+     * After a task was finished, this method shall be called to collect the 
+     * tasks resource usage
      * 
      * @param task
      */
@@ -105,7 +105,7 @@ public class TaskScaler {
                         t.getPod().getRequest());
 
                 // query suggestion
-                String suggestion = memoryPredictor.querySuggestion(t.getConfig().getTask());
+                String suggestion = memoryPredictor.querySuggestion(t);
                 if (suggestion != null) {
                     // 1. patch Kubernetes value
                     patchTask(t, suggestion);
@@ -136,11 +136,11 @@ public class TaskScaler {
     }
 
     /**
-     * After some testing, this was found to be the only reliable way to patch a pod
-     * using the Kubernetes client.
+     * After some testing, this was found to be the only reliable way to patch 
+     * a pod using the Kubernetes client.
      * 
-     * It will create a patch for the memory limits and request values and submit it
-     * to the cluster.
+     * It will create a patch for the memory limits and request values and 
+     * submit it to the cluster.
      * 
      * @param t          the task to be patched
      * @param suggestion the value to be set
@@ -175,11 +175,11 @@ public class TaskScaler {
     }
 
     /**
-     * Nextflow writes a trace file, when run with "-with-trace" on command line, or
-     * "trace.enabled = true" in the configuration file.
+     * Nextflow writes a trace file, when run with "-with-trace" on command 
+     * line, or "trace.enabled = true" in the configuration file.
      * 
-     * This method will get the peak resident set size (RSS) from there, and return
-     * it in BigDecimal format.
+     * This method will get the peak resident set size (RSS) from there, and 
+     * return it in BigDecimal format.
      * 
      * @return The peak RSS value that this task has used
      */

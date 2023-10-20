@@ -24,16 +24,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
 
+// @formatter:off
 /**
  * ConstantPredictor will use the following strategy:
  * 
- * - In case task has failed, double memory - In case task was successful:
- * reduce memory according to:
+ * - In case task has failed, double memory 
  * 
- * if no old suggestion exists: - let the new suggestion be 10% higher, then the
- * peakRss was else: - new suggestion = (new peakRss + last suggestion) / 2
+ * - In case task was successful, reduce memory according to:
+ *     if no old suggestion exists: 
+ *       - let the new suggestion be 10% higher, then the peakRss was 
+ *     else: 
+ *       - new suggestion = (new peakRss + last suggestion) / 2
  * 
  * I.e. the suggestions from ConstantPredictor are not dependent on the input
  * size of the tasks.
@@ -41,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Florian Friederici
  *
  */
+// @formatter:on
 @Slf4j
 class ConstantPredictor implements MemoryPredictor {
 
@@ -78,10 +83,11 @@ class ConstantPredictor implements MemoryPredictor {
     }
 
     @Override
-    public String querySuggestion(String task) {
-        log.debug("ConstantPredictor.querySuggestion({})", task);
-        if (suggestions.containsKey(task)) {
-            return suggestions.get(task).toPlainString();
+    public String querySuggestion(Task task) {
+        String taskName = task.getConfig().getTask();
+        log.debug("ConstantPredictor.querySuggestion({})", taskName);
+        if (suggestions.containsKey(taskName)) {
+            return suggestions.get(taskName).toPlainString();
         } else {
             return null;
         }
