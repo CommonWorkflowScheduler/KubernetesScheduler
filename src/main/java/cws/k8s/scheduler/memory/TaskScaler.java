@@ -63,7 +63,7 @@ public class TaskScaler {
 
         case "none":
         default:
-            log.debug("using NoneOptimizer");
+            log.debug("using NonePredictor");
             this.memoryPredictor = new NonePredictor();
         }
     }

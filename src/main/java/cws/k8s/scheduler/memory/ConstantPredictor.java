@@ -54,7 +54,7 @@ class ConstantPredictor implements MemoryPredictor {
 
     @Override
     public void addObservation(Observation o) {
-        log.debug("SimpleOptimizer.addObservation");
+        log.debug("ConstantPredictor.addObservation({})", o);
         this.observations.add(o);
 
         if (o.success) {
@@ -79,6 +79,7 @@ class ConstantPredictor implements MemoryPredictor {
 
     @Override
     public String querySuggestion(String task) {
+        log.debug("ConstantPredictor.querySuggestion({})", task);
         if (suggestions.containsKey(task)) {
             return suggestions.get(task).toPlainString();
         } else {
