@@ -29,18 +29,18 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class LinearPredictor implements MemoryPredictor {
-	
-	@Override
-	public void addObservation(Observation o) {
-		log.debug("LinearPredictor.addObservation({})", o);
-		// TODO Auto-generated method stub
-	}
 
-	@Override
-	public String querySuggestion(String task) {
-		log.debug("LinearPredictor.querySuggestion({})", task);
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void addObservation(Observation o) {
+        log.debug("LinearPredictor.addObservation({})", o);
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public String querySuggestion(String task) {
+        log.debug("LinearPredictor.querySuggestion({})", task);
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

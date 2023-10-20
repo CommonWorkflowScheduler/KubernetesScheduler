@@ -22,8 +22,8 @@ import java.math.BigDecimal;
 import lombok.Data;
 
 /**
- * This class holds the observations that can be made after the execution of a 
- * task in the workflow. Depending on those observations, either a single one, 
+ * This class holds the observations that can be made after the execution of a
+ * task in the workflow. Depending on those observations, either a single one,
  * or multiple, tasks resource needs can be adopted by algorithms.
  * 
  * Note: Would have been an java record if target was java 14+
@@ -34,13 +34,13 @@ import lombok.Data;
 @Data
 public class Observation {
 
-	final String task;
-	final String taskName;
-	final Boolean success;
-	final long inputSize;
-	final BigDecimal ramRequest;
-	final BigDecimal ramLimit;
-	final BigDecimal peakRss;
-	final BigDecimal wasted;
-	
+    final String task;
+    final String taskName;
+    final Boolean success;
+    final long inputSize;
+    final BigDecimal ramRequest;
+    final BigDecimal ramLimit;
+    final BigDecimal peakRss;
+    final BigDecimal wasted;
+
 }

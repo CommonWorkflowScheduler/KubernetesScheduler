@@ -31,7 +31,8 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import lombok.extern.slf4j.Slf4j;
 
-/** The TaskScaler offers the interfaces that are used by the Scheduler
+/**
+ * The TaskScaler offers the interfaces that are used by the Scheduler
  * 
  * It will collect the resource usage results of tasks and change future tasks.
  * 
@@ -39,159 +40,142 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TaskScaler {
-	
+
     final KubernetesClient client;
     final MemoryPredictor memoryPredictor;
 
-	public TaskScaler(KubernetesClient client) {
-		this.client = client;
-		String predictor = System.getenv( "MEMORY_PREDICTOR" );
-		if (predictor==null) {
-			predictor = "none";
-		}
-		switch (predictor.toLowerCase()) {
-		case "constant":
-			log.debug("using ConstantPredictor");
-			this.memoryPredictor = new ConstantPredictor();
-			break;
-
-		case "linear":
-			log.debug("using LinearPredictor");
-			this.memoryPredictor = new LinearPredictor();
-			break;
-			
-		case "none":
-		default:
-			log.debug("using NoneOptimizer");
-			this.memoryPredictor = new NonePredictor();
-		}
-	}
-
-	/** After a task was finished, this method shall be called to collect the 
-	 * tasks resource usage
-	 * 
-	 * @param task
-	 */
-	public void afterTaskFinished(Task task) {
-		BigDecimal peakRss = getNfPeakRss(task);
-		
-        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, wasted={}" ,
-        		task.getConfig().getTask(),
-        		task.getConfig().getName(),
-        		task.wasSuccessfullyExecuted(), 
-        		task.getInputSize(), 
-        		task.getPod().getRequest().getRam(),
-        		peakRss,
-        		task.getPod().getRequest().getRam().subtract(peakRss)
-        );
-        memoryPredictor.addObservation(new Observation(
-        		task.getConfig().getTask(),
-        		task.getConfig().getName(),
-        		task.wasSuccessfullyExecuted(), 
-        		task.getInputSize(), 
-        		task.getPod().getRequest().getRam(),
-        		null,
-        		peakRss,
-        		task.getPod().getRequest().getRam().subtract(peakRss))
-        		);
-
-	}
-	
-	public void beforeTasksScheduled(final List<Task> unscheduledTasks) {
-        synchronized(unscheduledTasks) {
-        	log.debug("--- unscheduledTasks BEGIN ---");
-            for (Task t : unscheduledTasks) {
-            	log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
-            	            	
-            	// query suggestion
-            	String suggestion = memoryPredictor.querySuggestion(t.getConfig().getTask());
-            	if (suggestion != null) {
-                	// 1. patch Kubernetes value
-            		patchTask(t, suggestion);
-
-                	// 2. patch CWS value
-                	List<Container> l = t.getPod().getSpec().getContainers();
-                	for (Container c : l) {
-                		ResourceRequirements req = c.getResources();
-                    	Map<String, Quantity> limits = req.getLimits();
-                    	limits.replace("memory", new Quantity(suggestion));
-                    	Map<String, Quantity> requests = req.getRequests();
-                    	requests.replace("memory", new Quantity(suggestion));
-                    	log.debug("container: {}", req);
-                	}
-                	
-                	log.debug("2 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
-            	}
-            	
-            }
-        	log.debug("--- unscheduledTasks END ---");
+    public TaskScaler(KubernetesClient client) {
+        this.client = client;
+        String predictor = System.getenv("MEMORY_PREDICTOR");
+        if (predictor == null) {
+            predictor = "none";
         }
-	}
-	
-	public void afterWorkflow() {
-		log.debug("afterWorkflow");
-		// TODO collect statistics for evaluation
-	}
+        switch (predictor.toLowerCase()) {
+        case "constant":
+            log.debug("using ConstantPredictor");
+            this.memoryPredictor = new ConstantPredictor();
+            break;
 
-	/** After some testing, this was found to be the only reliable way to patch
-	 * a pod using the Kubernetes client.
-	 * 
-	 * It will create a patch for the memory limits and request values and
-	 * submit it to the cluster.
-	 * 
-	 * @param t the task to be patched
-	 * @param suggestion the value to be set
-	 */
-	private void patchTask(Task t, String suggestion) {
-    	String namespace = t.getPod().getMetadata().getNamespace();
-    	String podname = t.getPod().getName();
-    	log.debug("namespace: {}, podname: {}", namespace, podname);
-    	String patch = "kind: Pod\n"
-    			+ "apiVersion: v1\n"
-    			+ "metadata:\n"
-    			+ "  name: PODNAME\n"
-    			+ "  namespace: NAMESPACE\n"
-    			+ "spec:\n"
-    			+ "  containers:\n"
-    			+ "    - name: PODNAME\n"
-    			+ "      resources:\n"
-    			+ "        limits:\n"
-    			+ "          memory: LIMIT\n"
-    			+ "        requests:\n"
-    			+ "          memory: REQUEST\n"
-    			+ "\n";
-    	patch = patch.replaceAll("NAMESPACE", namespace);
-    	patch = patch.replaceAll("PODNAME", podname);
-    	patch = patch.replaceAll("LIMIT", suggestion);
-    	patch = patch.replaceAll("REQUEST", suggestion);
-    	log.debug(patch);
+        case "linear":
+            log.debug("using LinearPredictor");
+            this.memoryPredictor = new LinearPredictor();
+            break;
 
-    	client.pods().inNamespace(namespace).withName(podname).patch(patch);
-	}
-	
-    /** Nextflow writes a trace file, when run with "-with-trace" on command 
-     * line, or "trace.enabled = true" in the configuration file.
+        case "none":
+        default:
+            log.debug("using NoneOptimizer");
+            this.memoryPredictor = new NonePredictor();
+        }
+    }
+
+    /**
+     * After a task was finished, this method shall be called to collect the tasks
+     * resource usage
      * 
-     * This method will get the peak resident set size (RSS) from there, and
-     * return it in BigDecimal format.
-     *  
+     * @param task
+     */
+    public void afterTaskFinished(Task task) {
+        BigDecimal peakRss = getNfPeakRss(task);
+
+        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, wasted={}",
+                task.getConfig().getTask(), task.getConfig().getName(), task.wasSuccessfullyExecuted(),
+                task.getInputSize(), task.getPod().getRequest().getRam(), peakRss,
+                task.getPod().getRequest().getRam().subtract(peakRss));
+        memoryPredictor.addObservation(new Observation(task.getConfig().getTask(), task.getConfig().getName(),
+                task.wasSuccessfullyExecuted(), task.getInputSize(), task.getPod().getRequest().getRam(), null, peakRss,
+                task.getPod().getRequest().getRam().subtract(peakRss)));
+
+    }
+
+    public void beforeTasksScheduled(final List<Task> unscheduledTasks) {
+        synchronized (unscheduledTasks) {
+            log.debug("--- unscheduledTasks BEGIN ---");
+            for (Task t : unscheduledTasks) {
+                log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
+                        t.getPod().getRequest());
+
+                // query suggestion
+                String suggestion = memoryPredictor.querySuggestion(t.getConfig().getTask());
+                if (suggestion != null) {
+                    // 1. patch Kubernetes value
+                    patchTask(t, suggestion);
+
+                    // 2. patch CWS value
+                    List<Container> l = t.getPod().getSpec().getContainers();
+                    for (Container c : l) {
+                        ResourceRequirements req = c.getResources();
+                        Map<String, Quantity> limits = req.getLimits();
+                        limits.replace("memory", new Quantity(suggestion));
+                        Map<String, Quantity> requests = req.getRequests();
+                        requests.replace("memory", new Quantity(suggestion));
+                        log.debug("container: {}", req);
+                    }
+
+                    log.debug("2 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
+                            t.getPod().getRequest());
+                }
+
+            }
+            log.debug("--- unscheduledTasks END ---");
+        }
+    }
+
+    public void afterWorkflow() {
+        log.debug("afterWorkflow");
+        // TODO collect statistics for evaluation
+    }
+
+    /**
+     * After some testing, this was found to be the only reliable way to patch a pod
+     * using the Kubernetes client.
+     * 
+     * It will create a patch for the memory limits and request values and submit it
+     * to the cluster.
+     * 
+     * @param t          the task to be patched
+     * @param suggestion the value to be set
+     */
+    private void patchTask(Task t, String suggestion) {
+        String namespace = t.getPod().getMetadata().getNamespace();
+        String podname = t.getPod().getName();
+        log.debug("namespace: {}, podname: {}", namespace, podname);
+        String patch = "kind: Pod\n" + "apiVersion: v1\n" + "metadata:\n" + "  name: PODNAME\n"
+                + "  namespace: NAMESPACE\n" + "spec:\n" + "  containers:\n" + "    - name: PODNAME\n"
+                + "      resources:\n" + "        limits:\n" + "          memory: LIMIT\n" + "        requests:\n"
+                + "          memory: REQUEST\n" + "\n";
+        patch = patch.replaceAll("NAMESPACE", namespace);
+        patch = patch.replaceAll("PODNAME", podname);
+        patch = patch.replaceAll("LIMIT", suggestion);
+        patch = patch.replaceAll("REQUEST", suggestion);
+        log.debug(patch);
+
+        client.pods().inNamespace(namespace).withName(podname).patch(patch);
+    }
+
+    /**
+     * Nextflow writes a trace file, when run with "-with-trace" on command line, or
+     * "trace.enabled = true" in the configuration file.
+     * 
+     * This method will get the peak resident set size (RSS) from there, and return
+     * it in BigDecimal format.
+     * 
      * @return The peak RSS value that this task has used
      */
     private BigDecimal getNfPeakRss(Task task) {
         final String nfTracePath = task.getWorkingDir() + '/' + ".command.trace";
-    	try {
-    		Path path = Paths.get(nfTracePath);
-    		List<String> allLines = Files.readAllLines(path);
-    	    for (String a: allLines) {
-    	    	if (a.startsWith("peak_rss")) {
-    	    		BigDecimal peakRss = new BigDecimal(a.substring(9));
-    	    		return peakRss.multiply(BigDecimal.valueOf(1024l));
-    	    	}
-    	    }
-        } catch ( Exception e ){
-            log.warn( "Cannot read nf .command.trace file in " + nfTracePath, e );
+        try {
+            Path path = Paths.get(nfTracePath);
+            List<String> allLines = Files.readAllLines(path);
+            for (String a : allLines) {
+                if (a.startsWith("peak_rss")) {
+                    BigDecimal peakRss = new BigDecimal(a.substring(9));
+                    return peakRss.multiply(BigDecimal.valueOf(1024l));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Cannot read nf .command.trace file in " + nfTracePath, e);
         }
-    	return BigDecimal.ZERO;
+        return BigDecimal.ZERO;
     }
-	
+
 }

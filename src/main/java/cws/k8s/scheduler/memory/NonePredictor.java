@@ -29,15 +29,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NonePredictor implements MemoryPredictor {
 
-	@Override
-	public void addObservation(Observation o) {
-		log.debug("NonePredictor.addObservation({})", o);
-	}
+    @Override
+    public void addObservation(Observation o) {
+        log.debug("NonePredictor.addObservation({})", o);
+    }
 
-	@Override
-	public String querySuggestion(String task) {
-		log.debug("NonePredictor.querySuggestion({})", task);
-		return null;
-	}
+    @Override
+    public String querySuggestion(String task) {
+        log.debug("NonePredictor.querySuggestion({})", task);
+        return null;
+    }
 
 }
