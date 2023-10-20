@@ -27,7 +27,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * SimpleOptimizer will use the following strategy:
+ * ConstantPredictor will use the following strategy:
  * 
  * - In case task has failed, double memory
  * - In case task was successful: reduce memory according to:
@@ -37,16 +37,19 @@ import lombok.extern.slf4j.Slf4j;
  *   else:
  *    - new suggestion = (new peakRss + last suggestion) / 2
  * 
+ * I.e. the suggestions from ConstantPredictor are not dependent on the input
+ * size of the tasks.
+ * 
  * @author Florian Friederici
  *
  */
 @Slf4j
-class SimpleOptimizer implements MemoryOptimizer {
+class ConstantPredictor implements MemoryPredictor {
 
 	List<Observation> observations;
 	Map<String, BigDecimal> suggestions;
 
-	public SimpleOptimizer() {
+	public ConstantPredictor() {
 		observations = new ArrayList<>();
 		suggestions = new HashMap<>();
 	}

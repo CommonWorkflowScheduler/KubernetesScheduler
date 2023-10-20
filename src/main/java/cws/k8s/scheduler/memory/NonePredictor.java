@@ -20,22 +20,23 @@ package cws.k8s.scheduler.memory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * NoneOptimizer will not change the tasks at all
+ * NonePredictor will not provide predictions at all. Which results in no
+ * changes to tasks in consequence. This is useful as baseline.
  * 
  * @author Florian Friederici
  *
  */
 @Slf4j
-public class NoneOptimizer implements MemoryOptimizer {
+public class NonePredictor implements MemoryPredictor {
 
 	@Override
 	public void addObservation(Observation o) {
-		log.debug("addObservation");
+		log.debug("NonePredictor.addObservation({})", o);
 	}
 
 	@Override
 	public String querySuggestion(String task) {
-		log.debug("querySuggestion");
+		log.debug("NonePredictor.querySuggestion({})", task);
 		return null;
 	}
 

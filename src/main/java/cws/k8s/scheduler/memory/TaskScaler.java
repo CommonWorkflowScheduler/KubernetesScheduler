@@ -41,23 +41,29 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskScaler {
 	
     final KubernetesClient client;
-    final MemoryOptimizer memoryOptimizer;
+    final MemoryPredictor memoryPredictor;
 
 	public TaskScaler(KubernetesClient client) {
 		this.client = client;
-		String optimizer = System.getenv( "OPTIMIZER" );
-		if (optimizer==null) {
-			optimizer = "none";
+		String predictor = System.getenv( "MEMORY_PREDICTOR" );
+		if (predictor==null) {
+			predictor = "none";
 		}
-		switch (optimizer) {
-		case "simple":
-			log.debug("using SimpleOptimizer");
-			this.memoryOptimizer = new SimpleOptimizer();
+		switch (predictor.toLowerCase()) {
+		case "constant":
+			log.debug("using ConstantPredictor");
+			this.memoryPredictor = new ConstantPredictor();
 			break;
+
+		case "linear":
+			log.debug("using LinearPredictor");
+			this.memoryPredictor = new LinearPredictor();
+			break;
+			
 		case "none":
 		default:
 			log.debug("using NoneOptimizer");
-			this.memoryOptimizer = new NoneOptimizer();
+			this.memoryPredictor = new NonePredictor();
 		}
 	}
 
@@ -78,7 +84,7 @@ public class TaskScaler {
         		peakRss,
         		task.getPod().getRequest().getRam().subtract(peakRss)
         );
-        memoryOptimizer.addObservation(new cws.k8s.scheduler.memory.Observation(
+        memoryPredictor.addObservation(new Observation(
         		task.getConfig().getTask(),
         		task.getConfig().getName(),
         		task.wasSuccessfullyExecuted(), 
@@ -98,12 +104,12 @@ public class TaskScaler {
             	log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
             	            	
             	// query suggestion
-            	String suggestion = memoryOptimizer.querySuggestion(t.getConfig().getTask());
+            	String suggestion = memoryPredictor.querySuggestion(t.getConfig().getTask());
             	if (suggestion != null) {
-                	// 1. patch kubernetes value
+                	// 1. patch Kubernetes value
             		patchTask(t, suggestion);
 
-                	// 2. patch cws value
+                	// 2. patch CWS value
                 	List<Container> l = t.getPod().getSpec().getContainers();
                 	for (Container c : l) {
                 		ResourceRequirements req = c.getResources();
@@ -114,11 +120,6 @@ public class TaskScaler {
                     	log.debug("container: {}", req);
                 	}
                 	
-                	/*
-                	InputStream patchStream = new ByteArrayInputStream(patch.getBytes());
-                	Pod patchedPod = client.pods().load(patchStream).item();
-                	client.pods().inNamespace(namespace).createOrReplace(patchedPod);
-                	*/            	
                 	log.debug("2 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(), t.getPod().getRequest());
             	}
             	
@@ -129,6 +130,7 @@ public class TaskScaler {
 	
 	public void afterWorkflow() {
 		log.debug("afterWorkflow");
+		// TODO collect statistics for evaluation
 	}
 
 	/** After some testing, this was found to be the only reliable way to patch
