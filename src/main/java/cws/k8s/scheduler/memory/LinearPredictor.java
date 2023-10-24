@@ -50,6 +50,7 @@ public class LinearPredictor implements MemoryPredictor {
     @Override
     public void addObservation(Observation o) {
         log.debug("LinearPredictor.addObservation({})", o);
+        TaskScaler.checkObservationSanity(o);
 
         // TODO handle success/failure
         

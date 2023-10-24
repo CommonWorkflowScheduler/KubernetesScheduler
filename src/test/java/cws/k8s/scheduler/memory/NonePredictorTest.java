@@ -24,12 +24,14 @@ import java.math.BigDecimal;
 import org.junit.Test;
 
 import cws.k8s.scheduler.model.Task;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * JUnit 4 Tests for the NonePredictor
  * 
  * @author Florian Friederici
  */
+@Slf4j
 public class NonePredictorTest {
 
     /**
@@ -38,6 +40,7 @@ public class NonePredictorTest {
      */
     @Test
     public void testNoObservationsYet() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         NonePredictor nonePredictor = new NonePredictor();
         Task task = MemoryPredictorTest.createTask("taskName");
         assertNull(nonePredictor.querySuggestion(task));
@@ -49,6 +52,7 @@ public class NonePredictorTest {
      */
     @Test
     public void testOneObservation() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         NonePredictor nonePredictor = new NonePredictor();
         Task task = MemoryPredictorTest.createTask("taskName");
         // @formatter:off
@@ -72,6 +76,7 @@ public class NonePredictorTest {
      */
     @Test
     public void testTwoObservations() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         NonePredictor nonePredictor = new NonePredictor();
         Task task = MemoryPredictorTest.createTask("taskName");
         // @formatter:off
@@ -98,4 +103,5 @@ public class NonePredictorTest {
         nonePredictor.addObservation(observation2);
         assertNull(nonePredictor.querySuggestion(task));
     }
+
 }

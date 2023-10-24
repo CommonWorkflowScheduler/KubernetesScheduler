@@ -17,29 +17,18 @@
 
 package cws.k8s.scheduler.memory;
 
-import cws.k8s.scheduler.model.Task;
-import lombok.extern.slf4j.Slf4j;
-
 /**
- * NonePredictor will not provide predictions at all. Which results in no
- * changes to tasks in consequence. This is useful as baseline.
+ * This is thrown if an observation appears to be invalid
  * 
  * @author Florian Friederici
- *
+ * 
  */
-@Slf4j
-public class NonePredictor implements MemoryPredictor {
+public class ObservationException extends RuntimeException {
 
-    @Override
-    public void addObservation(Observation o) {
-        log.debug("NonePredictor.addObservation({})", o);
-        TaskScaler.checkObservationSanity(o);
-    }
-
-    @Override
-    public String querySuggestion(Task task) {
-        log.debug("NonePredictor.querySuggestion({})", task);
-        return null;
+    private static final long serialVersionUID = 1L;
+    
+    public ObservationException(String message) {
+        super(message);
     }
 
 }

@@ -69,14 +69,13 @@ public class TaskScaler {
     }
 
     /**
-     * After a task was finished, this method shall be called to collect the 
-     * tasks resource usage
+     * After a task was finished, this method shall be called to collect the tasks
+     * resource usage
      * 
      * @param task
      */
     public void afterTaskFinished(Task task) {
         BigDecimal peakRss = getNfPeakRss(task);
-
         // @formatter:off
         log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}",
                 task.getConfig().getTask(), 
@@ -85,14 +84,17 @@ public class TaskScaler {
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
                 peakRss);
-        memoryPredictor.addObservation(new Observation(task.getConfig().getTask(), 
-                task.getConfig().getName(),
-                task.wasSuccessfullyExecuted(), 
-                task.getInputSize(), 
-                task.getPod().getRequest().getRam(), 
-                null, 
-                peakRss));
+        Observation o = Observation.builder()
+                .task( task.getConfig().getTask() )
+                .taskName( task.getConfig().getName() )
+                .success( task.wasSuccessfullyExecuted() )
+                .inputSize( task.getInputSize() )
+                .ramRequest( task.getPod().getRequest().getRam() )
+                .ramLimit( null )
+                .peakRss(peakRss)
+                .build();
         // @formatter:on
+        memoryPredictor.addObservation(o);
     }
 
     public void beforeTasksScheduled(final List<Task> unscheduledTasks) {
@@ -134,11 +136,11 @@ public class TaskScaler {
     }
 
     /**
-     * After some testing, this was found to be the only reliable way to patch 
-     * a pod using the Kubernetes client.
+     * After some testing, this was found to be the only reliable way to patch a pod
+     * using the Kubernetes client.
      * 
-     * It will create a patch for the memory limits and request values and 
-     * submit it to the cluster.
+     * It will create a patch for the memory limits and request values and submit it
+     * to the cluster.
      * 
      * @param t          the task to be patched
      * @param suggestion the value to be set
@@ -173,11 +175,11 @@ public class TaskScaler {
     }
 
     /**
-     * Nextflow writes a trace file, when run with "-with-trace" on command 
-     * line, or "trace.enabled = true" in the configuration file.
+     * Nextflow writes a trace file, when run with "-with-trace" on command line, or
+     * "trace.enabled = true" in the configuration file.
      * 
-     * This method will get the peak resident set size (RSS) from there, and 
-     * return it in BigDecimal format.
+     * This method will get the peak resident set size (RSS) from there, and return
+     * it in BigDecimal format.
      * 
      * @return The peak RSS value that this task has used
      */
@@ -196,6 +198,33 @@ public class TaskScaler {
             log.warn("Cannot read nf .command.trace file in " + nfTracePath, e);
         }
         return BigDecimal.ZERO;
+    }
+
+    /**
+     * This helper checks observations for sanity.
+     * 
+     * @return true is the Observation looks sane, false otherwise
+     */
+    public static void checkObservationSanity(Observation o) {
+        if (o.task == null || o.taskName == null || o.success == null || o.ramRequest == null || o.ramLimit == null
+                || o.peakRss == null) {
+            throw new ObservationException("unexpected null value in observation");
+        }
+        if (o.inputSize < 0) {
+            throw new ObservationException("inputSize may not be negative");
+        }
+        if (o.ramRequest.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ObservationException("ramRequest may not be negative");
+        }
+        if (o.ramLimit.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ObservationException("ramLimit may not be negative");
+        }
+        if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ObservationException("peakRss may not be negative");
+        }
+        if (o.getRamRequest().compareTo(o.ramLimit) > 0) {
+            throw new ObservationException("ramRequest is bigger than ramLimit");
+        }
     }
 
 }

@@ -60,6 +60,8 @@ class ConstantPredictor implements MemoryPredictor {
     @Override
     public void addObservation(Observation o) {
         log.debug("ConstantPredictor.addObservation({})", o);
+        TaskScaler.checkObservationSanity(o);
+
         this.observations.add(o);
 
         if (o.success) {

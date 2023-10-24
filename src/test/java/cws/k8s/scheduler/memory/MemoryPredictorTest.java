@@ -17,9 +17,14 @@
 
 package cws.k8s.scheduler.memory;
 
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import cws.k8s.scheduler.dag.DAG;
@@ -27,6 +32,7 @@ import cws.k8s.scheduler.dag.Process;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.TaskConfig;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Common methods for all MemoryPredictor Tests
@@ -34,6 +40,7 @@ import cws.k8s.scheduler.model.TaskConfig;
  * @author Florian Friederici
  * 
  */
+@Slf4j
 public class MemoryPredictorTest {
 
     /**
@@ -53,6 +60,60 @@ public class MemoryPredictorTest {
         dag.registerVertices(processes);
         Task task = new Task(taskConfig, dag);
         return task;
+    }
+
+    /**
+     * Execute observationSanityCheck on all predictors
+     * 
+     */
+    @Test
+    public void testSanityChecksOnAllPredictors() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+
+        NonePredictor nonePredictor = new NonePredictor();
+        observationSanityCheck(nonePredictor);
+
+        ConstantPredictor constantPredictor = new ConstantPredictor();
+        observationSanityCheck(constantPredictor);
+
+        LinearPredictor linearPredictor = new LinearPredictor();
+        observationSanityCheck(linearPredictor);
+    }
+    
+    /**
+     * A runtime exception is thrown, when the observation values look suspicious.
+     * No suggestion will be available then.
+     */
+    void observationSanityCheck(MemoryPredictor memoryPredictor) {
+        Task task = MemoryPredictorTest.createTask("taskName");
+        // @formatter:off
+        Observation observation1 = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(-1)
+                .ramRequest(BigDecimal.valueOf(0))
+                .ramLimit(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(0))
+                .build();
+        Observation observation2 = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(0)
+                .ramRequest(BigDecimal.valueOf(100l))
+                .ramLimit(BigDecimal.valueOf(99l))
+                .peakRss(BigDecimal.valueOf(0))
+                .build();
+        // @formatter:on
+
+        Exception e1 = assertThrows(ObservationException.class, () -> memoryPredictor.addObservation(observation1));
+        log.info("exception was: {}", e1.getMessage());
+
+        Exception e2 = assertThrows(ObservationException.class, () -> memoryPredictor.addObservation(observation2));
+        log.info("exception was: {}", e2.getMessage());
+        
+        assertNull(memoryPredictor.querySuggestion(task));
     }
 
 }

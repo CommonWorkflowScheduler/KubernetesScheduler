@@ -41,6 +41,7 @@ public class ConstantPredictorTest {
      */
     @Test
     public void testNoObservationsYet() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
         Task task = MemoryPredictorTest.createTask("taskName");
         assertNull(constantPredictor.querySuggestion(task));
@@ -52,6 +53,7 @@ public class ConstantPredictorTest {
      */
     @Test
     public void testOneObservation() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
         Task task = MemoryPredictorTest.createTask("taskName");
         // @formatter:off
@@ -74,6 +76,7 @@ public class ConstantPredictorTest {
      */
     @Test
     public void testTwoObservations() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
         Task task = MemoryPredictorTest.createTask("taskName");
         // @formatter:off
@@ -107,11 +110,12 @@ public class ConstantPredictorTest {
      */
     @Test
     public void testDecreasePredictionAfterOneObservation() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
         Task task = MemoryPredictorTest.createTask("taskName");
         
-        BigDecimal reserved = BigDecimal.valueOf(4*1024*1024*1024);
-        BigDecimal used = BigDecimal.valueOf(2*1024*1024*1024);
+        BigDecimal reserved = BigDecimal.valueOf(4l*1024*1024*1024);
+        BigDecimal used = BigDecimal.valueOf(2l*1024*1024*1024);
         
         // @formatter:off
         Observation observation = Observation.builder()
@@ -136,5 +140,41 @@ public class ConstantPredictorTest {
         assertTrue(suggestion.compareTo(used) > 0);
     }
 
+    /**
+     * The prediction decreases further, if another successful observation is 
+     * made
+     * 
+     */
+    @Test
+    public void testDecreasePredictionAfterTwoObservation() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+        ConstantPredictor constantPredictor = new ConstantPredictor();
+        Task task = MemoryPredictorTest.createTask("taskName");
+        
+        BigDecimal reserved = BigDecimal.valueOf(4l*1024*1024*1024);
+        BigDecimal used = BigDecimal.valueOf(2l*1024*1024*1024);
+        
+        // @formatter:off
+        Observation observation = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(0)
+                .ramRequest(reserved)
+                .ramLimit(reserved)
+                .peakRss(used)
+                .build();
+        // @formatter:on
+        constantPredictor.addObservation(observation);
+        String suggestionStr = constantPredictor.querySuggestion(task);
+        log.debug("suggestion is: {}", suggestionStr);
+        // 1. There is a suggestion at all
+        assertNotNull(suggestionStr);
+        BigDecimal suggestion = new BigDecimal(suggestionStr);
+        // 2. The suggestion is lower than the reserved value was
+        assertTrue(suggestion.compareTo(reserved) < 0);
+        // 3. The suggestion is higher than the used value was
+        assertTrue(suggestion.compareTo(used) > 0);
+    }
 
 }
