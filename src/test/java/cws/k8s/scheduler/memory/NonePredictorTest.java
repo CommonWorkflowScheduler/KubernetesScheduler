@@ -42,7 +42,7 @@ public class NonePredictorTest {
     public void testNoObservationsYet() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         NonePredictor nonePredictor = new NonePredictor();
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         assertNull(nonePredictor.querySuggestion(task));
     }
 
@@ -54,7 +54,7 @@ public class NonePredictorTest {
     public void testOneObservation() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         NonePredictor nonePredictor = new NonePredictor();
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         // @formatter:off
         Observation observation = Observation.builder()
                 .task("taskName")
@@ -78,7 +78,7 @@ public class NonePredictorTest {
     public void testTwoObservations() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         NonePredictor nonePredictor = new NonePredictor();
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         // @formatter:off
         Observation observation1 = Observation.builder()
                 .task("taskName")

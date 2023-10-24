@@ -54,13 +54,14 @@ public class MemoryPredictorTest {
      * 
      * @return the newly created Task
      */
-    static Task createTask(String name) {
+    static Task createTask(String name, long inputSize) {
         TaskConfig taskConfig = new TaskConfig(name);
         ReflectionTestUtils.setField(taskConfig, "name", name + " (1)");
         DAG dag = new DAG();
         List<Vertex> processes = Arrays.asList(new Process(name, 0));
         dag.registerVertices(processes);
         Task task = new Task(taskConfig, dag);
+        ReflectionTestUtils.setField(task, "inputSize", inputSize);
         return task;
     }
 
@@ -87,7 +88,7 @@ public class MemoryPredictorTest {
      * No suggestion will be available then.
      */
     void observationSanityCheck(MemoryPredictor memoryPredictor) {
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         // @formatter:off
         Observation observation1 = Observation.builder()
                 .task("taskName")
@@ -125,7 +126,7 @@ public class MemoryPredictorTest {
      * @return suggestion value
      */
     static BigDecimal createTaskObservationSuccessSuggestion(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         
         // @formatter:off
         Observation observation = Observation.builder()
@@ -158,7 +159,7 @@ public class MemoryPredictorTest {
      * @return suggestion value
      */
     static BigDecimal createTaskObservationFailureSuggestion(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         
         // @formatter:off
         Observation observation = Observation.builder()

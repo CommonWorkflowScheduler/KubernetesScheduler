@@ -18,6 +18,7 @@
 package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * LinearPredictor will use the following strategy:
  * 
- * tbd
+ * If there are less than 2 observations, give no prediction, else:
+ * 
+ * Calculate a line between the point where the peakRss was measured and the
+ * point where the minimal inputSize was measured.
+ * 
+ * Provide predictions based on that line in dependence of inputSize.
  * 
  * @author Florian Friederici
  *
@@ -41,6 +47,13 @@ public class LinearPredictor implements MemoryPredictor {
     
     Map<String, List<Observation>> observations;
     Map<String, BigDecimal> suggestions;
+    
+    BigDecimal slope=null;
+    BigDecimal intercept=null;
+    BigDecimal min_in=null;
+    BigDecimal min_rss=null;
+    BigDecimal max_in=null;
+    BigDecimal max_rss=null;
 
     public LinearPredictor() {
         observations = new HashMap<>();
@@ -54,13 +67,47 @@ public class LinearPredictor implements MemoryPredictor {
 
         // TODO handle success/failure
         
-        if (!observations.containsKey(o.taskName)) {
-            observations.put(o.taskName, new ArrayList<>());
+        if (!observations.containsKey(o.task)) {
+            observations.put(o.task, new ArrayList<>());
         }
+        this.observations.get(o.task).add(o);
         
-        this.observations.get(o.taskName).add(o);
+        recalculateSlopeAndIntercept(o.task);
     }
 
+    private void recalculateSlopeAndIntercept(String taskName) {
+        List<Observation> obs = observations.get(taskName);
+        if (obs.size() < 2) {
+            log.debug("LinearPredictor has less than 2 observations for {}", taskName);
+            return;
+        }
+        
+        // TODO is it not necessary to keep all observation points for this, rewrite!
+        
+        for (Observation o : obs) {
+            if (max_rss == null || o.peakRss.compareTo(max_rss) > 0) {
+                max_rss = o.peakRss;
+                max_in = new BigDecimal(o.inputSize);
+            }
+            if (min_in == null || new BigDecimal(o.inputSize).compareTo(min_in) < 0) {
+                min_rss = o.peakRss;
+                min_in = new BigDecimal(o.inputSize);
+            }
+        }
+        log.debug("found extremes: ({},{}) ({},{})", min_in, min_rss, max_in, max_rss);
+        
+        BigDecimal dx = max_in.subtract(min_in);
+        BigDecimal dy = max_rss.subtract(min_rss);
+        slope = dy.divide(dx);
+        
+        BigDecimal tmp1 = max_in.multiply(min_rss);
+        BigDecimal tmp2 = min_in.multiply(max_rss);
+        BigDecimal tmp3 = tmp1.subtract(tmp2);
+        intercept = tmp3.divide(dx);
+        
+        log.debug("found slope and y-intercept: {} {}", slope, intercept);
+    }
+    
     @Override
     public String querySuggestion(Task task) {
         String taskName = task.getConfig().getTask();
@@ -76,36 +123,9 @@ public class LinearPredictor implements MemoryPredictor {
             log.debug("LinearPredictor has less than 2 observations for {}", taskName);
             return null;
         }
-        
-        BigDecimal min_in=null;
-        BigDecimal min_rss=null;
-        BigDecimal max_in=null;
-        BigDecimal max_rss=null;
-        for (Observation o : obs) {
-            if (max_rss == null || o.peakRss.compareTo(max_rss) > 0) {
-                max_rss = o.peakRss;
-                max_in = new BigDecimal(o.inputSize);
-            }
-            if (min_in == null || new BigDecimal(o.inputSize).compareTo(min_in) < 0) {
-                min_rss = o.peakRss;
-                min_in = new BigDecimal(o.inputSize);
-            }
-        }
-        log.debug("found extremes: ({},{}) ({},{})", min_in, min_rss, max_in, max_rss);
-        
-        BigDecimal dx = max_in.subtract(min_in);
-        BigDecimal dy = max_rss.subtract(min_rss);
-        BigDecimal m = dy.divide(dx);
-        
-        BigDecimal tmp1 = max_in.multiply(min_rss);
-        BigDecimal tmp2 = min_in.multiply(max_rss);
-        BigDecimal tmp3 = tmp1.subtract(tmp2);
-        BigDecimal y0 = tmp3.divide(dx);
-        
-        log.debug("found slope and y-intercept: {} {})", m, y0);
 
-        BigDecimal expectation = m.multiply(new BigDecimal(task.getInputSize())).add(y0);
-        return expectation.toPlainString();
+        BigDecimal prediction = slope.multiply(new BigDecimal(task.getInputSize())).add(intercept);
+        return prediction.setScale(0, RoundingMode.CEILING).toPlainString();
     }
 
 }

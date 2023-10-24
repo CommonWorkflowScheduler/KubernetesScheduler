@@ -43,7 +43,7 @@ public class ConstantPredictorTest {
     public void testNoObservationsYet() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 0l);
         assertNull(constantPredictor.querySuggestion(task));
     }
 
@@ -55,7 +55,7 @@ public class ConstantPredictorTest {
     public void testOneObservation() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 0l);
         // @formatter:off
         Observation observation = Observation.builder()
                 .task("taskName")
@@ -78,7 +78,7 @@ public class ConstantPredictorTest {
     public void testTwoObservations() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 0l);
         // @formatter:off
         Observation observation1 = Observation.builder()
                 .task("taskName")
@@ -112,7 +112,7 @@ public class ConstantPredictorTest {
     public void testDecreasePredictionAfterOneObservation() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         ConstantPredictor constantPredictor = new ConstantPredictor();
-        Task task = MemoryPredictorTest.createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName", 0l);
 
         BigDecimal reserved = BigDecimal.valueOf(4l * 1024 * 1024 * 1024);
         BigDecimal used = BigDecimal.valueOf(2l * 1024 * 1024 * 1024);
