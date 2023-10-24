@@ -47,10 +47,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class ConstantPredictor implements MemoryPredictor {
 
-    Map<String, BigDecimal> suggestions;
+    Map<String, BigDecimal> model;
 
     public ConstantPredictor() {
-        suggestions = new HashMap<>();
+        model = new HashMap<>();
     }
 
     @Override
@@ -60,19 +60,19 @@ class ConstantPredictor implements MemoryPredictor {
 
         if (o.success) {
             // decrease suggestion
-            if (suggestions.containsKey(o.task)) {
-                BigDecimal sug = (o.peakRss.add(suggestions.get(o.task))).divide(new BigDecimal(2));
-                suggestions.replace(o.task, sug.setScale(0, RoundingMode.CEILING));
+            if (model.containsKey(o.task)) {
+                BigDecimal sug = (o.peakRss.add(model.get(o.task))).divide(new BigDecimal(2));
+                model.replace(o.task, sug.setScale(0, RoundingMode.CEILING));
             } else {
-                suggestions.put(o.task, o.peakRss.multiply(new BigDecimal(1.1)).setScale(0, RoundingMode.CEILING));
+                model.put(o.task, o.peakRss.multiply(new BigDecimal(1.1)).setScale(0, RoundingMode.CEILING));
             }
         } else {
             // increase suggestion
-            if (suggestions.containsKey(o.task)) {
-                BigDecimal sug = suggestions.get(o.task).multiply(new BigDecimal(2));
-                suggestions.replace(o.task, sug.setScale(0, RoundingMode.CEILING));
+            if (model.containsKey(o.task)) {
+                BigDecimal sug = model.get(o.task).multiply(new BigDecimal(2));
+                model.replace(o.task, sug.setScale(0, RoundingMode.CEILING));
             } else {
-                suggestions.put(o.task, o.ramRequest.multiply(new BigDecimal(2)).setScale(0, RoundingMode.CEILING));
+                model.put(o.task, o.ramRequest.multiply(new BigDecimal(2)).setScale(0, RoundingMode.CEILING));
             }
         }
 
@@ -82,8 +82,8 @@ class ConstantPredictor implements MemoryPredictor {
     public String queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
         log.debug("ConstantPredictor.queryPrediction({})", taskName);
-        if (suggestions.containsKey(taskName)) {
-            return suggestions.get(taskName).toPlainString();
+        if (model.containsKey(taskName)) {
+            return model.get(taskName).toPlainString();
         } else {
             return null;
         }
