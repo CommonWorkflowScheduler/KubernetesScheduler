@@ -20,17 +20,11 @@ package cws.k8s.scheduler.memory;
 import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
 
 import org.junit.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.model.Task;
-import cws.k8s.scheduler.model.TaskConfig;
-import cws.k8s.scheduler.dag.Process;
-import cws.k8s.scheduler.dag.Vertex;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * JUnit 4 Tests for the ConstantPredictor
@@ -38,27 +32,9 @@ import cws.k8s.scheduler.dag.Vertex;
  * @author Florian Friederici
  * 
  */
+@Slf4j
 public class ConstantPredictorTest {
 
-    /**
-     * Helper that creates tasks for the tests
-     * 
-     * Note: There a two fields that contain the name of the task within the
-     * taskConfig. The first one, taskConfig.task, contains the process name 
-     * from Nextflow. The second one, taskConfig.name, has a number added. 
-     * 
-     * @return the newly created Task
-     */
-    private static Task createTask(String name) {
-        TaskConfig taskConfig = new TaskConfig(name);
-        ReflectionTestUtils.setField(taskConfig, "name", name + " (1)");
-        DAG dag = new DAG();
-        List<Vertex> processes = Arrays.asList(new Process(name,0));
-        dag.registerVertices(processes);
-        Task task = new Task(taskConfig, dag);
-        return task;
-    }
-    
     /**
      * If there are no observations, we cannot get a prediction
      * 
@@ -66,7 +42,7 @@ public class ConstantPredictorTest {
     @Test
     public void testNoObservationsYet() {
         ConstantPredictor constantPredictor = new ConstantPredictor();
-        Task task = createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName");
         assertNull(constantPredictor.querySuggestion(task));
     }
 
@@ -75,9 +51,10 @@ public class ConstantPredictorTest {
      * 
      */
     @Test
-    public void testOneObservations() {
+    public void testOneObservation() {
         ConstantPredictor constantPredictor = new ConstantPredictor();
-        Task task = createTask("taskName");
+        Task task = MemoryPredictorTest.createTask("taskName");
+        // @formatter:off
         Observation observation = Observation.builder()
                 .task("taskName")
                 .taskName("taskName (1)")
@@ -86,9 +63,78 @@ public class ConstantPredictorTest {
                 .ramRequest(BigDecimal.valueOf(0))
                 .ramLimit(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(0))
-                .wasted(BigDecimal.valueOf(0))
                 .build();
+        // @formatter:on
         constantPredictor.addObservation(observation);
         assertNotNull(constantPredictor.querySuggestion(task));
     }
+    
+    /**
+     * If there are two observations, we will also get a suggestion
+     */
+    @Test
+    public void testTwoObservations() {
+        ConstantPredictor constantPredictor = new ConstantPredictor();
+        Task task = MemoryPredictorTest.createTask("taskName");
+        // @formatter:off
+        Observation observation1 = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(0)
+                .ramRequest(BigDecimal.valueOf(0))
+                .ramLimit(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(0))
+                .build();
+        Observation observation2 = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(0)
+                .ramRequest(BigDecimal.valueOf(0))
+                .ramLimit(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(0))
+                .build();
+        // @formatter:on
+        constantPredictor.addObservation(observation1);
+        constantPredictor.addObservation(observation2);
+        assertNotNull(constantPredictor.querySuggestion(task));
+    }
+    
+    /**
+     * The prediction decreases right after one observation
+     * 
+     */
+    @Test
+    public void testDecreasePredictionAfterOneObservation() {
+        ConstantPredictor constantPredictor = new ConstantPredictor();
+        Task task = MemoryPredictorTest.createTask("taskName");
+        
+        BigDecimal reserved = BigDecimal.valueOf(4*1024*1024*1024);
+        BigDecimal used = BigDecimal.valueOf(2*1024*1024*1024);
+        
+        // @formatter:off
+        Observation observation = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(0)
+                .ramRequest(reserved)
+                .ramLimit(reserved)
+                .peakRss(used)
+                .build();
+        // @formatter:on
+        constantPredictor.addObservation(observation);
+        String suggestionStr = constantPredictor.querySuggestion(task);
+        log.debug("suggestion is: {}", suggestionStr);
+        // 1. There is a suggestion at all
+        assertNotNull(suggestionStr);
+        BigDecimal suggestion = new BigDecimal(suggestionStr);
+        // 2. The suggestion is lower than the reserved value was
+        assertTrue(suggestion.compareTo(reserved) < 0);
+        // 3. The suggestion is higher than the used value was
+        assertTrue(suggestion.compareTo(used) > 0);
+    }
+
+
 }

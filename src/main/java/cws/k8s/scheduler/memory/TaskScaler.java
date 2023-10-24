@@ -78,22 +78,20 @@ public class TaskScaler {
         BigDecimal peakRss = getNfPeakRss(task);
 
         // @formatter:off
-        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, wasted={}",
+        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}",
                 task.getConfig().getTask(), 
                 task.getConfig().getName(), 
                 task.wasSuccessfullyExecuted(),
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
-                peakRss,
-                task.getPod().getRequest().getRam().subtract(peakRss));
+                peakRss);
         memoryPredictor.addObservation(new Observation(task.getConfig().getTask(), 
                 task.getConfig().getName(),
                 task.wasSuccessfullyExecuted(), 
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
                 null, 
-                peakRss,
-                task.getPod().getRequest().getRam().subtract(peakRss)));
+                peakRss));
         // @formatter:on
     }
 
