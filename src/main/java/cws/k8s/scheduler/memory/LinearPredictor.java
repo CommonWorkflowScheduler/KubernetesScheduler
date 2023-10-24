@@ -106,6 +106,11 @@ public class LinearPredictor implements MemoryPredictor {
         intercept = tmp3.divide(dx);
         
         log.debug("found slope and y-intercept: {} {}", slope, intercept);
+        
+        if (intercept.compareTo(BigDecimal.ZERO) < 0) {
+            log.warn("intercept negative!");
+            // TODO maybe discard observation?
+        }
     }
     
     @Override
@@ -125,6 +130,10 @@ public class LinearPredictor implements MemoryPredictor {
         }
 
         BigDecimal prediction = slope.multiply(new BigDecimal(task.getInputSize())).add(intercept);
+        if (prediction.compareTo(BigDecimal.ZERO) < 0) {
+            log.warn("prediction would be negative: {}", prediction);
+            return null;
+        }
         return prediction.setScale(0, RoundingMode.CEILING).toPlainString();
     }
 

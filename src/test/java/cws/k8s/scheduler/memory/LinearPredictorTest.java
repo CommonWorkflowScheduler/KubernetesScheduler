@@ -133,5 +133,40 @@ public class LinearPredictorTest {
         BigDecimal suggestion5 = new BigDecimal(suggestionStr5);
         assertTrue(suggestion5.compareTo(suggestion4) > 0);
     }
-    
+
+    /**
+     * Test that predictions cannot get negative
+     */
+    @Test
+    public void testNoNegativePredicitons() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+        LinearPredictor linearPredictor = new LinearPredictor();
+        // @formatter:off
+        Observation observation1 = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(3)
+                .ramRequest(BigDecimal.valueOf(3))
+                .ramLimit(BigDecimal.valueOf(3))
+                .peakRss(BigDecimal.valueOf(3))
+                .build();
+        Observation observation2 = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(2)
+                .ramRequest(BigDecimal.valueOf(1))
+                .ramLimit(BigDecimal.valueOf(1))
+                .peakRss(BigDecimal.valueOf(1))
+                .build();
+        // @formatter:on
+        linearPredictor.addObservation(observation1);
+        linearPredictor.addObservation(observation2);
+
+        Task task1 = MemoryPredictorTest.createTask("taskName", 1);
+        String suggestionStr1 = linearPredictor.querySuggestion(task1);
+        assertNull(suggestionStr1);
+    }
+
 }
