@@ -17,8 +17,10 @@
 
 package cws.k8s.scheduler.memory;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -116,4 +118,69 @@ public class MemoryPredictorTest {
         assertNull(memoryPredictor.querySuggestion(task));
     }
 
+    /**
+     * Helper to create Task and Observation and insert them into memoryPredictor
+     * for successful tasks
+     * 
+     * @return suggestion value
+     */
+    static BigDecimal createTaskObservationSuccessSuggestion(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
+        Task task = MemoryPredictorTest.createTask("taskName");
+        
+        // @formatter:off
+        Observation observation = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(true)
+                .inputSize(0)
+                .ramRequest(reserved)
+                .ramLimit(reserved)
+                .peakRss(used)
+                .build();
+        // @formatter:on
+        memoryPredictor.addObservation(observation);
+        String suggestionStr = memoryPredictor.querySuggestion(task);
+        log.debug("suggestion is: {}", suggestionStr);
+        // 1. There is a suggestion at all
+        assertNotNull(suggestionStr);
+        BigDecimal suggestion = new BigDecimal(suggestionStr);
+        // 2. The suggestion is lower than the reserved value was
+        assertTrue(suggestion.compareTo(reserved) < 0);
+        // 3. The suggestion is higher than the used value was
+        assertTrue(suggestion.compareTo(used) > 0);
+        return suggestion;
+    }
+
+    /**
+     * Helper to create Task and Observation and insert them into memoryPredictor
+     * for unsuccessful tasks
+     * 
+     * @return suggestion value
+     */
+    static BigDecimal createTaskObservationFailureSuggestion(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
+        Task task = MemoryPredictorTest.createTask("taskName");
+        
+        // @formatter:off
+        Observation observation = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(false)
+                .inputSize(0)
+                .ramRequest(reserved)
+                .ramLimit(reserved)
+                .peakRss(used)
+                .build();
+        // @formatter:on
+        memoryPredictor.addObservation(observation);
+        String suggestionStr = memoryPredictor.querySuggestion(task);
+        log.debug("suggestion is: {}", suggestionStr);
+        // 1. There is a suggestion at all
+        assertNotNull(suggestionStr);
+        BigDecimal suggestion = new BigDecimal(suggestionStr);
+        // 2. The suggestion is higher than the reserved value was
+        assertTrue(suggestion.compareTo(reserved) > 0);
+        // 3. The suggestion is higher than the used value was
+        assertTrue(suggestion.compareTo(used) > 0);
+        return suggestion;
+    }
 }
