@@ -19,6 +19,7 @@ package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -32,6 +33,7 @@ import lombok.Data;
  *
  */
 @Data
+@Builder
 public class Observation {
 
     final String task;
