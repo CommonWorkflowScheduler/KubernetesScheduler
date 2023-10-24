@@ -19,10 +19,10 @@ package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +32,10 @@ import lombok.extern.slf4j.Slf4j;
  * LinearPredictor will use the following strategy:
  * 
  * If there are less than 2 observations, give no prediction, else:
+ * Calculate linear regression model and provide predictions.
  * 
- * Calculate a line between the point where the peakRss was measured and the
- * point where the minimal inputSize was measured.
- * 
- * Provide predictions based on that line in dependence of inputSize.
+ * Predictions start with 10% over-provisioning. If tasks fail, this will
+ * increase automatically.
  * 
  * @author Florian Friederici
  *
@@ -45,19 +44,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LinearPredictor implements MemoryPredictor {
     
-    Map<String, List<Observation>> observations;
-    Map<String, BigDecimal> suggestions;
+    Map<String, SimpleRegression> model;
+    Map<String, Double> overprovisioning;
     
-    BigDecimal slope=null;
-    BigDecimal intercept=null;
-    BigDecimal min_in=null;
-    BigDecimal min_rss=null;
-    BigDecimal max_in=null;
-    BigDecimal max_rss=null;
-
     public LinearPredictor() {
-        observations = new HashMap<>();
-        suggestions = new HashMap<>();
+        model = new HashMap<>();
+        overprovisioning = new HashMap<>();
     }
     
     @Override
@@ -65,76 +57,49 @@ public class LinearPredictor implements MemoryPredictor {
         log.debug("LinearPredictor.addObservation({})", o);
         TaskScaler.checkObservationSanity(o);
 
-        // TODO handle success/failure
-        
-        if (!observations.containsKey(o.task)) {
-            observations.put(o.task, new ArrayList<>());
+        if (!overprovisioning.containsKey(o.task)) {
+            overprovisioning.put(o.task, 1.1);
         }
-        this.observations.get(o.task).add(o);
         
-        recalculateSlopeAndIntercept(o.task);
+        if (o.success) {
+            if (!model.containsKey(o.task)) {
+                model.put(o.task, new SimpleRegression());
+            }
+            
+            double x = o.getInputSize();
+            double y = o.getPeakRss().doubleValue();
+            model.get(o.task).addData(x,y);
+        } else {
+            log.debug("overprovisioning value will increase due to task failure");
+            Double old = overprovisioning.get(o.task);
+            overprovisioning.put(o.task, old+0.01);
+        }
     }
 
-    private void recalculateSlopeAndIntercept(String taskName) {
-        List<Observation> obs = observations.get(taskName);
-        if (obs.size() < 2) {
-            log.debug("LinearPredictor has less than 2 observations for {}", taskName);
-            return;
-        }
-        
-        // TODO is it not necessary to keep all observation points for this, rewrite!
-        
-        for (Observation o : obs) {
-            if (max_rss == null || o.peakRss.compareTo(max_rss) > 0) {
-                max_rss = o.peakRss;
-                max_in = new BigDecimal(o.inputSize);
-            }
-            if (min_in == null || new BigDecimal(o.inputSize).compareTo(min_in) < 0) {
-                min_rss = o.peakRss;
-                min_in = new BigDecimal(o.inputSize);
-            }
-        }
-        log.debug("found extremes: ({},{}) ({},{})", min_in, min_rss, max_in, max_rss);
-        
-        BigDecimal dx = max_in.subtract(min_in);
-        BigDecimal dy = max_rss.subtract(min_rss);
-        slope = dy.divide(dx);
-        
-        BigDecimal tmp1 = max_in.multiply(min_rss);
-        BigDecimal tmp2 = min_in.multiply(max_rss);
-        BigDecimal tmp3 = tmp1.subtract(tmp2);
-        intercept = tmp3.divide(dx);
-        
-        log.debug("found slope and y-intercept: {} {}", slope, intercept);
-        
-        if (intercept.compareTo(BigDecimal.ZERO) < 0) {
-            log.warn("intercept negative!");
-            // TODO maybe discard observation?
-        }
-    }
-    
     @Override
     public String querySuggestion(Task task) {
         String taskName = task.getConfig().getTask();
         log.debug("LinearPredictor.querySuggestion({},{})", taskName, task.getInputSize());
 
-        if (!observations.containsKey(taskName)) {
-            log.debug("LinearPredictor has no observations for {}", taskName);
+        if (!model.containsKey(taskName)) {
+            log.debug("LinearPredictor has no model for {}", taskName);
             return null;
         }
         
-        List<Observation> obs = observations.get(taskName);
-        if (obs.size() < 2) {
-            log.debug("LinearPredictor has less than 2 observations for {}", taskName);
+        SimpleRegression simpleRegression = model.get(taskName);
+        double prediction = simpleRegression.predict(task.getInputSize());
+
+        if (Double.isNaN(prediction)) {
+            log.debug("No prediction possible for {}", taskName);
             return null;
         }
 
-        BigDecimal prediction = slope.multiply(new BigDecimal(task.getInputSize())).add(intercept);
-        if (prediction.compareTo(BigDecimal.ZERO) < 0) {
+        if (prediction < 0) {
             log.warn("prediction would be negative: {}", prediction);
             return null;
         }
-        return prediction.setScale(0, RoundingMode.CEILING).toPlainString();
+
+        return new BigDecimal(prediction).multiply(new BigDecimal(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING).toPlainString();
     }
 
 }

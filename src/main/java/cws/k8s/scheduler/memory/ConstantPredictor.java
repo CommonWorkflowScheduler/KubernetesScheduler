@@ -19,9 +19,7 @@ package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import cws.k8s.scheduler.model.Task;
@@ -49,11 +47,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class ConstantPredictor implements MemoryPredictor {
 
-    List<Observation> observations;
     Map<String, BigDecimal> suggestions;
 
     public ConstantPredictor() {
-        observations = new ArrayList<>();
         suggestions = new HashMap<>();
     }
 
@@ -61,8 +57,6 @@ class ConstantPredictor implements MemoryPredictor {
     public void addObservation(Observation o) {
         log.debug("ConstantPredictor.addObservation({})", o);
         TaskScaler.checkObservationSanity(o);
-
-        this.observations.add(o);
 
         if (o.success) {
             // decrease suggestion
