@@ -43,6 +43,5 @@ public class Observation {
     final BigDecimal ramRequest;
     final BigDecimal ramLimit;
     final BigDecimal peakRss;
-    final BigDecimal wasted;
 
 }
