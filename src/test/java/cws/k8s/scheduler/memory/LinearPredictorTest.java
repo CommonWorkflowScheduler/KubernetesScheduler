@@ -43,7 +43,7 @@ public class LinearPredictorTest {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         LinearPredictor linearPredictor = new LinearPredictor();
         Task task = MemoryPredictorTest.createTask("taskName", 1024l);
-        assertNull(linearPredictor.querySuggestion(task));
+        assertNull(linearPredictor.queryPrediction(task));
     }
 
     /**
@@ -66,7 +66,7 @@ public class LinearPredictorTest {
                 .build();
         // @formatter:on
         linearPredictor.addObservation(observation);
-        assertNull(linearPredictor.querySuggestion(task));
+        assertNull(linearPredictor.queryPrediction(task));
     }
 
     /**
@@ -100,34 +100,34 @@ public class LinearPredictorTest {
         linearPredictor.addObservation(observation2);
 
         Task task1 = MemoryPredictorTest.createTask("taskName", 512l);
-        String suggestionStr1 = linearPredictor.querySuggestion(task1);
+        String suggestionStr1 = linearPredictor.queryPrediction(task1);
         assertNotNull(suggestionStr1);
         log.info("suggestion 1 is: {}", suggestionStr1);
         BigDecimal suggestion1 = new BigDecimal(suggestionStr1);
 
         Task task2 = MemoryPredictorTest.createTask("taskName", 1024l);
-        String suggestionStr2 = linearPredictor.querySuggestion(task2);
+        String suggestionStr2 = linearPredictor.queryPrediction(task2);
         assertNotNull(suggestionStr2);
         log.info("suggestion 2 is: {}", suggestionStr2);
         BigDecimal suggestion2 = new BigDecimal(suggestionStr2);
         assertTrue(suggestion2.compareTo(suggestion1) > 0);
 
         Task task3 = MemoryPredictorTest.createTask("taskName", 1536l);
-        String suggestionStr3 = linearPredictor.querySuggestion(task3);
+        String suggestionStr3 = linearPredictor.queryPrediction(task3);
         assertNotNull(suggestionStr3);
         log.info("suggestion 3 is: {}", suggestionStr3);
         BigDecimal suggestion3 = new BigDecimal(suggestionStr3);
         assertTrue(suggestion3.compareTo(suggestion2) > 0);
 
         Task task4 = MemoryPredictorTest.createTask("taskName", 2048l);
-        String suggestionStr4 = linearPredictor.querySuggestion(task4);
+        String suggestionStr4 = linearPredictor.queryPrediction(task4);
         assertNotNull(suggestionStr4);
         log.info("suggestion 4 is: {}", suggestionStr4);
         BigDecimal suggestion4 = new BigDecimal(suggestionStr4);
         assertTrue(suggestion4.compareTo(suggestion3) > 0);
 
         Task task5 = MemoryPredictorTest.createTask("taskName", 4096l);
-        String suggestionStr5 = linearPredictor.querySuggestion(task5);
+        String suggestionStr5 = linearPredictor.queryPrediction(task5);
         assertNotNull(suggestionStr5);
         log.info("suggestion 5 is: {}", suggestionStr5);
         BigDecimal suggestion5 = new BigDecimal(suggestionStr5);
@@ -165,7 +165,7 @@ public class LinearPredictorTest {
         linearPredictor.addObservation(observation2);
 
         Task task1 = MemoryPredictorTest.createTask("taskName", 1);
-        String suggestionStr1 = linearPredictor.querySuggestion(task1);
+        String suggestionStr1 = linearPredictor.queryPrediction(task1);
         assertNull(suggestionStr1);
     }
 

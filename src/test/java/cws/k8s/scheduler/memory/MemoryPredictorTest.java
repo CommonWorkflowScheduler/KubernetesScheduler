@@ -116,16 +116,16 @@ public class MemoryPredictorTest {
         Exception e2 = assertThrows(ObservationException.class, () -> memoryPredictor.addObservation(observation2));
         log.info("exception was: {}", e2.getMessage());
         
-        assertNull(memoryPredictor.querySuggestion(task));
+        assertNull(memoryPredictor.queryPrediction(task));
     }
 
     /**
      * Helper to create Task and Observation and insert them into memoryPredictor
      * for successful tasks
      * 
-     * @return suggestion value
+     * @return prediction value
      */
-    static BigDecimal createTaskObservationSuccessSuggestion(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
+    static BigDecimal createTaskObservationSuccessPrediction(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
         Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         
         // @formatter:off
@@ -140,7 +140,7 @@ public class MemoryPredictorTest {
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(observation);
-        String suggestionStr = memoryPredictor.querySuggestion(task);
+        String suggestionStr = memoryPredictor.queryPrediction(task);
         log.debug("suggestion is: {}", suggestionStr);
         // 1. There is a suggestion at all
         assertNotNull(suggestionStr);
@@ -156,9 +156,9 @@ public class MemoryPredictorTest {
      * Helper to create Task and Observation and insert them into memoryPredictor
      * for unsuccessful tasks
      * 
-     * @return suggestion value
+     * @return prediction value
      */
-    static BigDecimal createTaskObservationFailureSuggestion(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
+    static BigDecimal createTaskObservationFailurePrediction(MemoryPredictor memoryPredictor, BigDecimal reserved, BigDecimal used) {
         Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         
         // @formatter:off
@@ -173,7 +173,7 @@ public class MemoryPredictorTest {
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(observation);
-        String suggestionStr = memoryPredictor.querySuggestion(task);
+        String suggestionStr = memoryPredictor.queryPrediction(task);
         log.debug("suggestion is: {}", suggestionStr);
         // 1. There is a suggestion at all
         assertNotNull(suggestionStr);

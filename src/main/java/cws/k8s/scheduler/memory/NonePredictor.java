@@ -37,8 +37,8 @@ public class NonePredictor implements MemoryPredictor {
     }
 
     @Override
-    public String querySuggestion(Task task) {
-        log.debug("NonePredictor.querySuggestion({})", task);
+    public String queryPrediction(Task task) {
+        log.debug("NonePredictor.queryPrediction({})", task);
         return null;
     }
 

@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NonePredictorTest {
 
     /**
-     * NonePredictor shall never give a suggestion. Test 1: when no observations
+     * NonePredictor shall never give a prediction. Test 1: when no observations
      * were inserted
      */
     @Test
@@ -43,11 +43,11 @@ public class NonePredictorTest {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         NonePredictor nonePredictor = new NonePredictor();
         Task task = MemoryPredictorTest.createTask("taskName", 1024l);
-        assertNull(nonePredictor.querySuggestion(task));
+        assertNull(nonePredictor.queryPrediction(task));
     }
 
     /**
-     * NonePredictor shall never give a suggestion. Test 2: when one observation was
+     * NonePredictor shall never give a prediction. Test 2: when one observation was
      * inserted
      */
     @Test
@@ -67,11 +67,11 @@ public class NonePredictorTest {
                 .build();
         // @formatter:on
         nonePredictor.addObservation(observation);
-        assertNull(nonePredictor.querySuggestion(task));
+        assertNull(nonePredictor.queryPrediction(task));
     }
 
     /**
-     * NonePredictor shall never give a suggestion. Test 3: when two observations
+     * NonePredictor shall never give a prediction. Test 3: when two observations
      * were inserted
      */
     @Test
@@ -101,7 +101,7 @@ public class NonePredictorTest {
         // @formatter:on
         nonePredictor.addObservation(observation1);
         nonePredictor.addObservation(observation2);
-        assertNull(nonePredictor.querySuggestion(task));
+        assertNull(nonePredictor.queryPrediction(task));
     }
 
 }

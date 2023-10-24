@@ -79,9 +79,9 @@ class ConstantPredictor implements MemoryPredictor {
     }
 
     @Override
-    public String querySuggestion(Task task) {
+    public String queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
-        log.debug("ConstantPredictor.querySuggestion({})", taskName);
+        log.debug("ConstantPredictor.queryPrediction({})", taskName);
         if (suggestions.containsKey(taskName)) {
             return suggestions.get(taskName).toPlainString();
         } else {

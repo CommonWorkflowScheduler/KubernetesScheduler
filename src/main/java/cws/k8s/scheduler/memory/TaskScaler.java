@@ -84,6 +84,7 @@ public class TaskScaler {
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
                 peakRss);
+        // TODO Task does not provide Limits value yet
         Observation o = Observation.builder()
                 .task( task.getConfig().getTask() )
                 .taskName( task.getConfig().getName() )
@@ -105,7 +106,7 @@ public class TaskScaler {
                         t.getPod().getRequest());
 
                 // query suggestion
-                String suggestion = memoryPredictor.querySuggestion(t);
+                String suggestion = memoryPredictor.queryPrediction(t);
                 if (suggestion != null) {
                     // 1. patch Kubernetes value
                     patchTask(t, suggestion);

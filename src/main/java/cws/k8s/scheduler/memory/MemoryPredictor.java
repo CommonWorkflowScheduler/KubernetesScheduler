@@ -19,17 +19,26 @@ package cws.k8s.scheduler.memory;
 
 import cws.k8s.scheduler.model.Task;
 
+// @formatter:off
 /**
  * The MemoryPredictor has two important interfaces:
  * 
- * 1) addObservation() - "add a new observation" after a workflow task is
- * finished, the observation result will be collected in the MemoryPredictor 2)
- * querySuggestion() - "ask for a suggestion" at any time, the MemoryPredictor
- * can be asked what its guess is on the resource requirement of a task
+ * 1) addObservation() 
+ *    - "add a new observation" after a workflow task is finished, the 
+ *    observation result will be collected in the MemoryPredictor 
+ * 
+ * 2) queryPrediction() 
+ *    - "ask for a suggestion" at any time, the MemoryPredictor can be asked 
+ *    what its guess is on the resource requirement of a task
+ * 
+ * Different strategies can be tried and exchanged easily, they just have to 
+ * implement those two interfaces. See ConstantPredictor and LinearPredictor
+ * for concrete strategies.
  * 
  * @author Florian Friederici
  *
  */
+// @formatter:on
 interface MemoryPredictor {
 
     /**
@@ -47,6 +56,6 @@ interface MemoryPredictor {
      * @param task the task to get a suggestion form
      * @return null, if no suggestion possible, otherwise the value to be used
      */
-    String querySuggestion(Task task);
+    String queryPrediction(Task task);
 
 }

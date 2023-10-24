@@ -77,9 +77,9 @@ public class LinearPredictor implements MemoryPredictor {
     }
 
     @Override
-    public String querySuggestion(Task task) {
+    public String queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
-        log.debug("LinearPredictor.querySuggestion({},{})", taskName, task.getInputSize());
+        log.debug("LinearPredictor.queryPrediction({},{})", taskName, task.getInputSize());
 
         if (!model.containsKey(taskName)) {
             log.debug("LinearPredictor has no model for {}", taskName);
