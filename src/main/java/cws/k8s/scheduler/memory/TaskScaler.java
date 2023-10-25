@@ -43,9 +43,11 @@ public class TaskScaler {
 
     final KubernetesClient client;
     final MemoryPredictor memoryPredictor;
+    final Statistics statistics;
 
     public TaskScaler(KubernetesClient client) {
         this.client = client;
+        this.statistics = new Statistics();
         String predictor = System.getenv("MEMORY_PREDICTOR");
         if (predictor == null) {
             predictor = "none";
@@ -84,18 +86,19 @@ public class TaskScaler {
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
                 peakRss);
-        // TODO Task does not provide Limits value yet
+        // FIXME Task does not provide Limits value yet, therefore we set it to the Requests value
         Observation o = Observation.builder()
                 .task( task.getConfig().getTask() )
                 .taskName( task.getConfig().getName() )
                 .success( task.wasSuccessfullyExecuted() )
                 .inputSize( task.getInputSize() )
                 .ramRequest( task.getPod().getRequest().getRam() )
-                .ramLimit( null )
+                .ramLimit( task.getPod().getRequest().getRam() )
                 .peakRss(peakRss)
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(o);
+        statistics.addObservation(o);
     }
 
     public synchronized void beforeTasksScheduled(final List<Task> unscheduledTasks) {
@@ -131,7 +134,7 @@ public class TaskScaler {
 
     public void afterWorkflow() {
         log.debug("afterWorkflow");
-        // TODO collect statistics for evaluation
+        statistics.summary();
     }
 
     /**
