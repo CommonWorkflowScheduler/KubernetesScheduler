@@ -494,6 +494,7 @@ public abstract class Scheduler implements Informable {
     public void close(){
         watcher.close();
         schedulingThread.interrupt();
+        finishThread.interrupt();
         this.close = true;
     }
 
