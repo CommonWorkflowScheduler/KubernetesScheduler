@@ -61,7 +61,7 @@ public class LinearPredictor implements MemoryPredictor {
             overprovisioning.put(o.task, 1.1);
         }
         
-        if (o.success) {
+        if (Boolean.TRUE.equals(o.success)) {
             if (!model.containsKey(o.task)) {
                 model.put(o.task, new SimpleRegression());
             }
@@ -99,7 +99,7 @@ public class LinearPredictor implements MemoryPredictor {
             return null;
         }
 
-        return new BigDecimal(prediction).multiply(new BigDecimal(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING).toPlainString();
+        return BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING).toPlainString();
     }
 
 }

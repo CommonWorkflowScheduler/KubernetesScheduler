@@ -58,13 +58,13 @@ class ConstantPredictor implements MemoryPredictor {
         log.debug("ConstantPredictor.addObservation({})", o);
         TaskScaler.checkObservationSanity(o);
 
-        if (o.success) {
+        if (Boolean.TRUE.equals(o.success)) {
             // decrease suggestion
             if (model.containsKey(o.task)) {
                 BigDecimal sug = (o.peakRss.add(model.get(o.task))).divide(new BigDecimal(2));
                 model.replace(o.task, sug.setScale(0, RoundingMode.CEILING));
             } else {
-                model.put(o.task, o.peakRss.multiply(new BigDecimal(1.1)).setScale(0, RoundingMode.CEILING));
+                model.put(o.task, o.peakRss.multiply(new BigDecimal("1.1")).setScale(0, RoundingMode.CEILING));
             }
         } else {
             // increase suggestion

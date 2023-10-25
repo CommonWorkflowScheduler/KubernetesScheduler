@@ -98,37 +98,35 @@ public class TaskScaler {
         memoryPredictor.addObservation(o);
     }
 
-    public void beforeTasksScheduled(final List<Task> unscheduledTasks) {
-        synchronized (unscheduledTasks) {
-            log.debug("--- unscheduledTasks BEGIN ---");
-            for (Task t : unscheduledTasks) {
-                log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
-                        t.getPod().getRequest());
+    public synchronized void beforeTasksScheduled(final List<Task> unscheduledTasks) {
+        log.debug("--- unscheduledTasks BEGIN ---");
+        for (Task t : unscheduledTasks) {
+            log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
+                    t.getPod().getRequest());
 
-                // query suggestion
-                String suggestion = memoryPredictor.queryPrediction(t);
-                if (suggestion != null) {
-                    // 1. patch Kubernetes value
-                    patchTask(t, suggestion);
+            // query suggestion
+            String suggestion = memoryPredictor.queryPrediction(t);
+            if (suggestion != null) {
+                // 1. patch Kubernetes value
+                patchTask(t, suggestion);
 
-                    // 2. patch CWS value
-                    List<Container> l = t.getPod().getSpec().getContainers();
-                    for (Container c : l) {
-                        ResourceRequirements req = c.getResources();
-                        Map<String, Quantity> limits = req.getLimits();
-                        limits.replace("memory", new Quantity(suggestion));
-                        Map<String, Quantity> requests = req.getRequests();
-                        requests.replace("memory", new Quantity(suggestion));
-                        log.debug("container: {}", req);
-                    }
-
-                    log.debug("2 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
-                            t.getPod().getRequest());
+                // 2. patch CWS value
+                List<Container> l = t.getPod().getSpec().getContainers();
+                for (Container c : l) {
+                    ResourceRequirements req = c.getResources();
+                    Map<String, Quantity> limits = req.getLimits();
+                    limits.replace("memory", new Quantity(suggestion));
+                    Map<String, Quantity> requests = req.getRequests();
+                    requests.replace("memory", new Quantity(suggestion));
+                    log.debug("container: {}", req);
                 }
 
+                log.debug("2 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
+                        t.getPod().getRequest());
             }
-            log.debug("--- unscheduledTasks END ---");
+
         }
+        log.debug("--- unscheduledTasks END ---");
     }
 
     public void afterWorkflow() {
@@ -166,10 +164,10 @@ public class TaskScaler {
                 + "          memory: REQUEST\n"
                 + "\n";
         // @formatter:on
-        patch = patch.replaceAll("NAMESPACE", namespace);
-        patch = patch.replaceAll("PODNAME", podname);
-        patch = patch.replaceAll("LIMIT", suggestion);
-        patch = patch.replaceAll("REQUEST", suggestion);
+        patch = patch.replace("NAMESPACE", namespace);
+        patch = patch.replace("PODNAME", podname);
+        patch = patch.replace("LIMIT", suggestion);
+        patch = patch.replace("REQUEST", suggestion);
         log.debug(patch);
 
         client.pods().inNamespace(namespace).withName(podname).patch(patch);
