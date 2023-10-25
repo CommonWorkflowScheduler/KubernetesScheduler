@@ -169,6 +169,13 @@ public abstract class Scheduler implements Informable {
     void podEventReceived(Watcher.Action action, Pod pod){}
 
     void onPodTermination( PodWithAge pod ){
+        // check if task already was processed
+        Task task = getTaskByPod(pod);
+        if (task.getState().getState() == State.FINISHED || task.getState().getState() == State.FINISHED_WITH_ERROR) {
+            log.debug("already finished, nothing to do!");
+            return;
+        }
+
         Task t = changeStateOfTask( pod, State.PROCESSING_FINISHED );
 
         //If null, task was already changed
