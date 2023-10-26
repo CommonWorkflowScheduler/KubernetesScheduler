@@ -63,6 +63,11 @@ public class TaskScaler {
             this.memoryPredictor = new LinearPredictor();
             break;
 
+        case "combi":
+            log.debug("using CombiPredictor");
+            this.memoryPredictor = new CombiPredictor();
+            break;
+
         case "none":
         default:
             log.debug("using NonePredictor");
