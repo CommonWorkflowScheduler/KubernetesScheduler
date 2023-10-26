@@ -91,7 +91,6 @@ public class TaskScaler {
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
                 peakRss);
-        // FIXME Task does not provide Limits value yet, therefore we set it to the Requests value
         Observation o = Observation.builder()
                 .task( task.getConfig().getTask() )
                 .taskName( task.getConfig().getName() )
