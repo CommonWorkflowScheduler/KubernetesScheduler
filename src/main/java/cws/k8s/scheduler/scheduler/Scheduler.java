@@ -6,9 +6,6 @@ import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
-import io.fabric8.kubernetes.api.model.Binding;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
@@ -380,21 +377,7 @@ public abstract class Scheduler implements Informable {
 
         log.info ( "Assign pod: " + pod.getMetadata().getName() + " to node: " + alignment.node.getMetadata().getName() );
 
-        Binding b1 = new Binding();
-
-        ObjectMeta om = new ObjectMeta();
-        om.setName(pod.getMetadata().getName());
-        om.setNamespace(pod.getMetadata().getNamespace());
-        b1.setMetadata(om);
-
-        ObjectReference objectReference = new ObjectReference();
-        objectReference.setApiVersion("v1");
-        objectReference.setKind("Node");
-        objectReference.setName(alignment.node.getMetadata().getName());
-
-        b1.setTarget(objectReference);
-
-        client.bindings().create(b1);
+        client.assignPodToNode( pod, alignment.node.getMetadata().getName() );
 
         pod.getSpec().setNodeName( alignment.node.getMetadata().getName() );
         log.info ( "Assigned pod to:" + pod.getSpec().getNodeName());
@@ -428,14 +411,16 @@ public abstract class Scheduler implements Informable {
     /**
      * @return returns the task, if the state was changed
      */
-    Task changeStateOfTask(Pod pod, State state){
-        Task t = getTaskByPod( pod );
-        if( t != null ){
-            synchronized ( t.getState() ){
-                if( t.getState().getState() != state ){
-                    t.getState().setState( state );
+    Task changeStateOfTask(Pod pod, State state) {
+        Task t = getTaskByPod(pod);
+        if (t != null) {
+            synchronized (t.getState()) {
+                if (t.getState().getState().level < state.level) {
+                    t.getState().setState(state);
                     return t;
                 } else {
+                    log.debug("Task {} was already in state {} and cannot be changed to {}", t.getConfig().getRunName(),
+                            t.getState().getState(), state);
                     return null;
                 }
             }
@@ -507,6 +492,7 @@ public abstract class Scheduler implements Informable {
     public void close(){
         watcher.close();
         schedulingThread.interrupt();
+        finishThread.interrupt();
         this.close = true;
         
         // save statistics after the workflow is completed

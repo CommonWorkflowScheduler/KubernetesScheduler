@@ -2,11 +2,9 @@ package cws.k8s.scheduler.client;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
-import io.fabric8.kubernetes.api.model.ContainerStatus;
-import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +65,40 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     public int getNumberOfNodes(){
         return this.nodeHolder.size();
+    }
+
+    public void assignPodToNode( PodWithAge pod, String node ) {
+        for ( int i = 0; i < 5; i++ ) {
+            try {
+                Thread.sleep( 1000L * (int) (Math.pow( 2, i ) - 1) );
+            } catch ( InterruptedException e ) {
+                Thread.currentThread().interrupt();
+            }
+            try {
+                final NodeWithAlloc nodeWithAlloc = nodeHolder.get( node );
+                final Binding build = new BindingBuilder()
+                        .withNewMetadata().withName( pod.getName() ).endMetadata()
+                        .withNewTarget()
+                        .withKind( nodeWithAlloc.getKind() )
+                        .withApiVersion( nodeWithAlloc.getApiVersion() )
+                        .withName( node ).endTarget()
+                        .build();
+                bindings()
+                        .inNamespace( pod.getMetadata().getNamespace() )
+                        .resource( build )
+                        .create();
+                return;
+            } catch ( KubernetesClientException e ) {
+                if ( e.getStatus().getMessage().toLowerCase().contains( "is already assigned to node" ) ) {
+                    // If node is already assigned, ignore (happens if binding timeouts)
+                    return;
+                }
+                e.printStackTrace();
+                if ( i == 4 ) {
+                    throw e;
+                }
+            }
+        }
     }
 
     public List<NodeWithAlloc> getAllNodes(){
