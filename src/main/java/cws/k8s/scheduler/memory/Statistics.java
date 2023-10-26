@@ -17,6 +17,10 @@
 
 package cws.k8s.scheduler.memory;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
@@ -39,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class Statistics {
+    
+    String baseDir;
 
     boolean active = true;
     List<Observation> observations = new ArrayList<>();
@@ -62,10 +68,16 @@ public class Statistics {
     }
 
     /**
-     * Save all Observations into csv file
+     * Save all Observations into csv file in baseDir
      * 
+     * @param timestamp time stamp for the file name
+     * @return the csv as string for logging
      */
-    String exportCsv() {
+    String exportCsv(long timestamp) {
+        if (!active) {
+            log.info("Statistics disabled by environment variable");
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("task,taskName,success,inputSize,ramRequest,peakRss\n");
         for (Observation o : observations) {
@@ -82,20 +94,39 @@ public class Statistics {
             sb.append(o.getPeakRss().toPlainString());
             sb.append("\n");
         }
-        return sb.toString();
+        String csv = sb.toString();
+        
+        if (baseDir != null) {
+            Path path = Paths.get(baseDir + "TaskScaler_" + timestamp + ".csv");
+            log.debug("save csv to: {}", path);
+            try {
+                Files.write(path, csv.getBytes());
+            } catch (IOException e) {
+                log.warn("could not save statistics csv to {}", path);
+            }
+        } else {
+            log.debug("baseDir was not set, could not save csv file");
+        }
+         
+        return csv;
     }
-    
+
     /**
-     * Print summary to log.info
+     * Save summary to file in baseDir
      * 
+     * @param timestamp time stamp for the filename
+     * @return the summary as string for logging
      */
-    void summary() {
+    String summary(long timestamp) {
         if (!active) {
             log.info("Statistics disabled by environment variable");
-            return;
+            return "";
         }
-        log.info("~~~ Statistics ~~~");
-        log.info(" total observations collected: {}", observations.size());
+        StringBuilder sb = new StringBuilder();
+        sb.append("~~~ Statistics ~~~\n");
+        sb.append(" total observations collected: ");
+        sb.append(observations.size());
+        sb.append("\n");
 
         Set<String> tasks = new HashSet<>();
         Map<String, Set<String>> taskMap = new HashMap<>();
@@ -121,34 +152,58 @@ public class Statistics {
             }
         }
 
-        log.info(" different tasks: {}", tasks.size());
+        sb.append(" different tasks: ");
+        sb.append(tasks.size());
+        sb.append("\n");
         
         for (String task : tasks) {
             TaskSummary ts = taskSummaryMap.get(task);
-            log.info(" -- task: '{}' --", task);
-            log.info("  named instances of '{}' seen: {}", task, taskMap.get(task).size());
-            log.info("  success count: {}", ts.successCount);
-            log.info("  failure count: {}", ts.failCount);
+            sb.append(" -- task: '");
+            sb.append(task);
+            sb.append("' --\n");
+            sb.append("  named instances of '");
+            sb.append(task);
+            sb.append("' seen: ");
+            sb.append(taskMap.get(task).size());
+            sb.append("\n");
+            sb.append("  success count: ");
+            sb.append(ts.successCount);
+            sb.append("\n");
+            sb.append("  failure count: ");
+            sb.append(ts.failCount);
+            sb.append("\n");
             // @formatter:off
-            String fstr = "%.3e";
-            log.info("  inputSize : cnt {}, avr {}, min {}, max {}", 
-                    ts.inputSizeStatistics.getCount(), 
-                    String.format("%.1f",ts.inputSizeStatistics.getAverage()),
-                    String.format("%d",ts.inputSizeStatistics.getMin()),
-                    String.format("%d",ts.inputSizeStatistics.getMax()));
-            log.info("  ramRequest: cnt {}, avr {}, min {}, max {}", 
-                    ts.ramRequestStatitistics.getCount(), 
-                    String.format(fstr,ts.ramRequestStatitistics.getAverage()),
-                    String.format(fstr,ts.ramRequestStatitistics.getMin()),
-                    String.format(fstr,ts.ramRequestStatitistics.getMax()));
-            log.info("  peakRss   : cnt {}, avr {}, min {}, max {}", 
-                    ts.peakRssStatistics.getCount(), 
-                    String.format(fstr,ts.peakRssStatistics.getAverage()),
-                    String.format(fstr,ts.peakRssStatistics.getMin()),
-                    String.format(fstr,ts.peakRssStatistics.getMax()));
+            sb.append(String.format("inputSize  : cnt %d, avr %.1f, min %d, max %d%n",
+                    ts.inputSizeStatistics.getCount(),
+                    ts.inputSizeStatistics.getAverage(),
+                    ts.inputSizeStatistics.getMin(),
+                    ts.inputSizeStatistics.getMax()) );
+            sb.append(String.format("ramRequest : cnt %d, avr %.3e, min %.3e, max %.3e%n",
+                    ts.ramRequestStatitistics.getCount(),
+                    ts.ramRequestStatitistics.getAverage(),
+                    ts.ramRequestStatitistics.getMin(),
+                    ts.ramRequestStatitistics.getMax()) );
+            sb.append(String.format("peakRss    : cnt %d, avr %.3e, min %.3e, max %.3e%n",
+                    ts.peakRssStatistics.getCount(),
+                    ts.peakRssStatistics.getAverage(),
+                    ts.peakRssStatistics.getMin(),
+                    ts.peakRssStatistics.getMax()) );
             // @formatter:on
-
         }
+
+        String summary = sb.toString();
+        if (baseDir != null) {
+            Path path = Paths.get(baseDir + "TaskScaler_" + timestamp + ".txt");
+            log.debug("save summary to: {}", path);
+            try {
+                Files.write(path, summary.getBytes());
+            } catch (IOException e) {
+                log.warn("could not save statistics summary to {}", path);
+            }
+        } else {
+            log.debug("baseDir was not set, could not save summary file");
+        }
+        return summary;
     }
 
     @Data
