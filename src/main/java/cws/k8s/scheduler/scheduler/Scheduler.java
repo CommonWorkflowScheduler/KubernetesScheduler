@@ -422,14 +422,16 @@ public abstract class Scheduler implements Informable {
     /**
      * @return returns the task, if the state was changed
      */
-    Task changeStateOfTask(Pod pod, State state){
-        Task t = getTaskByPod( pod );
-        if( t != null ){
-            synchronized ( t.getState() ){
-                if( t.getState().getState() != state ){
-                    t.getState().setState( state );
+    Task changeStateOfTask(Pod pod, State state) {
+        Task t = getTaskByPod(pod);
+        if (t != null) {
+            synchronized (t.getState()) {
+                if (t.getState().getState().level < state.level) {
+                    t.getState().setState(state);
                     return t;
                 } else {
+                    log.warn("Task {} was already in state {} and cannot be changed to {}", t.getConfig().getRunName(),
+                            t.getState().getState(), state);
                     return null;
                 }
             }
