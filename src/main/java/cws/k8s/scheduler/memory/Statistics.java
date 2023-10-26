@@ -62,6 +62,30 @@ public class Statistics {
     }
 
     /**
+     * Save all Observations into csv file
+     * 
+     */
+    String exportCsv() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("task,taskName,success,inputSize,ramRequest,peakRss\n");
+        for (Observation o : observations) {
+            sb.append(o.getTask());
+            sb.append(",");
+            sb.append(o.getTaskName());
+            sb.append(",");
+            sb.append(o.getSuccess());
+            sb.append(",");
+            sb.append(o.getInputSize());
+            sb.append(",");
+            sb.append(o.getRamRequest().toPlainString());
+            sb.append(",");
+            sb.append(o.getPeakRss().toPlainString());
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+    
+    /**
      * Print summary to log.info
      * 
      */
