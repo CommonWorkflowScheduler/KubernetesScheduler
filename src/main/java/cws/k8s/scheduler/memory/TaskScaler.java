@@ -93,7 +93,6 @@ public class TaskScaler {
                 .success( task.wasSuccessfullyExecuted() )
                 .inputSize( task.getInputSize() )
                 .ramRequest( task.getPod().getRequest().getRam() )
-                .ramLimit( task.getPod().getRequest().getRam() )
                 .peakRss(peakRss)
                 .build();
         // @formatter:on
@@ -208,8 +207,7 @@ public class TaskScaler {
      * @return true is the Observation looks sane, false otherwise
      */
     public static void checkObservationSanity(Observation o) {
-        if (o.task == null || o.taskName == null || o.success == null || o.ramRequest == null || o.ramLimit == null
-                || o.peakRss == null) {
+        if (o.task == null || o.taskName == null || o.success == null || o.ramRequest == null || o.peakRss == null) {
             throw new ObservationException("unexpected null value in observation");
         }
         if (o.inputSize < 0) {
@@ -218,14 +216,8 @@ public class TaskScaler {
         if (o.ramRequest.compareTo(BigDecimal.ZERO) < 0) {
             throw new ObservationException("ramRequest may not be negative");
         }
-        if (o.ramLimit.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ObservationException("ramLimit may not be negative");
-        }
         if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
             throw new ObservationException("peakRss may not be negative");
-        }
-        if (o.getRamRequest().compareTo(o.ramLimit) > 0) {
-            throw new ObservationException("ramRequest is bigger than ramLimit");
         }
     }
 

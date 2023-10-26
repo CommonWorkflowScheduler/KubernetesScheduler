@@ -96,25 +96,12 @@ public class MemoryPredictorTest {
                 .success(true)
                 .inputSize(-1)
                 .ramRequest(BigDecimal.valueOf(0))
-                .ramLimit(BigDecimal.valueOf(0))
-                .peakRss(BigDecimal.valueOf(0))
-                .build();
-        Observation observation2 = Observation.builder()
-                .task("taskName")
-                .taskName("taskName (1)")
-                .success(true)
-                .inputSize(0)
-                .ramRequest(BigDecimal.valueOf(100l))
-                .ramLimit(BigDecimal.valueOf(99l))
                 .peakRss(BigDecimal.valueOf(0))
                 .build();
         // @formatter:on
 
         Exception e1 = assertThrows(ObservationException.class, () -> memoryPredictor.addObservation(observation1));
         log.info("exception was: {}", e1.getMessage());
-
-        Exception e2 = assertThrows(ObservationException.class, () -> memoryPredictor.addObservation(observation2));
-        log.info("exception was: {}", e2.getMessage());
         
         assertNull(memoryPredictor.queryPrediction(task));
     }
@@ -135,7 +122,6 @@ public class MemoryPredictorTest {
                 .success(true)
                 .inputSize(0)
                 .ramRequest(reserved)
-                .ramLimit(reserved)
                 .peakRss(used)
                 .build();
         // @formatter:on
@@ -168,7 +154,6 @@ public class MemoryPredictorTest {
                 .success(false)
                 .inputSize(0)
                 .ramRequest(reserved)
-                .ramLimit(reserved)
                 .peakRss(used)
                 .build();
         // @formatter:on

@@ -41,7 +41,6 @@ public class Observation {
     final Boolean success;
     final long inputSize;
     final BigDecimal ramRequest;
-    final BigDecimal ramLimit;
     final BigDecimal peakRss;
 
 }

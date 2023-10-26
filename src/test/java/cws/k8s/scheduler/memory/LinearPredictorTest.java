@@ -61,7 +61,6 @@ public class LinearPredictorTest {
                 .success(true)
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
-                .ramLimit(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(0))
                 .build();
         // @formatter:on
@@ -83,7 +82,6 @@ public class LinearPredictorTest {
                 .success(true)
                 .inputSize(1024l)
                 .ramRequest(BigDecimal.valueOf(4l*1024*1024*1024))
-                .ramLimit(BigDecimal.valueOf(4l*1024*1024*1024))
                 .peakRss(BigDecimal.valueOf(1l*1024*1024*1024))
                 .build();
         Observation observation2 = Observation.builder()
@@ -92,7 +90,6 @@ public class LinearPredictorTest {
                 .success(true)
                 .inputSize(2048)
                 .ramRequest(BigDecimal.valueOf(4l*1024*1024*1024))
-                .ramLimit(BigDecimal.valueOf(4l*1024*1024*1024))
                 .peakRss(BigDecimal.valueOf(2l*1024*1024*1024))
                 .build();
         // @formatter:on
@@ -148,7 +145,6 @@ public class LinearPredictorTest {
                 .success(true)
                 .inputSize(3)
                 .ramRequest(BigDecimal.valueOf(3))
-                .ramLimit(BigDecimal.valueOf(3))
                 .peakRss(BigDecimal.valueOf(3))
                 .build();
         Observation observation2 = Observation.builder()
@@ -157,7 +153,6 @@ public class LinearPredictorTest {
                 .success(true)
                 .inputSize(2)
                 .ramRequest(BigDecimal.valueOf(1))
-                .ramLimit(BigDecimal.valueOf(1))
                 .peakRss(BigDecimal.valueOf(1))
                 .build();
         // @formatter:on

@@ -91,10 +91,9 @@ public class Statistics {
                 ts.inputSizeStatistics.accept(o.inputSize);
                 // TODO check if BigDecimal is bigger than double can handle
                 ts.ramRequestStatitistics.accept(o.ramRequest.doubleValue());
-                ts.ramLimitStatistics.accept(o.ramLimit.doubleValue());
                 ts.peakRssStatistics.accept(o.peakRss.doubleValue());
             } else {
-                // TODO there is currently no reliable way to count the unique failures
+                ts.failCount++;
             }
         }
 
@@ -103,9 +102,9 @@ public class Statistics {
         for (String task : tasks) {
             TaskSummary ts = taskSummaryMap.get(task);
             log.info(" -- task: '{}' --", task);
-            // TODO this might be to low, need a realiable way to suppress double observations
-            log.info("  approximatly unique observations for '{}' collected: {}", task, taskMap.get(task).size());
+            log.info("  named instances of '{}' seen: {}", task, taskMap.get(task).size());
             log.info("  success count: {}", ts.successCount);
+            log.info("  failure count: {}", ts.failCount);
             // @formatter:off
             String fstr = "%.3e";
             log.info("  inputSize : cnt {}, avr {}, min {}, max {}", 
@@ -118,11 +117,6 @@ public class Statistics {
                     String.format(fstr,ts.ramRequestStatitistics.getAverage()),
                     String.format(fstr,ts.ramRequestStatitistics.getMin()),
                     String.format(fstr,ts.ramRequestStatitistics.getMax()));
-            log.info("  ramLimit  : cnt {}, avr {}, min {}, max {}", 
-                    ts.ramLimitStatistics.getCount(), 
-                    String.format(fstr,ts.ramLimitStatistics.getAverage()),
-                    String.format(fstr,ts.ramLimitStatistics.getMin()),
-                    String.format(fstr,ts.ramLimitStatistics.getMax()));
             log.info("  peakRss   : cnt {}, avr {}, min {}, max {}", 
                     ts.peakRssStatistics.getCount(), 
                     String.format(fstr,ts.peakRssStatistics.getAverage()),
@@ -140,7 +134,6 @@ public class Statistics {
         int failCount = 0;
         LongSummaryStatistics inputSizeStatistics = new LongSummaryStatistics();
         DoubleSummaryStatistics ramRequestStatitistics = new DoubleSummaryStatistics();
-        DoubleSummaryStatistics ramLimitStatistics = new DoubleSummaryStatistics();
         DoubleSummaryStatistics peakRssStatistics = new DoubleSummaryStatistics();
     }
 }
