@@ -55,11 +55,16 @@ public class NfTrace {
      * The Linux kernel provides the value in KiB, we multiply with 1024 to have
      * it in byte, like the other values we use.
      * 
-     * @return The peak RSS value that this task has used (in byte)
+     * @return The peak RSS value that this task has used (in byte), BigDecimal.ZERO if extraction failed
      */
     static BigDecimal getNfPeakRss(Task task) {
         String value = extractTraceFile(task, "peak_rss");
-        return new BigDecimal(value).multiply(BigDecimal.valueOf(1024l));
+        if (value == null) {
+            // extraction failed, return ZERO
+            return BigDecimal.ZERO;
+        } else {
+            return new BigDecimal(value).multiply(BigDecimal.valueOf(1024l));
+        }
     }
 
     /**
@@ -70,11 +75,15 @@ public class NfTrace {
      * 
      * https://www.nextflow.io/docs/latest/tracing.html#trace-report
      * 
-     * @return task execution time (in ms)
+     * @return task execution time (in ms), 0 if extraction failed
      */
     static long getNfRealTime(Task task) {
         String value = extractTraceFile(task, "realtime");
-        return Long.valueOf(value);
+        if (value == null) {
+            return 0;
+        } else {
+            return Long.valueOf(value);
+        }
     }
 
     private static String extractTraceFile(Task task, String key) {

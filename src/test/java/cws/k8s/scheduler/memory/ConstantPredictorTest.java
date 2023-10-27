@@ -63,7 +63,7 @@ public class ConstantPredictorTest {
                 .success(true)
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
-                .peakRss(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(1))
                 .build();
         // @formatter:on
         constantPredictor.addObservation(observation);
@@ -85,7 +85,7 @@ public class ConstantPredictorTest {
                 .success(true)
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
-                .peakRss(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(1))
                 .build();
         Observation observation2 = Observation.builder()
                 .task("taskName")
@@ -93,7 +93,7 @@ public class ConstantPredictorTest {
                 .success(true)
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
-                .peakRss(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(1))
                 .build();
         // @formatter:on
         constantPredictor.addObservation(observation1);

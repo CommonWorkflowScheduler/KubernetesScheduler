@@ -61,7 +61,7 @@ public class LinearPredictorTest {
                 .success(true)
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
-                .peakRss(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(1))
                 .build();
         // @formatter:on
         linearPredictor.addObservation(observation);

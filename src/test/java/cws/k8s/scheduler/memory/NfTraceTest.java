@@ -60,24 +60,38 @@ public class NfTraceTest {
             + "vol_ctxt=1906\n"
             + "inv_ctxt=11615";
     
-    private Task mockTask() throws IOException {
+    /**
+     * mock a Task with the trace string as trace file
+     * 
+     * @param trace the contents for the trace file, if null no file will be created
+     * @return the mocked Task
+     * @throws IOException if file i/o goes wrong
+     */
+    private Task mockTask(String trace) throws IOException {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         Task task = MemoryPredictorTest.createTask("taskName", 0);
         TaskConfig taskConfig = (TaskConfig)ReflectionTestUtils.getField(task, "config");
         Path tmpdir = Files.createTempDirectory("unittest.");
         tmpdir.toFile().deleteOnExit();
         ReflectionTestUtils.setField(taskConfig, "workDir", tmpdir.toFile().getAbsolutePath());
-        String filename = ".command.trace";
-        Path path = Paths.get(tmpdir.toFile().getAbsolutePath() + File.separator + filename);
-        Files.write(path, exampleTrace.getBytes());
+        if (trace != null) {
+            String filename = ".command.trace";
+            Path path = Paths.get(tmpdir.toFile().getAbsolutePath() + File.separator + filename);
+            Files.write(path, trace.getBytes());
+        }
         return task;
     }
     
+    /**
+     * Positive test case for NfTrace.getNfPeakRss
+     * 
+     * @throws IOException
+     */
     @Test
     public void testGetNfPeakRss() throws IOException {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
         
-        Task task = mockTask();
+        Task task = mockTask(exampleTrace);
         log.info("workdir: {}", task.getWorkingDir());
 
         BigDecimal peakRss = NfTrace.getNfPeakRss(task);
@@ -85,15 +99,54 @@ public class NfTraceTest {
         assertEquals(0,peakRss.compareTo(new BigDecimal("607428608")));
     }
 
+    /**
+     * Negative test case for NfTrace.getNfPeakRss
+     * When the trace file is missing, we expect BigDecimal.ZERO as peakRss
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testGetNfPeakRssMissingFile() throws IOException {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+        
+        Task task = mockTask(null);
+        log.info("workdir: {}", task.getWorkingDir());
+
+        BigDecimal peakRss = NfTrace.getNfPeakRss(task);
+        log.info("" + peakRss);
+        assertEquals(0,peakRss.compareTo(BigDecimal.ZERO));
+    }
+    
+    /**
+     * Positive test case for NfTrace.getNfRealTime
+     * 
+     * @throws IOException
+     */
     @Test
     public void testGetNfRealTime() throws IOException {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
-        Task task = mockTask();
+        Task task = mockTask(exampleTrace);
         log.info("workdir: {}", task.getWorkingDir());
         
         long realtime = NfTrace.getNfRealTime(task);
         log.info("" + realtime);
         assertEquals(30090,realtime);
+    }
+
+    /**
+     * Negative test case for NfTrace.getNfRealTime
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testGetNfRealTimeMissingFile() throws IOException {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+        Task task = mockTask(null);
+        log.info("workdir: {}", task.getWorkingDir());
+        
+        long realtime = NfTrace.getNfRealTime(task);
+        log.info("" + realtime);
+        assertEquals(0,realtime);
     }
 
 }
