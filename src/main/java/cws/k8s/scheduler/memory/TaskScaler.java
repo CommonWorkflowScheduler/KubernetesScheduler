@@ -18,9 +18,6 @@
 package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -82,15 +79,17 @@ public class TaskScaler {
      * @param task
      */
     public void afterTaskFinished(Task task) {
-        BigDecimal peakRss = getNfPeakRss(task);
+        BigDecimal peakRss = NfTrace.getNfPeakRss(task);
+        long realtime = NfTrace.getNfRealTime(task);
         // @formatter:off
-        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}",
+        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, realtime={}",
                 task.getConfig().getTask(), 
                 task.getConfig().getName(), 
                 task.wasSuccessfullyExecuted(),
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
-                peakRss);
+                peakRss,
+                realtime);
         Observation o = Observation.builder()
                 .task( task.getConfig().getTask() )
                 .taskName( task.getConfig().getName() )
@@ -98,6 +97,7 @@ public class TaskScaler {
                 .inputSize( task.getInputSize() )
                 .ramRequest( task.getPod().getRequest().getRam() )
                 .peakRss(peakRss)
+                .realtime(realtime)
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(o);
@@ -184,32 +184,6 @@ public class TaskScaler {
         log.debug(patch);
 
         client.pods().inNamespace(namespace).withName(podname).patch(patch);
-    }
-
-    /**
-     * Nextflow writes a trace file, when run with "-with-trace" on command line, or
-     * "trace.enabled = true" in the configuration file.
-     * 
-     * This method will get the peak resident set size (RSS) from there, and return
-     * it in BigDecimal format.
-     * 
-     * @return The peak RSS value that this task has used
-     */
-    private BigDecimal getNfPeakRss(Task task) {
-        final String nfTracePath = task.getWorkingDir() + '/' + ".command.trace";
-        try {
-            Path path = Paths.get(nfTracePath);
-            List<String> allLines = Files.readAllLines(path);
-            for (String a : allLines) {
-                if (a.startsWith("peak_rss")) {
-                    BigDecimal peakRss = new BigDecimal(a.substring(9));
-                    return peakRss.multiply(BigDecimal.valueOf(1024l));
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Cannot read nf .command.trace file in " + nfTracePath, e);
-        }
-        return BigDecimal.ZERO;
     }
 
     /**

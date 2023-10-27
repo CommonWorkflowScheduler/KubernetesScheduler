@@ -42,5 +42,6 @@ public class Observation {
     final long inputSize;
     final BigDecimal ramRequest;
     final BigDecimal peakRss;
+    final long realtime;
 
 }

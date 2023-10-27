@@ -79,7 +79,7 @@ public class Statistics {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("task,taskName,success,inputSize,ramRequest,peakRss\n");
+        sb.append("task,taskName,success,inputSize,ramRequest,peakRss,realtime\n");
         for (Observation o : observations) {
             sb.append(o.getTask());
             sb.append(",");
@@ -92,6 +92,8 @@ public class Statistics {
             sb.append(o.getRamRequest().toPlainString());
             sb.append(",");
             sb.append(o.getPeakRss().toPlainString());
+            sb.append(",");
+            sb.append(o.getRealtime());
             sb.append("\n");
         }
         String csv = sb.toString();
@@ -147,6 +149,7 @@ public class Statistics {
                 // TODO check if BigDecimal is bigger than double can handle
                 ts.ramRequestStatitistics.accept(o.ramRequest.doubleValue());
                 ts.peakRssStatistics.accept(o.peakRss.doubleValue());
+                ts.realtimeStatistics.accept(o.realtime);
             } else {
                 ts.failCount++;
             }
@@ -188,6 +191,11 @@ public class Statistics {
                     ts.peakRssStatistics.getAverage(),
                     ts.peakRssStatistics.getMin(),
                     ts.peakRssStatistics.getMax()) );
+            sb.append(String.format("realtime   : cnt %d, avr %.1f, min %d, max %d%n",
+                    ts.realtimeStatistics.getCount(),
+                    ts.realtimeStatistics.getAverage(),
+                    ts.realtimeStatistics.getMin(),
+                    ts.realtimeStatistics.getMax()) );
             // @formatter:on
         }
 
@@ -214,5 +222,6 @@ public class Statistics {
         LongSummaryStatistics inputSizeStatistics = new LongSummaryStatistics();
         DoubleSummaryStatistics ramRequestStatitistics = new DoubleSummaryStatistics();
         DoubleSummaryStatistics peakRssStatistics = new DoubleSummaryStatistics();
+        LongSummaryStatistics realtimeStatistics = new LongSummaryStatistics();
     }
 }
