@@ -19,6 +19,7 @@ public class LocationWrapper {
     private long createTime = System.currentTimeMillis();
     private Task createdByTask;
     private LocationWrapper copyOf;
+    //Deactivated if file was maybe not copied completely or if one file was changed by the workflow engine.
     private boolean active = true;
     private int inUse = 0;
 
