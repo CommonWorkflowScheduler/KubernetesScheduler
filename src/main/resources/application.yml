@@ -1,3 +1,7 @@
+spring:
+  config:
+    activate:
+      on-profile: "dev"
 logging:
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%-5level) %clr(%-30.30logger{29}){cyan} %msg%n"
