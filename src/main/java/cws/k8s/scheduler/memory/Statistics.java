@@ -88,7 +88,7 @@ public class Statistics {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("task,taskName,success,inputSize,ramRequest,peakRss,realtime\n");
+        sb.append("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,realtime\n");
         for (Observation o : observations) {
             sb.append(o.getTask());
             sb.append(",");
@@ -99,6 +99,8 @@ public class Statistics {
             sb.append(o.getInputSize());
             sb.append(",");
             sb.append(o.getRamRequest().toPlainString());
+            sb.append(",");
+            sb.append(o.getPeakVmem().toPlainString());
             sb.append(",");
             sb.append(o.getPeakRss().toPlainString());
             sb.append(",");
@@ -170,6 +172,7 @@ public class Statistics {
                 ts.inputSizeStatistics.accept(o.inputSize);
                 // TODO check if BigDecimal is bigger than double can handle
                 ts.ramRequestStatitistics.accept(o.ramRequest.doubleValue());
+                ts.peakVmemStatistics.accept(o.peakVmem.doubleValue());
                 ts.peakRssStatistics.accept(o.peakRss.doubleValue());
                 ts.realtimeStatistics.accept(o.realtime);
             } else {
@@ -208,6 +211,11 @@ public class Statistics {
                     ts.ramRequestStatitistics.getAverage(),
                     ts.ramRequestStatitistics.getMin(),
                     ts.ramRequestStatitistics.getMax()) );
+            sb.append(String.format("peakVmem   : cnt %d, avr %.3e, min %.3e, max %.3e%n",
+                    ts.peakVmemStatistics.getCount(),
+                    ts.peakVmemStatistics.getAverage(),
+                    ts.peakVmemStatistics.getMin(),
+                    ts.peakVmemStatistics.getMax()) );
             sb.append(String.format("peakRss    : cnt %d, avr %.3e, min %.3e, max %.3e%n",
                     ts.peakRssStatistics.getCount(),
                     ts.peakRssStatistics.getAverage(),
@@ -243,6 +251,7 @@ public class Statistics {
         int failCount = 0;
         LongSummaryStatistics inputSizeStatistics = new LongSummaryStatistics();
         DoubleSummaryStatistics ramRequestStatitistics = new DoubleSummaryStatistics();
+        DoubleSummaryStatistics peakVmemStatistics = new DoubleSummaryStatistics();
         DoubleSummaryStatistics peakRssStatistics = new DoubleSummaryStatistics();
         LongSummaryStatistics realtimeStatistics = new LongSummaryStatistics();
     }

@@ -83,14 +83,16 @@ public class TaskScaler {
      */
     public void afterTaskFinished(Task task) {
         BigDecimal peakRss = NfTrace.getNfPeakRss(task);
+        BigDecimal peakVmem = NfTrace.getNfPeakVmem(task);
         long realtime = NfTrace.getNfRealTime(task);
         // @formatter:off
-        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_rss={}, realtime={}",
+        log.info("taskWasFinished, task={}, name={}, succ={}, inputSize={}, reqRam={}, peak_vmem={}, peak_rss={}, realtime={}",
                 task.getConfig().getTask(), 
                 task.getConfig().getName(), 
                 task.wasSuccessfullyExecuted(),
                 task.getInputSize(), 
                 task.getPod().getRequest().getRam(), 
+                peakVmem,
                 peakRss,
                 realtime);
         Observation o = Observation.builder()
@@ -99,6 +101,7 @@ public class TaskScaler {
                 .success( task.wasSuccessfullyExecuted() )
                 .inputSize( task.getInputSize() )
                 .ramRequest( task.getPod().getRequest().getRam() )
+                .peakVmem(peakVmem)
                 .peakRss(peakRss)
                 .realtime(realtime)
                 .build();
