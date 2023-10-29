@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,6 +49,8 @@ public class Statistics {
     String baseDir;
     final Scheduler scheduler;
     final MemoryPredictor memoryPredictor;
+    long start;
+    long end;
 
     boolean active = true;
     List<Observation> observations = new ArrayList<>();
@@ -59,6 +62,7 @@ public class Statistics {
         if (disableStatistics != null) {
             active = false;
         }
+        this.start = System.currentTimeMillis();
     }
     
     /**
@@ -137,6 +141,13 @@ public class Statistics {
         sb.append(" memory predictor: ");
         sb.append(this.memoryPredictor.getClass());
         sb.append("\n");
+        sb.append(" start: ");
+        sb.append(String.valueOf(new Date(this.start)));
+        sb.append(" | end: ");
+        sb.append(String.valueOf(new Date(this.end)));
+        sb.append("\n makespan: ");
+        sb.append(this.end-this.start);
+        sb.append(" ms\n");
         sb.append(" total observations collected: ");
         sb.append(observations.size());
         sb.append("\n");

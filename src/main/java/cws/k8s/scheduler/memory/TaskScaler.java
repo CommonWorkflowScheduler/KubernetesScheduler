@@ -152,6 +152,7 @@ public class TaskScaler {
     public void afterWorkflow() {
         log.debug("afterWorkflow");
         long timestamp = System.currentTimeMillis();
+        statistics.end = timestamp;
         log.info(statistics.summary(timestamp));
         log.debug(statistics.exportCsv(timestamp));
     }
