@@ -78,7 +78,7 @@ public abstract class Scheduler implements Informable {
         log.info("Watching");
         
         // create a new TaskScaler for each Scheduler instance
-        taskScaler = new cws.k8s.scheduler.memory.TaskScaler(client);
+        taskScaler = new cws.k8s.scheduler.memory.TaskScaler(client, this);
     }
 
     /* Abstract methods */

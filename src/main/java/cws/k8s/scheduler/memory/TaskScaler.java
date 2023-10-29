@@ -23,6 +23,7 @@ import java.util.Map;
 
 import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.scheduler.Scheduler;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -39,12 +40,13 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskScaler {
 
     final KubernetesClient client;
+    final Scheduler scheduler;
     final MemoryPredictor memoryPredictor;
     final Statistics statistics;
 
-    public TaskScaler(KubernetesClient client) {
+    public TaskScaler(KubernetesClient client, Scheduler scheduler) {
         this.client = client;
-        this.statistics = new Statistics();
+        this.scheduler = scheduler;
         String predictor = System.getenv("MEMORY_PREDICTOR");
         if (predictor == null) {
             predictor = "none";
@@ -70,6 +72,7 @@ public class TaskScaler {
             log.debug("using NonePredictor");
             this.memoryPredictor = new NonePredictor();
         }
+        this.statistics = new Statistics(scheduler,memoryPredictor);
     }
 
     /**

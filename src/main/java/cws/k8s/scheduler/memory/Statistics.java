@@ -30,6 +30,7 @@ import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Set;
 
+import cws.k8s.scheduler.scheduler.Scheduler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,11 +46,15 @@ import lombok.extern.slf4j.Slf4j;
 public class Statistics {
     
     String baseDir;
+    final Scheduler scheduler;
+    final MemoryPredictor memoryPredictor;
 
     boolean active = true;
     List<Observation> observations = new ArrayList<>();
     
-    public Statistics() {
+    public Statistics(Scheduler scheduler, MemoryPredictor memoryPredictor) {
+        this.scheduler = scheduler;
+        this.memoryPredictor = memoryPredictor;
         String disableStatistics = System.getenv("DISABLE_STATISTICS");
         if (disableStatistics != null) {
             active = false;
@@ -126,6 +131,12 @@ public class Statistics {
         }
         StringBuilder sb = new StringBuilder();
         sb.append("~~~ Statistics ~~~\n");
+        sb.append(" execution: ");
+        sb.append(this.scheduler.getExecution());
+        sb.append("\n");
+        sb.append(" memory predictor: ");
+        sb.append(this.memoryPredictor.getClass());
+        sb.append("\n");
         sb.append(" total observations collected: ");
         sb.append(observations.size());
         sb.append("\n");
