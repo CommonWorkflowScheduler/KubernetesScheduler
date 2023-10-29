@@ -115,6 +115,12 @@ public class TaskScaler {
             log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
                     t.getPod().getRequest());
 
+            // if task had no memory request set, it cannot be changed
+            if (t.getPod().getRequest().getRam().compareTo(BigDecimal.ZERO) == 0) {
+                log.info("cannot change task {}, because it had no prior requirements", t.toString());
+                break;
+            }
+            
             // query suggestion
             String suggestion = memoryPredictor.queryPrediction(t);
             if (suggestion != null) {
