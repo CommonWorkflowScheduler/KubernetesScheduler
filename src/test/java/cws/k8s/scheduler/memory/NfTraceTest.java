@@ -149,4 +149,6 @@ public class NfTraceTest {
         assertEquals(0,realtime);
     }
 
+    // TODO add test for getNfPeakVmem
+    // TODO add test for utility class non-constructor
 }

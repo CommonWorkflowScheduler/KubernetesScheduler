@@ -164,4 +164,6 @@ public class LinearPredictorTest {
         assertNull(suggestionStr1);
     }
 
+    // TODO add test for observation with success = false
+    
 }
