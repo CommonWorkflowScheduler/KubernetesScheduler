@@ -124,7 +124,7 @@ public class TaskScaler {
             // if task had no memory request set, it cannot be changed
             if (t.getPod().getRequest().getRam().compareTo(BigDecimal.ZERO) == 0) {
                 log.info("cannot change task {}, because it had no prior requirements", t.toString());
-                break;
+                continue;
             }
             
             // query suggestion
