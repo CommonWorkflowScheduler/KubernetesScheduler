@@ -82,7 +82,7 @@ public abstract class Scheduler implements Informable {
         
         if ( StringUtils.hasText(config.memoryPredictor) ) {
             // create a new TaskScaler for each Scheduler instance
-            taskScaler = new TaskScaler(client, this);
+            taskScaler = new TaskScaler(this, config, client);
         } else {
             taskScaler = null;
         }

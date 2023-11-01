@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.scheduler.Scheduler;
 import io.fabric8.kubernetes.api.model.Container;
@@ -44,10 +45,10 @@ public class TaskScaler {
     final MemoryPredictor memoryPredictor;
     final Statistics statistics;
 
-    public TaskScaler(KubernetesClient client, Scheduler scheduler) {
+    public TaskScaler(Scheduler scheduler, SchedulerConfig config, KubernetesClient client) {
         this.client = client;
         this.scheduler = scheduler;
-        String predictor = System.getenv("MEMORY_PREDICTOR");
+        String predictor = config.memoryPredictor;
         if (predictor == null) {
             predictor = "none";
         }
