@@ -1,6 +1,7 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.dag.DAG;
+import cws.k8s.scheduler.memory.TaskScaler;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
@@ -18,6 +19,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+
+import org.springframework.util.StringUtils;
 
 @Slf4j
 public abstract class Scheduler implements Informable {
@@ -77,8 +80,12 @@ public abstract class Scheduler implements Informable {
         watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
         log.info("Watching");
         
-        // create a new TaskScaler for each Scheduler instance
-        taskScaler = new cws.k8s.scheduler.memory.TaskScaler(client, this);
+        if ( StringUtils.hasText(config.memoryPredictor) ) {
+            // create a new TaskScaler for each Scheduler instance
+            taskScaler = new TaskScaler(client, this);
+        } else {
+            taskScaler = null;
+        }
     }
 
     /* Abstract methods */
@@ -92,8 +99,10 @@ public abstract class Scheduler implements Informable {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
         
-        // change memory resource requests and limits here
-        taskScaler.beforeTasksScheduled(unscheduledTasks);
+        if (taskScaler!=null) {
+            // change memory resource requests and limits here
+            taskScaler.beforeTasksScheduled(unscheduledTasks);
+        }
         
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
@@ -195,9 +204,11 @@ public abstract class Scheduler implements Informable {
             unfinishedTasks.remove( task );
         }
         task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
-        
-        // this will collect the result of the task execution for future scaling
-        taskScaler.afterTaskFinished(task);
+
+        if (taskScaler!=null) {
+            // this will collect the result of the task execution for future scaling
+            taskScaler.afterTaskFinished(task);
+        }
     }
 
     public void schedulePod(PodWithAge pod ) {
@@ -495,8 +506,10 @@ public abstract class Scheduler implements Informable {
         finishThread.interrupt();
         this.close = true;
         
-        // save statistics after the workflow is completed
-        taskScaler.afterWorkflow();
+        if (taskScaler!=null) {
+            // save statistics after the workflow is completed
+            taskScaler.afterWorkflow();
+        }
     }
 
     static class PodWatcher implements Watcher<Pod> {
