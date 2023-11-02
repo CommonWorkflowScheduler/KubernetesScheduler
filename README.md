@@ -28,7 +28,7 @@ docker push <your docker account>/cws:<version>
 | 11 | /{version}/{execution}/task/{id}    | DELETE |
 
 SWAGGER:  /swagger-ui.html <br>
-API-DOCS: /v3/api-docs/
+API-DOCS: /v3/api-docs
 
 For more details, we refer to the paper.
 
