@@ -1,4 +1,4 @@
-FROM maven:3.8.3-jdk-11-slim AS build
+FROM maven:3-openjdk-17-slim AS build
 WORKDIR /build
 COPY pom.xml pom.xml
 RUN mvn dependency:go-offline --no-transfer-progress -Dmaven.repo.local=/mvn/.m2nrepo/repository
