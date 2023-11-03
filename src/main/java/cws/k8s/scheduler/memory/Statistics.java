@@ -27,6 +27,7 @@ import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Set;
@@ -201,27 +202,27 @@ public class Statistics {
             sb.append(ts.failCount);
             sb.append("\n");
             // @formatter:off
-            sb.append(String.format("inputSize  : cnt %d, avr %.1f, min %d, max %d%n",
+            sb.append(String.format(Locale.US, "inputSize  : cnt %d, avr %.1f, min %d, max %d%n",
                     ts.inputSizeStatistics.getCount(),
                     ts.inputSizeStatistics.getAverage(),
                     ts.inputSizeStatistics.getMin(),
                     ts.inputSizeStatistics.getMax()) );
-            sb.append(String.format("ramRequest : cnt %d, avr %.3e, min %.3e, max %.3e%n",
+            sb.append(String.format(Locale.US, "ramRequest : cnt %d, avr %.3e, min %.3e, max %.3e%n",
                     ts.ramRequestStatitistics.getCount(),
                     ts.ramRequestStatitistics.getAverage(),
                     ts.ramRequestStatitistics.getMin(),
                     ts.ramRequestStatitistics.getMax()) );
-            sb.append(String.format("peakVmem   : cnt %d, avr %.3e, min %.3e, max %.3e%n",
+            sb.append(String.format(Locale.US, "peakVmem   : cnt %d, avr %.3e, min %.3e, max %.3e%n",
                     ts.peakVmemStatistics.getCount(),
                     ts.peakVmemStatistics.getAverage(),
                     ts.peakVmemStatistics.getMin(),
                     ts.peakVmemStatistics.getMax()) );
-            sb.append(String.format("peakRss    : cnt %d, avr %.3e, min %.3e, max %.3e%n",
+            sb.append(String.format(Locale.US, "peakRss    : cnt %d, avr %.3e, min %.3e, max %.3e%n",
                     ts.peakRssStatistics.getCount(),
                     ts.peakRssStatistics.getAverage(),
                     ts.peakRssStatistics.getMin(),
                     ts.peakRssStatistics.getMax()) );
-            sb.append(String.format("realtime   : cnt %d, avr %.1f, min %d, max %d%n",
+            sb.append(String.format(Locale.US, "realtime   : cnt %d, avr %.1f, min %d, max %d%n",
                     ts.realtimeStatistics.getCount(),
                     ts.realtimeStatistics.getAverage(),
                     ts.realtimeStatistics.getMin(),
