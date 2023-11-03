@@ -153,11 +153,11 @@ public class StatisticsTest {
                 + "  named instances of 'task' seen: 1\n"
                 + "  success count: 3\n"
                 + "  failure count: 0\n"
-                + "inputSize  : cnt 3, avr 2,0, min 1, max 3\n"
-                + "ramRequest : cnt 3, avr 3,000e+00, min 2,000e+00, max 4,000e+00\n"
-                + "peakVmem   : cnt 3, avr 4,000e+00, min 3,000e+00, max 5,000e+00\n"
-                + "peakRss    : cnt 3, avr 5,000e+00, min 4,000e+00, max 6,000e+00\n"
-                + "realtime   : cnt 3, avr 6,0, min 5, max 7\n";
+                + "inputSize  : cnt 3, avr 2.0, min 1, max 3\n"
+                + "ramRequest : cnt 3, avr 3.000e+00, min 2.000e+00, max 4.000e+00\n"
+                + "peakVmem   : cnt 3, avr 4.000e+00, min 3.000e+00, max 5.000e+00\n"
+                + "peakRss    : cnt 3, avr 5.000e+00, min 4.000e+00, max 6.000e+00\n"
+                + "realtime   : cnt 3, avr 6.0, min 5, max 7\n";
         assertTrue(summary.endsWith(reference));
     }
 
