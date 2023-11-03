@@ -45,10 +45,28 @@ public class TaskScaler {
     final MemoryPredictor memoryPredictor;
     final Statistics statistics;
 
+    /**
+     * Create a new TaskScaler instance. The memory predictor to be used is
+     * determined as follows:
+     * 
+     * 1) use the value memoryPredictor provided in SchedulerConfig config
+     * 
+     * 2) if (1) is set to "default", use the environment variable
+     * MEMORY_PREDICTOR_DEFAULT
+     * 
+     * 3) if (2) is not set, or unrecognized, use the NonePredictor
+     * 
+     * @param scheduler the Scheduler that has started this TaskScler 
+     * @param config the SchedulerConfig for the execution
+     * @param client the associated KubernetesClient
+     */
     public TaskScaler(Scheduler scheduler, SchedulerConfig config, KubernetesClient client) {
         this.client = client;
         this.scheduler = scheduler;
         String predictor = config.memoryPredictor;
+        if ("default".equalsIgnoreCase(predictor)) {
+            predictor = System.getenv("MEMORY_PREDICTOR_DEFAULT");
+        }
         if (predictor == null) {
             predictor = "none";
         }
@@ -65,6 +83,11 @@ public class TaskScaler {
 
         case "combi":
             log.debug("using CombiPredictor");
+            this.memoryPredictor = new CombiPredictor();
+            break;
+
+        case "kube":
+            log.debug("using KubePredictor");
             this.memoryPredictor = new CombiPredictor();
             break;
 
