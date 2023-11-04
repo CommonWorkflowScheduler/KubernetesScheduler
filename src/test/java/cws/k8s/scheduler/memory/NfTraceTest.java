@@ -149,6 +149,36 @@ public class NfTraceTest {
         assertEquals(0,realtime);
     }
 
-    // TODO add test for getNfPeakVmem
-    // TODO add test for utility class non-constructor
+    /**
+     * Positive test case for NfTrace.getNfPeakVmem
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testGetNfPeakVmem() throws IOException {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+        Task task = mockTask(exampleTrace);
+        log.info("workdir: {}", task.getWorkingDir());
+        
+        BigDecimal peakVmem = NfTrace.getNfPeakVmem(task);
+        log.info("" + peakVmem);
+        assertEquals(0,peakVmem.compareTo(BigDecimal.valueOf(745693184)));
+    }
+
+    /**
+     * Negative test case for NfTrace.getNfPeakVmem
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testGetNfPeakVmemMissingFile() throws IOException {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+        Task task = mockTask(null);
+        log.info("workdir: {}", task.getWorkingDir());
+        
+        BigDecimal peakVmem = NfTrace.getNfPeakVmem(task);
+        log.info("" + peakVmem);
+        assertEquals(0,peakVmem.compareTo(BigDecimal.ZERO));
+    }
+
 }

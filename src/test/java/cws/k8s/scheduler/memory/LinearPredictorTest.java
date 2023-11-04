@@ -164,6 +164,31 @@ public class LinearPredictorTest {
         assertNull(suggestionStr1);
     }
 
-    // TODO add test for observation with success = false
+    /**
+     * test for observation with success = false
+     */
+    @Test
+    public void testObservationFailed() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
+        LinearPredictor linearPredictor = new LinearPredictor();
+        Task task = MemoryPredictorTest.createTask("taskName", 1024l);
+        // @formatter:off
+        Observation observation = Observation.builder()
+                .task("taskName")
+                .taskName("taskName (1)")
+                .success(false)
+                .inputSize(0)
+                .ramRequest(BigDecimal.valueOf(0))
+                .peakRss(BigDecimal.valueOf(1))
+                .build();
+        // @formatter:on
+        linearPredictor.addObservation(observation);
+        assertNull(linearPredictor.queryPrediction(task));
+        linearPredictor.addObservation(observation);
+        assertNull(linearPredictor.queryPrediction(task));
+        linearPredictor.addObservation(observation);
+        assertNull(linearPredictor.queryPrediction(task));
+    }
+
     
 }
