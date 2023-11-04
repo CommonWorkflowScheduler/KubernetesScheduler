@@ -86,9 +86,9 @@ public class TaskScaler {
             this.memoryPredictor = new CombiPredictor();
             break;
 
-        case "kube":
-            log.debug("using KubePredictor");
-            this.memoryPredictor = new CombiPredictor();
+        case "square":
+            log.debug("using SquarePredictor");
+            this.memoryPredictor = new SquarePredictor();
             break;
 
         case "none":
