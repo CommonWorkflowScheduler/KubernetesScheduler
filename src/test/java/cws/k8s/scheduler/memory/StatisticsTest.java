@@ -157,6 +157,7 @@ public class StatisticsTest {
                 + "ramRequest : cnt 3, avr 3.000e+00, min 2.000e+00, max 4.000e+00\n"
                 + "peakVmem   : cnt 3, avr 4.000e+00, min 3.000e+00, max 5.000e+00\n"
                 + "peakRss    : cnt 3, avr 5.000e+00, min 4.000e+00, max 6.000e+00\n"
+                + "wasted     : cnt 3, avr -2.000e+00, min -2.000e+00, max -2.000e+00\n"
                 + "realtime   : cnt 3, avr 6.0, min 5, max 7\n";
         assertTrue(summary.endsWith(reference));
     }
