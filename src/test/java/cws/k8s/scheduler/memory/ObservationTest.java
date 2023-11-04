@@ -35,7 +35,7 @@ public class ObservationTest {
     @Test
     public void testConstructor() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
-        Observation o1 = new Observation(null, null, null, 0, null, null, null, 0);
+        Observation o1 = new Observation(null, null, null, 0, null, null, null, null, 0);
         Observation o2 = Observation.builder()
                 .build();
         assertEquals(o1, o2);

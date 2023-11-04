@@ -54,7 +54,7 @@ public class StatisticsTest {
         
         String csv = statistics.exportCsv(0);
         log.info(csv);
-        assertEquals("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,realtime\n", csv);
+        assertEquals("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,wasted,realtime\n", csv);
 
         String summary = statistics.summary(0);
         log.info(summary);
@@ -78,14 +78,15 @@ public class StatisticsTest {
                 .ramRequest(BigDecimal.valueOf(234l))
                 .peakVmem(BigDecimal.valueOf(345l))
                 .peakRss(BigDecimal.valueOf(456l))
-                .realtime(567l)
+                .wasted(BigDecimal.valueOf(567l))
+                .realtime(678l)
                 .build();
         statistics.addObservation(o);
         
         String csv = statistics.exportCsv(0);
         log.info(csv);
-        assertEquals("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,realtime\n"
-                    +"task,taskName,true,123,234,345,456,567\n", csv);
+        assertEquals("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,wasted,realtime\n"
+                    +"task,taskName,true,123,234,345,456,567,678\n", csv);
 
         String summary = statistics.summary(0);
         log.info(summary);
@@ -109,7 +110,8 @@ public class StatisticsTest {
                 .ramRequest(BigDecimal.valueOf(2l))
                 .peakVmem(BigDecimal.valueOf(3l))
                 .peakRss(BigDecimal.valueOf(4l))
-                .realtime(5l)
+                .wasted(BigDecimal.valueOf(5l))
+                .realtime(6l)
                 .build();
         statistics.addObservation(o1);
 
@@ -121,7 +123,8 @@ public class StatisticsTest {
                 .ramRequest(BigDecimal.valueOf(3l))
                 .peakVmem(BigDecimal.valueOf(4l))
                 .peakRss(BigDecimal.valueOf(5l))
-                .realtime(6l)
+                .wasted(BigDecimal.valueOf(6l))
+                .realtime(7l)
                 .build();
         statistics.addObservation(o2);
 
@@ -133,16 +136,17 @@ public class StatisticsTest {
                 .ramRequest(BigDecimal.valueOf(4l))
                 .peakVmem(BigDecimal.valueOf(5l))
                 .peakRss(BigDecimal.valueOf(6l))
-                .realtime(7l)
+                .wasted(BigDecimal.valueOf(7l))
+                .realtime(8l)
                 .build();
         statistics.addObservation(o3);
 
         String csv = statistics.exportCsv(0);
         log.info(csv);
-        assertEquals("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,realtime\n"
-                   + "task,taskName,true,1,2,3,4,5\n"
-                   + "task,taskName,true,2,3,4,5,6\n"
-                   + "task,taskName,true,3,4,5,6,7\n", csv);
+        assertEquals("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,wasted,realtime\n"
+                   + "task,taskName,true,1,2,3,4,5,6\n"
+                   + "task,taskName,true,2,3,4,5,6,7\n"
+                   + "task,taskName,true,3,4,5,6,7,8\n", csv);
 
         String summary = statistics.summary(0);
         log.info(summary);
@@ -157,8 +161,8 @@ public class StatisticsTest {
                 + "ramRequest : cnt 3, avr 3.000e+00, min 2.000e+00, max 4.000e+00\n"
                 + "peakVmem   : cnt 3, avr 4.000e+00, min 3.000e+00, max 5.000e+00\n"
                 + "peakRss    : cnt 3, avr 5.000e+00, min 4.000e+00, max 6.000e+00\n"
-                + "wasted     : cnt 3, avr -2.000e+00, min -2.000e+00, max -2.000e+00\n"
-                + "realtime   : cnt 3, avr 6.0, min 5, max 7\n";
+                + "wasted     : cnt 3, avr 6.000e+00, min 5.000e+00, max 7.000e+00\n"
+                + "realtime   : cnt 3, avr 7.0, min 6, max 8\n";
         assertTrue(summary.endsWith(reference));
     }
 

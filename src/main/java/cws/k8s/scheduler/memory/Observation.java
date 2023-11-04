@@ -43,6 +43,7 @@ public class Observation {
     final BigDecimal ramRequest;
     final BigDecimal peakVmem;
     final BigDecimal peakRss;
+    final BigDecimal wasted;
     final long realtime;
 
 }

@@ -89,7 +89,7 @@ public class Statistics {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,realtime\n");
+        sb.append("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,wasted,realtime\n");
         for (Observation o : observations) {
             sb.append(o.getTask());
             sb.append(",");
@@ -104,6 +104,8 @@ public class Statistics {
             sb.append(o.getPeakVmem().toPlainString());
             sb.append(",");
             sb.append(o.getPeakRss().toPlainString());
+            sb.append(",");
+            sb.append(o.getWasted().toPlainString());
             sb.append(",");
             sb.append(o.getRealtime());
             sb.append("\n");
@@ -175,7 +177,7 @@ public class Statistics {
                 ts.ramRequestStatitistics.accept(o.ramRequest.doubleValue());
                 ts.peakVmemStatistics.accept(o.peakVmem.doubleValue());
                 ts.peakRssStatistics.accept(o.peakRss.doubleValue());
-                ts.wastedStatistics.accept( o.ramRequest.subtract(o.peakRss).doubleValue() );
+                ts.wastedStatistics.accept( o.wasted.doubleValue() );
                 ts.realtimeStatistics.accept(o.realtime);
             } else {
                 ts.failCount++;
