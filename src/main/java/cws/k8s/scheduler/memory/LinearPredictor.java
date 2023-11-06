@@ -75,7 +75,7 @@ public class LinearPredictor implements MemoryPredictor {
         } else {
             log.debug("overprovisioning value will increase due to task failure");
             Double old = overprovisioning.get(o.task);
-            overprovisioning.put(o.task, old+0.01);
+            overprovisioning.put(o.task, old+0.05);
         }
     }
 
