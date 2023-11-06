@@ -234,8 +234,8 @@ public class TaskScaler {
         if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
             throw new ObservationException("peakRss may not be negative");
         }
-        if (o.peakRss.compareTo(BigDecimal.ZERO) == 0) {
-            throw new ObservationException("peakRss may not be zero (has the .command.trace read failed?)");
+        if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ObservationException("peakRss may not be negative (has the .command.trace read failed?)");
         }
     }
 

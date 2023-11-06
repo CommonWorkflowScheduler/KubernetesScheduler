@@ -55,13 +55,13 @@ public class NfTrace {
      * The Linux kernel provides the value in KiB, we multiply with 1024 to have
      * it in byte, like the other values we use.
      * 
-     * @return The peak VMEM value that this task has used (in byte), BigDecimal.ZERO if extraction failed
+     * @return The peak VMEM value that this task has used (in byte), -1 if extraction failed
      */
     static BigDecimal getNfPeakVmem(Task task) {
         String value = extractTraceFile(task, "peak_vmem");
         if (value == null) {
             // extraction failed, return ZERO
-            return BigDecimal.ZERO;
+            return BigDecimal.valueOf(-1);
         } else {
             return new BigDecimal(value).multiply(BigDecimal.valueOf(1024l));
         }
@@ -79,13 +79,15 @@ public class NfTrace {
      * The Linux kernel provides the value in KiB, we multiply with 1024 to have
      * it in byte, like the other values we use.
      * 
-     * @return The peak RSS value that this task has used (in byte), BigDecimal.ZERO if extraction failed
+     * If the task failed, this can be 0.
+     * 
+     * @return The peak RSS value that this task has used (in byte), -1 if extraction failed
      */
     static BigDecimal getNfPeakRss(Task task) {
         String value = extractTraceFile(task, "peak_rss");
         if (value == null) {
-            // extraction failed, return ZERO
-            return BigDecimal.ZERO;
+            // extraction failed, return -1
+            return BigDecimal.valueOf(-1);
         } else {
             return new BigDecimal(value).multiply(BigDecimal.valueOf(1024l));
         }
@@ -99,12 +101,12 @@ public class NfTrace {
      * 
      * https://www.nextflow.io/docs/latest/tracing.html#trace-report
      * 
-     * @return task execution time (in ms), 0 if extraction failed
+     * @return task execution time (in ms), -1 if extraction failed
      */
     static long getNfRealTime(Task task) {
         String value = extractTraceFile(task, "realtime");
         if (value == null) {
-            return 0;
+            return -1;
         } else {
             return Long.valueOf(value);
         }

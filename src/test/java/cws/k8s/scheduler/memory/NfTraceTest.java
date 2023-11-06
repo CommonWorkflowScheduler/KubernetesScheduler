@@ -114,7 +114,7 @@ public class NfTraceTest {
 
         BigDecimal peakRss = NfTrace.getNfPeakRss(task);
         log.info("" + peakRss);
-        assertEquals(0,peakRss.compareTo(BigDecimal.ZERO));
+        assertEquals(0,peakRss.compareTo(BigDecimal.valueOf(-1)));
     }
     
     /**
@@ -146,7 +146,7 @@ public class NfTraceTest {
         
         long realtime = NfTrace.getNfRealTime(task);
         log.info("" + realtime);
-        assertEquals(0,realtime);
+        assertEquals(-1,realtime);
     }
 
     /**
@@ -178,7 +178,7 @@ public class NfTraceTest {
         
         BigDecimal peakVmem = NfTrace.getNfPeakVmem(task);
         log.info("" + peakVmem);
-        assertEquals(0,peakVmem.compareTo(BigDecimal.ZERO));
+        assertEquals(0,peakVmem.compareTo(BigDecimal.valueOf(-1)));
     }
 
 }
