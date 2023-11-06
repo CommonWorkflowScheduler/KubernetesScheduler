@@ -221,22 +221,34 @@ public class TaskScaler {
      * 
      * @return true is the Observation looks sane, false otherwise
      */
-    public static void checkObservationSanity(Observation o) {
+    public static boolean checkObservationSanity(Observation o) {
         if (o.task == null || o.taskName == null || o.success == null || o.ramRequest == null || o.peakRss == null) {
-            throw new ObservationException("unexpected null value in observation");
+            log.error("unexpected null value in observation");
+            return false;
         }
         if (o.inputSize < 0) {
-            throw new ObservationException("inputSize may not be negative");
+            log.error("inputSize may not be negative");
+            return false;
         }
         if (o.ramRequest.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ObservationException("ramRequest may not be negative");
+            log.error("ramRequest may not be negative");
+            return false;
+        }
+
+        // those are indicators that the .command.trace read has failed
+        if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
+            log.warn("peakRss may not be negative (has the .command.trace read failed?)");
+            return false;
         }
         if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ObservationException("peakRss may not be negative");
+            log.warn("peakRss may not be negative (has the .command.trace read failed?)");
+            return false;
         }
-        if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ObservationException("peakRss may not be negative (has the .command.trace read failed?)");
+        if (o.realtime < 0) {
+            log.warn("realtime may not be negative (has the .command.trace read failed?)");
+            return false;
         }
+        return true;
     }
 
 }

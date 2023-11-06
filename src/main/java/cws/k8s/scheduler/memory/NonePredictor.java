@@ -33,7 +33,10 @@ public class NonePredictor implements MemoryPredictor {
     @Override
     public void addObservation(Observation o) {
         log.debug("NonePredictor.addObservation({})", o);
-        TaskScaler.checkObservationSanity(o);
+        if (!TaskScaler.checkObservationSanity(o)) {
+            log.warn("dismiss observation {}", o);
+            return;
+        }
     }
 
     @Override

@@ -55,7 +55,10 @@ public class LinearPredictor implements MemoryPredictor {
     @Override
     public void addObservation(Observation o) {
         log.debug("LinearPredictor.addObservation({})", o);
-        TaskScaler.checkObservationSanity(o);
+        if (!TaskScaler.checkObservationSanity(o)) {
+            log.warn("dismiss observation {}", o);
+            return;
+        }
 
         if (!overprovisioning.containsKey(o.task)) {
             overprovisioning.put(o.task, 1.1);

@@ -58,7 +58,10 @@ class ConstantPredictor implements MemoryPredictor {
     @Override
     public void addObservation(Observation o) {
         log.debug("ConstantPredictor.addObservation({})", o);
-        TaskScaler.checkObservationSanity(o);
+        if (!TaskScaler.checkObservationSanity(o)) {
+            log.warn("dismiss observation {}", o);
+            return;
+        }
 
         // observations increase the generation value for this task
         if (!generation.containsKey(o.task)) {

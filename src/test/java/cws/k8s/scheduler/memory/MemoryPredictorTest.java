@@ -17,6 +17,7 @@
 
 package cws.k8s.scheduler.memory;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -100,10 +101,8 @@ public class MemoryPredictorTest {
                 .build();
         // @formatter:on
 
-        Exception e1 = assertThrows(ObservationException.class, () -> memoryPredictor.addObservation(observation1));
-        log.info("exception was: {}", e1.getMessage());
-        
-        assertNull(memoryPredictor.queryPrediction(task));
+        memoryPredictor.addObservation(observation1);        
+        assertNull( memoryPredictor.queryPrediction(task) );
     }
 
     /**
