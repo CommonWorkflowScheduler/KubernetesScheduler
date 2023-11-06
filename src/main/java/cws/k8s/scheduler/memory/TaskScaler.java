@@ -106,9 +106,19 @@ public class TaskScaler {
      * @param task
      */
     public void afterTaskFinished(Task task) {
-        BigDecimal peakRss = NfTrace.getNfPeakRss(task);
-        BigDecimal peakVmem = NfTrace.getNfPeakVmem(task);
-        long realtime = NfTrace.getNfRealTime(task);
+        BigDecimal peakRss;
+        BigDecimal peakVmem;
+        long realtime;
+        // there is no nextflow trace, when the task failed
+        if (task.wasSuccessfullyExecuted()) {
+            peakRss = NfTrace.getNfPeakRss(task);
+            peakVmem = NfTrace.getNfPeakVmem(task);
+            realtime = NfTrace.getNfRealTime(task);
+        } else {
+            peakRss = BigDecimal.ZERO;
+            peakVmem = BigDecimal.ZERO;
+            realtime = 0;
+        }
         // @formatter:off
         Observation o = Observation.builder()
                 .task( task.getConfig().getTask() )

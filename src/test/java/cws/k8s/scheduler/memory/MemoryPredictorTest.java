@@ -130,8 +130,8 @@ public class MemoryPredictorTest {
         // 1. There is a suggestion at all
         assertNotNull(suggestionStr);
         BigDecimal suggestion = new BigDecimal(suggestionStr);
-        // 2. The suggestion is lower than the reserved value was
-        assertTrue(suggestion.compareTo(reserved) < 0);
+        // 2. The suggestion is leq than the reserved value was
+        assertTrue(suggestion.compareTo(reserved) <= 0);
         // 3. The suggestion is higher than the used value was
         assertTrue(suggestion.compareTo(used) > 0);
         return suggestion;

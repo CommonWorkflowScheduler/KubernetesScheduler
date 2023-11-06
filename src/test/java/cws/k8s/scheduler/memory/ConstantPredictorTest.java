@@ -242,7 +242,7 @@ public class ConstantPredictorTest {
         log.info("reserved      : {})", suggestion1);
         log.info("usedSucc      : {})", usedSucc);
         log.info("suggestion2 is: {})", suggestion2);
-        assertTrue(suggestion2.compareTo(suggestion1) < 0);
+        assertTrue(suggestion2.compareTo(suggestion1) <= 0);
 
         BigDecimal suggestion3 = MemoryPredictorTest.createTaskObservationFailurePrediction(constantPredictor, suggestion2, usedFail);
         log.info("reserved      : {})", suggestion2);
@@ -260,7 +260,7 @@ public class ConstantPredictorTest {
         log.info("reserved      : {})", suggestion4);
         log.info("usedSucc      : {})", usedSucc);
         log.info("suggestion5 is: {})", suggestion5);
-        assertTrue(suggestion5.compareTo(suggestion4) < 0);
+        assertTrue(suggestion5.compareTo(suggestion4) <= 0);
     }
 
 }

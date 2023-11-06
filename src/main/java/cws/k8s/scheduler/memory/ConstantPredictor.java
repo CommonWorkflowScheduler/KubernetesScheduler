@@ -29,13 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * ConstantPredictor will use the following strategy:
  * 
- * - In case task has failed, double memory 
- * 
- * - In case task was successful, reduce memory according to:
- *     if no old suggestion exists: 
- *       - let the new suggestion be 10% higher, then the peakRss was 
- *     else: 
- *       - new suggestion = (new peakRss + last suggestion) / 2
+ * - In case task was successful:
+ *   - let the next prediction be 10% higher, then the peakRss was 
+ *
+ * - In case task has failed:
+ *   - reset to initial value
  * 
  * I.e. the suggestions from ConstantPredictor are not dependent on the input
  * size of the tasks.
@@ -49,10 +47,12 @@ class ConstantPredictor implements MemoryPredictor {
 
     Map<String, Integer> generation;
     Map<String, BigDecimal> model;
+    Map<String, BigDecimal> initialValue;
 
     public ConstantPredictor() {
         model = new HashMap<>();
         generation = new HashMap<>();
+        initialValue = new HashMap<>();
     }
 
     @Override
@@ -63,6 +63,11 @@ class ConstantPredictor implements MemoryPredictor {
             return;
         }
 
+        // store initial ramRequest value per task
+        if (!initialValue.containsKey(o.task)) {
+            initialValue.put(o.task, o.getRamRequest());
+        }
+        
         // observations increase the generation value for this task
         if (!generation.containsKey(o.task)) {
             generation.put(o.task, 1);
@@ -71,18 +76,16 @@ class ConstantPredictor implements MemoryPredictor {
         }
         
         if (Boolean.TRUE.equals(o.success)) {
-            // decrease suggestion
+            // set model to peakRss + 10%
             if (model.containsKey(o.task)) {
-                BigDecimal sug = (o.peakRss.add(model.get(o.task))).divide(new BigDecimal(2));
-                model.replace(o.task, sug.setScale(0, RoundingMode.CEILING));
+                model.replace(o.task, o.peakRss.multiply(new BigDecimal("1.1")).setScale(0, RoundingMode.CEILING));
             } else {
                 model.put(o.task, o.peakRss.multiply(new BigDecimal("1.1")).setScale(0, RoundingMode.CEILING));
             }
         } else {
-            // increase suggestion
+            // reset to initialValue
             if (model.containsKey(o.task)) {
-                BigDecimal sug = model.get(o.task).multiply(new BigDecimal(2));
-                model.replace(o.task, sug.setScale(0, RoundingMode.CEILING));
+                model.replace(o.task, this.initialValue.get(o.task));
             } else {
                 model.put(o.task, o.ramRequest.multiply(new BigDecimal(2)).setScale(0, RoundingMode.CEILING));
             }
@@ -95,15 +98,15 @@ class ConstantPredictor implements MemoryPredictor {
         String taskName = task.getConfig().getTask();
         log.debug("ConstantPredictor.queryPrediction({})", taskName);
 
-        if (!generation.containsKey(taskName)) {
-            // this taskName is unknown, no prediction possible
-            return null;
-        } else {
-            // only provide a prediction to tasks when the prediction generation is bigger than the tasks generation
-            if (task.getGeneration() >= generation.get(taskName)) {
-                return null;
-            }
-        }
+//        if (!generation.containsKey(taskName)) {
+//            // this taskName is unknown, no prediction possible
+//            return null;
+//        } else {
+//            // only provide a prediction to tasks when the prediction generation is bigger than the tasks generation
+//            if (task.getGeneration() >= generation.get(taskName)) {
+//                return null;
+//            }
+//        }
 
         if (model.containsKey(taskName)) {
             // update the task.generation to the predictor.generation
