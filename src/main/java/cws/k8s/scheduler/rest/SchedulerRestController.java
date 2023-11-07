@@ -103,22 +103,20 @@ public class SchedulerRestController {
 
         Scheduler scheduler;
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("myconfig"),Map.class);
+        // ObjectMapper objetMapper = new ObjectMapper();
+        // Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("tasklabelconfig"),Map.class);
 
         if ( schedulerHolder.containsKey( execution ) ) {
             return noSchedulerFor( execution );
         }
 
+
+        Prioritize prioritize;
+        NodeAssign assign;
+
         switch ( strategy.toLowerCase() ){
             case "nodelabelassign":  
-                Prioritize prioritize;
-                NodeAssign labelassign;
-                NodeAssign assign;
-                prioritize = new RankMaxPrioritize();
-                labelassign = new LabelAssign(nodelabel);
-                assign = new FairAssign();
-                scheduler = new NodeLabelAssign(execution, client, namespace, config, prioritize, labelassign, assign);
+                scheduler = new NodeLabelAssign(execution, client, namespace, config);
                 break;
             default: {
                 final String[] split = strategy.split( "-" );

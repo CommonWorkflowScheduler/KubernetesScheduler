@@ -8,10 +8,10 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 @NoArgsConstructor( access = AccessLevel.PRIVATE, force = true )
+@Getter
 /**
  * Only for testing
  */
-@Getter
 @RequiredArgsConstructor( access = AccessLevel.PACKAGE )
 public class TaskInput {
 

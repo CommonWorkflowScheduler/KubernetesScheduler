@@ -4,26 +4,34 @@ import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
 import cws.k8s.scheduler.model.Requirements;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import lombok.extern.slf4j.Slf4j;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
 @Slf4j
 public class LabelAssign extends NodeAssign {
 
-    public Map<String, String> nodelabel;
+    final SchedulerConfig config;
 
     public LabelAssign( 
-                        final Map<String, String> nodelabel
+                        final SchedulerConfig config
                      ){
-        this.nodelabel = nodelabel;
+        this.config = config;
     }
     
     @Override
     public List<NodeTaskAlignment> getTaskNodeAlignment( List<Task> unscheduledTasks, Map<NodeWithAlloc, Requirements> availableByNode ) {
+        
+        // get the node-label map 
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("tasklabelconfig"),Map.class);
+
         LinkedList<NodeTaskAlignment> alignment = new LinkedList<>();
-        final ArrayList<Map.Entry<NodeWithAlloc, Requirements>> entries = new ArrayList<>( availableByNode.entrySet() );
+        // final ArrayList<Map.Entry<NodeWithAlloc, Requirements>> entries = new ArrayList<>( availableByNode.entrySet() );
         for ( final Task task : unscheduledTasks ) {
             
             String taskName = null; 
@@ -42,12 +50,12 @@ public class LabelAssign extends NodeAssign {
             }            
 
             final PodWithAge pod = task.getPod();
-            log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
+            // log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
 
             if(nodelabel.containsKey(taskLabel)){
                 String nodeName = nodelabel.get(taskLabel);
 
-                for ( Map.Entry<NodeWithAlloc, Requirements> e : entries ) {
+                for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
                     final NodeWithAlloc node = e.getKey();
 
                     if(nodeName.equals(node.getName())){
@@ -59,9 +67,8 @@ public class LabelAssign extends NodeAssign {
                         break;
                     } 
                 }
-            } else 
-            {
-                log.info( "Task Label: " + taskLabel + " doesn't exist in config file.");
+            } else {
+                log.warn( "Task Label: " + taskLabel + " does not exist in config file.");
             }
         }
         return alignment;
