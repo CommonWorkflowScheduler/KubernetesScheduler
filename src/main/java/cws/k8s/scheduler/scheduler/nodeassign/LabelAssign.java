@@ -30,6 +30,10 @@ public class LabelAssign extends NodeAssign {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("tasklabelconfig"),Map.class);
 
+        if ( nodelabel == null ){
+            log.error("No tasklabelconfig exist in the nextflow.config file. Define a tasklabelconfig or use another scheduling strategy.");
+        }
+
         LinkedList<NodeTaskAlignment> alignment = new LinkedList<>();
         // final ArrayList<Map.Entry<NodeWithAlloc, Requirements>> entries = new ArrayList<>( availableByNode.entrySet() );
         for ( final Task task : unscheduledTasks ) {
