@@ -37,10 +37,12 @@ import lombok.extern.slf4j.Slf4j;
 * If there are less than 3 observations, give no prediction, else:
 * Calculate linear regression model and test if all observations would fit into
 * the model. If all past observations fit into the model, give a prediction.
-* If the model does not fit the past observations, don't provide a prediction.
+* If the model does not fit the past observations, provide initial value.
 * 
 * Predictions start with 10% over-provisioning. If tasks fail, this will
 * increase automatically.
+* 
+* WaryPredictor will never exceed the initial value.
 * 
 * @author Florian Friederici
 *
@@ -52,11 +54,15 @@ public class WaryPredictor implements MemoryPredictor {
     Map<String, SimpleRegression> model;
     Map<String, Double> overprovisioning;
     Map<String, List<Pair<Double, Double>>> observations;
+    Map<String, Integer> errorCounter;
+    Map<String, BigDecimal> initialValue;
     
     public WaryPredictor() {
         model = new HashMap<>();
         overprovisioning = new HashMap<>();
         observations = new HashMap<>();
+        errorCounter = new HashMap<>();
+        initialValue = new HashMap<>();
     }
 
     @Override
@@ -67,8 +73,17 @@ public class WaryPredictor implements MemoryPredictor {
             return;
         }
 
+        // store initial ramRequest value per task
+        if (!initialValue.containsKey(o.task)) {
+            initialValue.put(o.task, o.getRamRequest());
+        }
+
         if (!overprovisioning.containsKey(o.task)) {
             overprovisioning.put(o.task, 1.1);
+        }
+
+        if (!errorCounter.containsKey(o.task)) {
+            errorCounter.put(o.task, 0);
         }
 
         if (Boolean.TRUE.equals(o.success)) {
@@ -86,7 +101,9 @@ public class WaryPredictor implements MemoryPredictor {
             observations.get(o.task).add(Pair.of(x, y));
             model.get(o.task).addData(x,y);
         } else {
-            log.debug("overprovisioning value will increase due to task failure");
+            Integer errors = errorCounter.get(o.task);
+            errorCounter.put(o.task, 1+errors);
+            log.debug("overprovisioning value will increase due to task failure, errors: {}", 1+errors);
             Double old = overprovisioning.get(o.task);
             overprovisioning.put(o.task, old+0.05);
         }
@@ -100,6 +117,11 @@ public class WaryPredictor implements MemoryPredictor {
         if (!model.containsKey(taskName)) {
             log.debug("WaryPredictor has no model for {}", taskName);
             return null;
+        }
+        
+        if (2 < errorCounter.get(taskName)) {
+            log.warn("to many errors for {}, providing initial value", taskName);
+            return initialValue.get(taskName).toPlainString();
         }
         
         SimpleRegression simpleRegression = model.get(taskName);
@@ -136,6 +158,11 @@ public class WaryPredictor implements MemoryPredictor {
         if (prediction < 0) {
             log.warn("prediction would be negative: {}", prediction);
             return null;
+        }
+        
+        if (prediction > initialValue.get(taskName).doubleValue()) {
+            log.warn("prediction would exceed initial value");
+            return initialValue.get(taskName).toPlainString();
         }
 
         return BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING).toPlainString();
