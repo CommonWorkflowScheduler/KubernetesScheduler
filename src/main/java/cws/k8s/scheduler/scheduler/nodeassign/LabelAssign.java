@@ -35,7 +35,7 @@ public class LabelAssign extends NodeAssign {
         for ( final Task task : unscheduledTasks ) {
 
             if ( nodelabel == null ){
-                log.error("No tasklabelconfig exist in the nextflow.config file. Define a tasklabelconfig or use another scheduling strategy.");
+                log.warn("No tasklabelconfig exist in the nextflow.config file. Define a tasklabelconfig or use another scheduling strategy.");
                 break;
             }
             
