@@ -71,7 +71,6 @@ public class NodeLabelAssign extends Scheduler {
         // first alignemnt (LabelAssign)
         List<NodeTaskAlignment> alignmentLabelAssign = nodeLabelAssigner.getTaskNodeAlignment(unscheduledTasks, availableByNode);
         List<String> namesList = alignmentLabelAssign.stream().map(obj -> obj.task.getConfig().getName()).collect(Collectors.toList());
-        // System.out.println(namesList.toString());
 
         List<Task> filteredTasks = new LinkedList<>();
 

@@ -59,7 +59,7 @@ public class LabelAssign extends NodeAssign {
                     final NodeWithAlloc node = e.getKey();
 
                     if(nodeName.equals(node.getName())){
-                        System.out.println("Aligned Pod to node: " + node.getName());
+                        log.info("Aligned Pod to node: " + node.getName());
                         alignment.add( new NodeTaskAlignment( node, task ) );
                         availableByNode.get( node ).subFromThis(pod.getRequest());
                         log.info("--> " + node.getName());
