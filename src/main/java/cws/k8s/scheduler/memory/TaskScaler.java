@@ -91,6 +91,11 @@ public class TaskScaler {
             this.memoryPredictor = new SquarePredictor();
             break;
 
+        case "wary":
+            log.debug("using WaryPredictor");
+            this.memoryPredictor = new WaryPredictor();
+            break;
+
         case "none":
         default:
             log.debug("using NonePredictor");
