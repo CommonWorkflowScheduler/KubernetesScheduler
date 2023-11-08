@@ -257,4 +257,71 @@ class WaryPredictorTest {
 
     }
 
+    /**
+     * Test ignore list
+     */
+    @Test
+    void testIgnoreList() {
+        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());        
+        WaryPredictor waryPredictor = new WaryPredictor();
+        Task task = MemoryPredictorTest.createTask("taskName", 1000);
+        Task task3 = MemoryPredictorTest.createTask("taskName", 1000, 3);
+
+        long initialValue = 2000l;
+        
+        // @formatter:off
+        Observation o2 = Observation.builder().task("taskName").taskName("taskName (2)")
+                .success(false)
+                .inputSize(1000)
+                .ramRequest(BigDecimal.valueOf(initialValue))
+                .peakVmem(BigDecimal.valueOf(853852160l))
+                .peakRss(BigDecimal.valueOf(853852160l))
+                .realtime(73000)
+                .build();
+        // @formatter:on
+        waryPredictor.addObservation(o2);
+
+        // @formatter:off
+        Observation o1 = Observation.builder().task("taskName").taskName("taskName (1)")
+                .success(false)
+                .inputSize(1000)
+                .ramRequest(BigDecimal.valueOf(53687091200l))
+                .peakVmem(BigDecimal.valueOf(853852160l))
+                .peakRss(BigDecimal.valueOf(853852160l))
+                .realtime(73000)
+                .build();
+        // @formatter:on
+        waryPredictor.addObservation(o1);
+
+        log.info(waryPredictor.queryPrediction(task));
+        assertEquals(initialValue, Long.parseLong(waryPredictor.queryPrediction(task)));
+        log.info(waryPredictor.queryPrediction(task3));
+        assertNull(waryPredictor.queryPrediction(task3));
+        
+        for (int i=0; i<4; i++) {
+            log.info("insert successful observation {}", i);
+            // @formatter:off
+            Observation observation = Observation.builder()
+                    .task("taskName")
+                    .taskName("taskName ("+(4+i)+")")
+                    .success(true)
+                    .inputSize(123+i)
+                    .ramRequest(BigDecimal.valueOf(123))
+                    .peakVmem(BigDecimal.valueOf(1))
+                    .peakRss(BigDecimal.valueOf(1))
+                    .realtime(1000)
+                    .build();
+            // @formatter:on
+            waryPredictor.addObservation(observation);
+        }
+
+        log.info(waryPredictor.queryPrediction(task3));
+        assertNotNull(waryPredictor.queryPrediction(task3));
+
+        log.info(waryPredictor.queryPrediction(task));
+        assertEquals(initialValue, Long.parseLong(waryPredictor.queryPrediction(task)));
+
+    }
+
+    
 }

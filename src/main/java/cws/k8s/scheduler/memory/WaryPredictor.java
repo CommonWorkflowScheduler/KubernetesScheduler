@@ -56,6 +56,7 @@ public class WaryPredictor implements MemoryPredictor {
     Map<String, List<Pair<Double, Double>>> observations;
     Map<String, Integer> errorCounter;
     Map<String, BigDecimal> initialValue;
+    Map<String, List<String>> ignoreList;
     
     public WaryPredictor() {
         model = new HashMap<>();
@@ -63,11 +64,22 @@ public class WaryPredictor implements MemoryPredictor {
         observations = new HashMap<>();
         errorCounter = new HashMap<>();
         initialValue = new HashMap<>();
+        ignoreList = new HashMap<>();
     }
 
     @Override
     public void addObservation(Observation o) {
         log.debug("WaryPredictor.addObservation({})", o);
+
+        // nextflow will only retry once, so if the task failed, we will add
+        // it to our ignore list, so that it wont fail twice
+        if (!Boolean.TRUE.equals(o.success)) {
+            if (!ignoreList.containsKey(o.task)) {
+                ignoreList.put(o.task, new ArrayList<>());
+            }
+            ignoreList.get(o.task).add(o.taskName);
+        }
+        
         if (!TaskScaler.checkObservationSanity(o)) {
             log.warn("dismiss observation {}", o);
             return;
@@ -113,6 +125,12 @@ public class WaryPredictor implements MemoryPredictor {
     public String queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
         log.debug("WaryPredictor.queryPrediction({},{})", taskName, task.getInputSize());
+        
+        // check ignore list first
+        if (ignoreList.containsKey(taskName) && (ignoreList.get(taskName).contains(task.getConfig().getName()))) {
+            log.debug("{} is on the ignore list", task.getConfig().getName());
+            return initialValue.get(taskName).toPlainString();
+        }
 
         if (!model.containsKey(taskName)) {
             log.debug("WaryPredictor has no model for {}", taskName);

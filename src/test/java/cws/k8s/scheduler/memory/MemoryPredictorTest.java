@@ -64,6 +64,17 @@ public class MemoryPredictorTest {
         return task;
     }
 
+    static Task createTask(String name, long inputSize, int number) {
+        TaskConfig taskConfig = new TaskConfig(name);
+        ReflectionTestUtils.setField(taskConfig, "name", name + " ("+number+")");
+        DAG dag = new DAG();
+        List<Vertex> processes = Arrays.asList(new Process(name, 0));
+        dag.registerVertices(processes);
+        Task task = new Task(taskConfig, dag);
+        ReflectionTestUtils.setField(task, "inputSize", inputSize);
+        return task;
+    }
+
     /**
      * Execute observationSanityCheck on all predictors
      * 
