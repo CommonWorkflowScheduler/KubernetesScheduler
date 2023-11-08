@@ -250,6 +250,12 @@ public class TaskScaler {
             return false;
         }
 
+        // we don't trust the observation of the realtime was that low
+        if (o.realtime == 0) {
+            log.error("realtime was zero, suspicious observation");
+            return false;
+        }
+
         // those are indicators that the .command.trace read has failed
         if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
             log.warn("peakRss may not be negative (has the .command.trace read failed?)");
