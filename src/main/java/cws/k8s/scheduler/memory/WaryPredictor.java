@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
 * WaryPredictor will use the following strategy:
 * 
-* If there are less than 3 observations, give no prediction, else:
+* If there are less than 4 observations, give no prediction, else:
 * Calculate linear regression model and test if all observations would fit into
 * the model. If all past observations fit into the model, give a prediction.
 * If the model does not fit the past observations, provide initial value.
@@ -126,7 +126,7 @@ public class WaryPredictor implements MemoryPredictor {
         
         SimpleRegression simpleRegression = model.get(taskName);
 
-        if (simpleRegression.getN() < 3) {
+        if (simpleRegression.getN() < 4) {
             log.debug("Not enough observations for {}", taskName);
             return null;
         }
