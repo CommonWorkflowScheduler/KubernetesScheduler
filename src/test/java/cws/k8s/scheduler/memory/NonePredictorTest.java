@@ -63,6 +63,7 @@ public class NonePredictorTest {
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(1))
+                .realtime(1000)
                 .build();
         // @formatter:on
         nonePredictor.addObservation(observation);
@@ -86,6 +87,7 @@ public class NonePredictorTest {
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(1))
+                .realtime(1000)
                 .build();
         Observation observation2 = Observation.builder()
                 .task("taskName")
@@ -94,6 +96,7 @@ public class NonePredictorTest {
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(1))
+                .realtime(1000)
                 .build();
         // @formatter:on
         nonePredictor.addObservation(observation1);

@@ -62,6 +62,7 @@ public class LinearPredictorTest {
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(1))
+                .realtime(1000)
                 .build();
         // @formatter:on
         linearPredictor.addObservation(observation);
@@ -83,6 +84,7 @@ public class LinearPredictorTest {
                 .inputSize(1024l)
                 .ramRequest(BigDecimal.valueOf(4l*1024*1024*1024))
                 .peakRss(BigDecimal.valueOf(1l*1024*1024*1024))
+                .realtime(1000)
                 .build();
         Observation observation2 = Observation.builder()
                 .task("taskName")
@@ -91,6 +93,7 @@ public class LinearPredictorTest {
                 .inputSize(2048)
                 .ramRequest(BigDecimal.valueOf(4l*1024*1024*1024))
                 .peakRss(BigDecimal.valueOf(2l*1024*1024*1024))
+                .realtime(1000)
                 .build();
         // @formatter:on
         linearPredictor.addObservation(observation1);
@@ -146,6 +149,7 @@ public class LinearPredictorTest {
                 .inputSize(3)
                 .ramRequest(BigDecimal.valueOf(3))
                 .peakRss(BigDecimal.valueOf(3))
+                .realtime(1000)
                 .build();
         Observation observation2 = Observation.builder()
                 .task("taskName")
@@ -154,6 +158,7 @@ public class LinearPredictorTest {
                 .inputSize(2)
                 .ramRequest(BigDecimal.valueOf(1))
                 .peakRss(BigDecimal.valueOf(1))
+                .realtime(1000)
                 .build();
         // @formatter:on
         linearPredictor.addObservation(observation1);
@@ -180,6 +185,7 @@ public class LinearPredictorTest {
                 .inputSize(0)
                 .ramRequest(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(1))
+                .realtime(1000)
                 .build();
         // @formatter:on
         linearPredictor.addObservation(observation);

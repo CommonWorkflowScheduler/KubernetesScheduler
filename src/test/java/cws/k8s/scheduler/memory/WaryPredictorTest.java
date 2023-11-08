@@ -57,7 +57,9 @@ class WaryPredictorTest {
                     .success(true)
                     .inputSize(123+i)
                     .ramRequest(BigDecimal.valueOf(0))
+                    .peakVmem(BigDecimal.valueOf(1))
                     .peakRss(BigDecimal.valueOf(1))
+                    .realtime(1000)
                     .build();
             // @formatter:on
             waryPredictor.addObservation(observation);
@@ -88,6 +90,8 @@ class WaryPredictorTest {
                     .inputSize(123+i)
                     .ramRequest(BigDecimal.valueOf(0))
                     .peakRss(BigDecimal.valueOf(1))
+                    .peakVmem(BigDecimal.valueOf(1))
+                    .realtime(1000)
                     .build();
             // @formatter:on
             waryPredictor.addObservation(observation);
@@ -118,6 +122,8 @@ class WaryPredictorTest {
                     .inputSize(123)
                     .ramRequest(BigDecimal.valueOf(0))
                     .peakRss(BigDecimal.valueOf(1))
+                    .peakVmem(BigDecimal.valueOf(1))
+                    .realtime(1000)
                     .build();
             // @formatter:on
             waryPredictor.addObservation(observation);
@@ -136,6 +142,8 @@ class WaryPredictorTest {
         WaryPredictor waryPredictor = new WaryPredictor();
         Task task = MemoryPredictorTest.createTask("taskName", 1024l);
         
+        long initialValue = 1000;
+        
         for (int i=0; i<3; i++) {
             log.info("insert successful observation {}", i);
             // @formatter:off
@@ -144,8 +152,10 @@ class WaryPredictorTest {
                     .taskName("taskName (1)")
                     .success(true)
                     .inputSize(123+i)
-                    .ramRequest(BigDecimal.valueOf(0))
+                    .ramRequest(BigDecimal.valueOf(initialValue))
+                    .peakVmem(BigDecimal.valueOf(1))
                     .peakRss(BigDecimal.valueOf(1))
+                    .realtime(1000)
                     .build();
             // @formatter:on
             waryPredictor.addObservation(observation);
@@ -161,14 +171,16 @@ class WaryPredictorTest {
                     .taskName("taskName (1)")
                     .success(false)
                     .inputSize(0)
-                    .ramRequest(BigDecimal.valueOf(0))
+                    .ramRequest(BigDecimal.valueOf(initialValue/2))
                     .peakRss(BigDecimal.valueOf(0))
+                    .peakVmem(BigDecimal.valueOf(0))
+                    .realtime(1000)
                     .build();
             // @formatter:on
             assertNotNull(waryPredictor.queryPrediction(task));
             waryPredictor.addObservation(observation);
         }
-        assertNull(waryPredictor.queryPrediction(task));
+        assertEquals(initialValue, Long.parseLong( waryPredictor.queryPrediction(task) ));
     }
     
     

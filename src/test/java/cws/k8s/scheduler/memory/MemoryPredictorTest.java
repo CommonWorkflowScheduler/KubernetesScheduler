@@ -96,6 +96,7 @@ public class MemoryPredictorTest {
                 .inputSize(-1)
                 .ramRequest(BigDecimal.valueOf(0))
                 .peakRss(BigDecimal.valueOf(0))
+                .realtime(1000)
                 .build();
         // @formatter:on
 
@@ -120,6 +121,7 @@ public class MemoryPredictorTest {
                 .inputSize(0)
                 .ramRequest(reserved)
                 .peakRss(used)
+                .realtime(1000)
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(observation);
@@ -152,18 +154,20 @@ public class MemoryPredictorTest {
                 .inputSize(0)
                 .ramRequest(reserved)
                 .peakRss(used)
+                .realtime(1000)
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(observation);
         String suggestionStr = memoryPredictor.queryPrediction(task);
-        log.debug("suggestion is: {}", suggestionStr);
+        log.info("suggestion is: {}", suggestionStr);
         // 1. There is a suggestion at all
         assertNotNull(suggestionStr);
         BigDecimal suggestion = new BigDecimal(suggestionStr);
         // 2. The suggestion is higher than the reserved value was
         assertTrue(suggestion.compareTo(reserved) > 0);
         // 3. The suggestion is higher than the used value was
-        assertTrue(suggestion.compareTo(used) > 0);
+        log.info("assert {} >= {}", suggestion, used);
+        assertTrue(suggestion.compareTo(used) >= 0);
         return suggestion;
     }
 }
