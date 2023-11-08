@@ -96,7 +96,7 @@ public class WaryPredictor implements MemoryPredictor {
             }
 
             double x = o.getInputSize();
-            double y = o.getPeakRss().doubleValue();
+            double y = o.getPeakVmem().doubleValue();
 
             observations.get(o.task).add(Pair.of(x, y));
             model.get(o.task).addData(x,y);
