@@ -57,6 +57,7 @@ public class WaryPredictor implements MemoryPredictor {
     Map<String, Integer> errorCounter;
     Map<String, BigDecimal> initialValue;
     Map<String, List<String>> ignoreList;
+    Map<String, BigDecimal> lowestSuccess;
     
     public WaryPredictor() {
         model = new HashMap<>();
@@ -65,6 +66,7 @@ public class WaryPredictor implements MemoryPredictor {
         errorCounter = new HashMap<>();
         initialValue = new HashMap<>();
         ignoreList = new HashMap<>();
+        lowestSuccess = new HashMap<>();
     }
 
     @Override
@@ -110,6 +112,7 @@ public class WaryPredictor implements MemoryPredictor {
             double x = o.getInputSize();
             double y = o.getPeakVmem().doubleValue();
 
+            lowestSuccess.put(o.task, BigDecimal.valueOf(y));
             observations.get(o.task).add(Pair.of(x, y));
             model.get(o.task).addData(x,y);
         } else {
@@ -129,7 +132,7 @@ public class WaryPredictor implements MemoryPredictor {
         // check ignore list first
         if (ignoreList.containsKey(taskName) && (ignoreList.get(taskName).contains(task.getConfig().getName()))) {
             log.debug("{} is on the ignore list", task.getConfig().getName());
-            return initialValue.get(taskName).toPlainString();
+            return null;
         }
 
         if (!model.containsKey(taskName)) {
@@ -181,6 +184,12 @@ public class WaryPredictor implements MemoryPredictor {
         if (prediction > initialValue.get(taskName).doubleValue()) {
             log.warn("prediction would exceed initial value");
             return initialValue.get(taskName).toPlainString();
+        }
+
+        // this catches if the model underestimates the behavior
+        if (prediction < lowestSuccess.get(taskName).doubleValue()) {
+            log.info("prediction would be lower than the lowest known successful value");
+            return null;
         }
 
         return BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING).toPlainString();
