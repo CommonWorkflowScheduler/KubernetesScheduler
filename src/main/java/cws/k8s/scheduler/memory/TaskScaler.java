@@ -18,10 +18,13 @@
 package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
 import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.model.NodeWithAlloc;
+import cws.k8s.scheduler.model.Requirements;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.scheduler.Scheduler;
@@ -44,6 +47,7 @@ public class TaskScaler {
     final Scheduler scheduler;
     final MemoryPredictor memoryPredictor;
     final Statistics statistics;
+    BigDecimal maxRequest = null;
 
     /**
      * Create a new TaskScaler instance. The memory predictor to be used is
@@ -102,6 +106,19 @@ public class TaskScaler {
             this.memoryPredictor = new NonePredictor();
         }
         this.statistics = new Statistics(scheduler,memoryPredictor);
+        
+        // remember the biggest node, as upper bound for memory requests
+        List<NodeWithAlloc> allNodes = client.getAllNodes();
+        for (NodeWithAlloc n : allNodes) {
+            Requirements maxRes = n.getMaxResources();
+            Requirements availRes = n.getAvailableResources();
+            log.debug("node = {}, ram = {}, available = {}", n.getName(), NumberFormat.getNumberInstance(Locale.US).format( maxRes.getRam() ), NumberFormat.getNumberInstance(Locale.US).format(n.getAvailableResources().getRam()));
+            
+            if (maxRequest==null || availRes.getRam().compareTo(maxRequest) > 0) {
+                maxRequest = availRes.getRam();
+            }
+        }
+        log.info("biggest node has maxRequest = {}", NumberFormat.getNumberInstance(Locale.US).format(maxRequest));
     }
 
     /**
@@ -154,25 +171,44 @@ public class TaskScaler {
                     t.getPod().getRequest());
 
             // if task had no memory request set, it cannot be changed
-            if (t.getPod().getRequest().getRam().compareTo(BigDecimal.ZERO) == 0) {
+            BigDecimal taskRequest = t.getPod().getRequest().getRam();
+            if (taskRequest.compareTo(BigDecimal.ZERO) == 0) {
                 log.info("cannot change task {}, because it had no prior requirements", t.toString());
                 continue;
             }
             
+            BigDecimal newRequestValue = null;
+                        
+            // sanity check for Nextflow provided value
+            if (taskRequest.compareTo(this.maxRequest) > 0) {
+                // this would never get scheduled and CWS will get stuck, so we take the liberty to lower the value
+                newRequestValue = this.maxRequest.subtract(BigDecimal.valueOf(1l*1024*1024));
+                log.warn("nextflow request exceeds maximal cluster allocatable capacity, request was reduced by TaskScaler");
+            }
+
             // query suggestion
-            String suggestion = memoryPredictor.queryPrediction(t);
-            if (suggestion != null) {
+            String prediction = memoryPredictor.queryPrediction(t);
+
+            // sanity check for our prediction
+            if (prediction != null && new BigDecimal(prediction).compareTo(maxRequest) < 0) {
+                // we have a prediction and it fits into the cluster
+                newRequestValue = new BigDecimal(prediction);
+                log.debug("predictor proposes {} for task {}", prediction, t.getConfig().getName());
+            }
+
+            if (newRequestValue != null) {
+                log.info("resizing {} to {} bytes", t.getConfig().getName(), newRequestValue.toPlainString());
                 // 1. patch Kubernetes value
-                patchTask(t, suggestion);
+                patchTask(t, newRequestValue.toPlainString());
 
                 // 2. patch CWS value
                 List<Container> l = t.getPod().getSpec().getContainers();
                 for (Container c : l) {
                     ResourceRequirements req = c.getResources();
                     Map<String, Quantity> limits = req.getLimits();
-                    limits.replace("memory", new Quantity(suggestion));
+                    limits.replace("memory", new Quantity(newRequestValue.toPlainString()));
                     Map<String, Quantity> requests = req.getRequests();
-                    requests.replace("memory", new Quantity(suggestion));
+                    requests.replace("memory", new Quantity(newRequestValue.toPlainString()));
                     log.debug("container: {}", req);
                 }
 
@@ -271,5 +307,5 @@ public class TaskScaler {
         }
         return true;
     }
-
+    
 }
