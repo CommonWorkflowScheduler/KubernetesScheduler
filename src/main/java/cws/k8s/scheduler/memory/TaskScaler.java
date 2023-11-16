@@ -19,6 +19,7 @@ package cws.k8s.scheduler.memory;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -48,6 +49,7 @@ public class TaskScaler {
     final MemoryPredictor memoryPredictor;
     final Statistics statistics;
     BigDecimal maxRequest = null;
+    List<String> blacklist;
 
     /**
      * Create a new TaskScaler instance. The memory predictor to be used is
@@ -107,6 +109,9 @@ public class TaskScaler {
         }
         this.statistics = new Statistics(scheduler,memoryPredictor);
         
+        // blacklist for failed tasks
+        this.blacklist = new ArrayList<>();
+        
         // remember the biggest node, as upper bound for memory requests
         List<NodeWithAlloc> allNodes = client.getAllNodes();
         for (NodeWithAlloc n : allNodes) {
@@ -140,6 +145,8 @@ public class TaskScaler {
             peakRss = BigDecimal.ZERO;
             peakVmem = BigDecimal.ZERO;
             realtime = 0;
+            // when a task has failed, we put it on the blacklist, so we will not tamper it again
+            this.blacklist.add(task.getConfig().getName());
         }
         // @formatter:off
         Observation o = Observation.builder()
@@ -170,6 +177,11 @@ public class TaskScaler {
             log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
                     t.getPod().getRequest());
 
+            // if task is already blacklisted, don't touch it again
+            if (this.blacklist.contains(t.getConfig().getName())) {
+                continue;
+            }
+            
             // if task had no memory request set, it cannot be changed
             BigDecimal taskRequest = t.getPod().getRequest().getRam();
             if (taskRequest.compareTo(BigDecimal.ZERO) == 0) {
