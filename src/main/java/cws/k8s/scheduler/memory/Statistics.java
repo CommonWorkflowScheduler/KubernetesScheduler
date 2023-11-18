@@ -89,7 +89,7 @@ public class Statistics {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,wasted,realtime\n");
+        sb.append("task,taskName,success,inputSize,ramRequest,peakVmem,peakRss,realtime,node\n");
         for (Observation o : observations) {
             sb.append(o.getTask());
             sb.append(",");
@@ -105,9 +105,9 @@ public class Statistics {
             sb.append(",");
             sb.append(o.getPeakRss().toPlainString());
             sb.append(",");
-            sb.append(o.getWasted().toPlainString());
-            sb.append(",");
             sb.append(o.getRealtime());
+            sb.append(",");
+            sb.append(o.getNode());
             sb.append("\n");
         }
         String csv = sb.toString();
@@ -177,7 +177,6 @@ public class Statistics {
                 ts.ramRequestStatitistics.accept(o.ramRequest.doubleValue());
                 ts.peakVmemStatistics.accept(o.peakVmem.doubleValue());
                 ts.peakRssStatistics.accept(o.peakRss.doubleValue());
-                ts.wastedStatistics.accept( o.wasted.doubleValue() );
                 ts.realtimeStatistics.accept(o.realtime);
             } else {
                 ts.failCount++;
@@ -225,11 +224,6 @@ public class Statistics {
                     ts.peakRssStatistics.getAverage(),
                     ts.peakRssStatistics.getMin(),
                     ts.peakRssStatistics.getMax()) );
-            sb.append(String.format(Locale.US, "wasted     : cnt %d, avr %.3e, min %.3e, max %.3e%n",
-                    ts.wastedStatistics.getCount(),
-                    ts.wastedStatistics.getAverage(),
-                    ts.wastedStatistics.getMin(),
-                    ts.wastedStatistics.getMax()) );
             sb.append(String.format(Locale.US, "realtime   : cnt %d, avr %.1f, min %d, max %d%n",
                     ts.realtimeStatistics.getCount(),
                     ts.realtimeStatistics.getAverage(),
@@ -262,7 +256,6 @@ public class Statistics {
         DoubleSummaryStatistics ramRequestStatitistics = new DoubleSummaryStatistics();
         DoubleSummaryStatistics peakVmemStatistics = new DoubleSummaryStatistics();
         DoubleSummaryStatistics peakRssStatistics = new DoubleSummaryStatistics();
-        DoubleSummaryStatistics wastedStatistics = new DoubleSummaryStatistics();
         LongSummaryStatistics realtimeStatistics = new LongSummaryStatistics();
     }
 }

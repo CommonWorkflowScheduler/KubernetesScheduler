@@ -158,7 +158,7 @@ public class TaskScaler {
                 .peakVmem(peakVmem)
                 .peakRss(peakRss)
                 .realtime(realtime)
-                .wasted(task.getPod().getRequest().getRam().subtract(peakRss))
+                .node(task.getNode().getName())
                 .build();
         // @formatter:on
         log.info("taskWasFinished, observation={}", o);
