@@ -206,6 +206,13 @@ public class TaskScaler {
                 // we have a prediction and it fits into the cluster
                 newRequestValue = new BigDecimal(prediction);
                 log.debug("predictor proposes {} for task {}", prediction, t.getConfig().getName());
+                
+                // if our prediction is a very low value, the pod might not start. Make sure it has at least 256MiB
+                BigDecimal lowestRequest = BigDecimal.valueOf(256l*1024*1024);
+                if (newRequestValue.compareTo(lowestRequest) < 0) {
+                    log.debug("Prediction of {} is lower than {}. Automatically increased.", newRequestValue, lowestRequest);
+                    newRequestValue = lowestRequest;
+                }
             }
 
             if (newRequestValue != null) {
