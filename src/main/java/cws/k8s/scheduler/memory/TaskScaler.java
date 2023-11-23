@@ -255,9 +255,9 @@ public class TaskScaler {
      * to the cluster.
      * 
      * @param t          the task to be patched
-     * @param suggestion the value to be set
+     * @param value the value to be set
      */
-    private void patchTask(Task t, String suggestion) {
+    private void patchTask(Task t, String value) {
         String namespace = t.getPod().getMetadata().getNamespace();
         String podname = t.getPod().getName();
         log.debug("namespace: {}, podname: {}", namespace, podname);
@@ -279,8 +279,8 @@ public class TaskScaler {
         // @formatter:on
         patch = patch.replace("NAMESPACE", namespace);
         patch = patch.replace("PODNAME", podname);
-        patch = patch.replace("LIMIT", suggestion);
-        patch = patch.replace("REQUEST", suggestion);
+        patch = patch.replace("LIMIT", value);
+        patch = patch.replace("REQUEST", value);
         log.debug(patch);
 
         client.pods().inNamespace(namespace).withName(podname).patch(patch);
