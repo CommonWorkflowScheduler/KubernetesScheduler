@@ -40,9 +40,9 @@ public class CombiPredictorTest {
     @Test
     public void testNoObservationsYet() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
-        ConstantPredictor constantPredictor = new ConstantPredictor();
+        CombiPredictor combiPredictor = new CombiPredictor();
         Task task = MemoryPredictorTest.createTask("taskName", 0l);
-        assertNull(constantPredictor.queryPrediction(task));
+        assertNull(combiPredictor.queryPrediction(task));
     }
 
     // TODO add tests for combipredictor
