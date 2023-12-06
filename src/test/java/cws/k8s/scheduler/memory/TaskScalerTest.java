@@ -17,7 +17,6 @@
 
 package cws.k8s.scheduler.memory;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -37,9 +36,7 @@ import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.TaskConfig;
 import cws.k8s.scheduler.scheduler.Scheduler;
-import io.fabric8.kubernetes.api.model.Pod;
 import lombok.extern.slf4j.Slf4j;
-import io.fabric8.kubernetes.api.model.Node;
 
 /**
  * JUnit 5 Tests for the TaskScaler class
@@ -72,7 +69,7 @@ class TaskScalerTest {
         when(t.getPod()).thenReturn(p);
         when(t.getNode()).thenReturn(n);
         
-        // task.getWorkingDir().substring(0, task.getWorkingDir().lastIndexOf("work"));
+        // TODO provide .command.trace file
         when(t.getWorkingDir()).thenReturn("work");
         
         return t;
