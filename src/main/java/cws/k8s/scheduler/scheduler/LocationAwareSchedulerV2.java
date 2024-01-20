@@ -156,11 +156,13 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                         if ( inputsOfTask == null ) return null;
                         return getDataOnNode( task, inputsOfTask, allNodes, readyTasksPerNode );
                     } )
+                    .filter( Objects::nonNull )
                     .filter( TaskStat::canStartSomewhere )
                     .sequential()
                     .forEach( taskStats::add );
 
             taskStats.setComparator( phaseTwoComparator );
+
 
             final CurrentlyCopying planedToCopy = new CurrentlyCopying();
             //Fill the currently available resources as fast as possible: start the tasks with the least data missing on a node.
