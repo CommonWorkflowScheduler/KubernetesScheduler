@@ -47,10 +47,6 @@ public class Task {
     @Setter
     private boolean copiesDataToNode = false;
 
-    @Getter
-    @Setter
-    private Integer generation = 0;
-    
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
         this.process = dag.getByProcess( config.getTask() );
