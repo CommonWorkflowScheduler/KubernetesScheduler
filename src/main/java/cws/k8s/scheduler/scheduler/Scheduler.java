@@ -56,7 +56,7 @@ public abstract class Scheduler implements Informable {
     final boolean traceEnabled;
 
     // TaskScaler will observe tasks and modify their memory assignments
-    final cws.k8s.scheduler.memory.TaskScaler taskScaler;
+    final TaskScaler taskScaler;
     
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
