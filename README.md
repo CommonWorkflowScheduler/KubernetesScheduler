@@ -139,7 +139,7 @@ The memory predictor that shall be used for task scaling is set via the nf-cws c
 | wary                | WaryPredictor, behaves like LinearPredictor but is more cautious about its predictions.                                            |
 | default             | Query the environment variable "MEMORY_PREDICTOR_DEFAULT" and use the value that is set there.                                     |
 
-If a memory predictor is selected (i.e. setting is not disabled), the implementation will locally record statistics and print out the result after the workflow has finished. This can be disabled via the  environment variable "DISABLE_STATISTICS". It this is set to any string, the implementation will not collect and print out the results.
+If a memory predictor is selected (i.e. setting is not disabled), the implementation will locally record statistics and print out the result after the workflow has finished. This can be disabled via the  environment variable "DISABLE_STATISTICS". If this is set to any string, the implementation will not collect and print out the results.
 
 ---
 
