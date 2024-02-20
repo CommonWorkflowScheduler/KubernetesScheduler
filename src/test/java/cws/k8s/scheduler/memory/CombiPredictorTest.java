@@ -45,5 +45,4 @@ public class CombiPredictorTest {
         assertNull(combiPredictor.queryPrediction(task));
     }
 
-    // TODO add tests for combipredictor
 }

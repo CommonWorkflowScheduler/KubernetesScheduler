@@ -173,7 +173,7 @@ public class Statistics {
             if (Boolean.TRUE.equals(o.success)) {
                 ts.successCount++;
                 ts.inputSizeStatistics.accept(o.inputSize);
-                // TODO check if BigDecimal is bigger than double can handle
+                // Note: There might be a loss of precision after 15 digits here
                 ts.ramRequestStatitistics.accept(o.ramRequest.doubleValue());
                 ts.peakVmemStatistics.accept(o.peakVmem.doubleValue());
                 ts.peakRssStatistics.accept(o.peakRss.doubleValue());

@@ -41,6 +41,4 @@ public class ObservationTest {
         assertEquals(o1, o2);
     }
     
-    // TODO test sanity checks
-
 }

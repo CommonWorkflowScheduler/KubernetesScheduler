@@ -160,7 +160,7 @@ public class TaskScaler {
         memoryPredictor.addObservation(o);
         statistics.addObservation(o);
 
-        // TODO this is a workaround, because the SchedulerConfig does not contain the baseDir
+        // Note: this is a workaround, because the SchedulerConfig does not contain the baseDir
         if (statistics.baseDir == null) {
             statistics.baseDir = task.getWorkingDir().substring(0, task.getWorkingDir().lastIndexOf("work"));
         }
