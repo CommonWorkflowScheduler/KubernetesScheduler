@@ -123,6 +123,25 @@ spec:
 ```
 
 ---
+#### Memory Prediction and Task Scaling
+- Supported if used together with [nf-cws](https://github.com/CommonWorkflowScheduler/nf-cws) version 1.0.4 or newer.
+- Kubernetes Feature InPlacePodVerticalScaling must be enabled. This is available starting from Kubernetes v1.27. See [KEP 1287](https://github.com/kubernetes/enhancements/issues/1287) for the current status.
+
+The memory predictor that shall be used for task scaling is set via the nf-cws configuration. If not set, task scaling is disabled.
+
+| cws.memoryPredictor | Behaviour                                                                                                                          |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| ""                  | Disabled if empty or not set.                                                                                                      |
+| none                | NonePredictor, will never make any predictions and consequently no task scaling will occur. Used for testing and benchmarking only.|
+| constant            | ConstantPredictor, will try to predict a constant memory usage pattern.                                                            |
+| linear              | LinearPredictor, will try to predict a memory usage that is linear to the task input size.                                         |
+| combi               | CombiPredictor, combines predictions from ConstantPredictor and LinearPredictor.                                                   |
+| wary                | WaryPredictor, behaves like LinearPredictor but is more cautious about its predictions.                                            |
+| default             | Query the environment variable "MEMORY_PREDICTOR_DEFAULT" and use the value that is set there.                                     |
+
+If a memory predictor is selected (i.e. setting is not disabled), the implementation will locally record statistics and print out the result after the workflow has finished. This can be disabled via the  environment variable "DISABLE_STATISTICS". It this is set to any string, the implementation will not collect and print out the results.
+
+---
 
 If you use this software or artifacts in a publication, please cite it as:
 
