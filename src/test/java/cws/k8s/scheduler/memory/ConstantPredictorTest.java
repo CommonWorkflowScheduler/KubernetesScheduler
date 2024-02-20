@@ -72,50 +72,6 @@ public class ConstantPredictorTest {
     }
 
     /**
-     * If the predictor is asked multiple times, it will only present an update
-     * when new observations are available
-     * 
-     * NOTE: disabled!
-     */
-    //@Test
-    public void testMultiAsking() {
-        log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
-        ConstantPredictor constantPredictor = new ConstantPredictor();
-        Task task = MemoryPredictorTest.createTask("taskName", 0l);
-        // @formatter:off
-        Observation observation = Observation.builder()
-                .task("taskName")
-                .taskName("taskName (1)")
-                .success(true)
-                .inputSize(0)
-                .ramRequest(BigDecimal.valueOf(0))
-                .peakRss(BigDecimal.valueOf(1))
-                .realtime(1000)
-                .build();
-        // @formatter:on
-        constantPredictor.addObservation(observation);
-        assertNotNull(constantPredictor.queryPrediction(task));
-        assertNull(constantPredictor.queryPrediction(task));
-        assertNull(constantPredictor.queryPrediction(task));
-        assertNull(constantPredictor.queryPrediction(task));
-        assertNull(constantPredictor.queryPrediction(task));
-        // @formatter:off
-        Observation observation2 = Observation.builder()
-                .task("taskName")
-                .taskName("taskName (1)")
-                .success(true)
-                .inputSize(0)
-                .ramRequest(BigDecimal.valueOf(0))
-                .peakRss(BigDecimal.valueOf(1))
-                .realtime(1000)
-                .build();
-        // @formatter:on
-        constantPredictor.addObservation(observation2);
-        assertNotNull(constantPredictor.queryPrediction(task));
-        assertNull(constantPredictor.queryPrediction(task));
-    }
-    
-    /**
      * If there are two observations, we will also get a prediction
      */
     @Test
