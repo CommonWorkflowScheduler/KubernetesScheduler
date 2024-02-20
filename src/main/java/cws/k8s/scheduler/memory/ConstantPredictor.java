@@ -45,13 +45,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class ConstantPredictor implements MemoryPredictor {
 
-    Map<String, Integer> generation;
     Map<String, BigDecimal> model;
     Map<String, BigDecimal> initialValue;
 
     public ConstantPredictor() {
         model = new HashMap<>();
-        generation = new HashMap<>();
         initialValue = new HashMap<>();
     }
 
@@ -67,14 +65,7 @@ class ConstantPredictor implements MemoryPredictor {
         if (!initialValue.containsKey(o.task)) {
             initialValue.put(o.task, o.getRamRequest());
         }
-        
-        // observations increase the generation value for this task
-        if (!generation.containsKey(o.task)) {
-            generation.put(o.task, 1);
-        } else {
-            generation.replace(o.task, 1 + generation.get(o.task));
-        }
-        
+                
         if (Boolean.TRUE.equals(o.success)) {
             // set model to peakRss + 10%
             if (model.containsKey(o.task)) {
@@ -98,19 +89,7 @@ class ConstantPredictor implements MemoryPredictor {
         String taskName = task.getConfig().getTask();
         log.debug("ConstantPredictor.queryPrediction({})", taskName);
 
-//        if (!generation.containsKey(taskName)) {
-//            // this taskName is unknown, no prediction possible
-//            return null;
-//        } else {
-//            // only provide a prediction to tasks when the prediction generation is bigger than the tasks generation
-//            if (task.getGeneration() >= generation.get(taskName)) {
-//                return null;
-//            }
-//        }
-
         if (model.containsKey(taskName)) {
-            // update the task.generation to the predictor.generation
-            task.setGeneration(generation.get(taskName));
             return model.get(taskName).toPlainString();
         } else {
             return null;
