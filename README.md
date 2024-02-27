@@ -122,6 +122,21 @@ spec:
       claimName: api-exp-data
 ```
 
+#### Profiles
+This is a Spring Boot application, that can be run with profiles. The "default" profile is used if no configuration is set. The "dev" profile can be enabled by setting the JVM System Parameter
+
+        -Dspring.profiles.active=dev
+or Environment Variable
+
+        export spring_profiles_active=dev
+or via the corresponding setting in your development environment or within the pod definition.
+
+Example:
+
+        $ SCHEDULER_NAME=workflow-scheduler java -Dspring.profiles.active=dev -jar cws-k8s-scheduler-1.2-SNAPSHOT.jar
+
+The "dev" profile is useful for debugging and reporting problems because it increases the log-level.
+
 ---
 #### Memory Prediction and Task Scaling
 - Supported if used together with [nf-cws](https://github.com/CommonWorkflowScheduler/nf-cws) version 1.0.4 or newer.
