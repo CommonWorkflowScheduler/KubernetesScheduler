@@ -32,6 +32,7 @@ import cws.k8s.scheduler.scheduler.Scheduler;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -278,7 +279,12 @@ public class TaskScaler {
         patch = patch.replace("REQUEST", value);
         log.debug(patch);
 
-        client.pods().inNamespace(namespace).withName(podname).patch(patch);
+        try {
+            client.pods().inNamespace(namespace).withName(podname).patch(patch);
+        } catch (KubernetesClientException e) {
+            // this happens when the feature gate InPlacePodVerticalScaling was not enabled
+            log.error("Could not patch task: {}", e);
+        }
     }
 
     /**
