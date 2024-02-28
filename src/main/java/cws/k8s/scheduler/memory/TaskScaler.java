@@ -51,6 +51,7 @@ public class TaskScaler {
     final Statistics statistics;
     BigDecimal maxRequest = null;
     List<String> blacklist;
+    private boolean active = true;
 
     /**
      * Create a new TaskScaler instance. The memory predictor to be used is
@@ -129,6 +130,9 @@ public class TaskScaler {
      * @param task
      */
     public void afterTaskFinished(Task task) {
+        if (!active) {
+            return;
+        }
         BigDecimal peakRss;
         BigDecimal peakVmem;
         long realtime;
@@ -168,6 +172,9 @@ public class TaskScaler {
     }
 
     public synchronized void beforeTasksScheduled(final List<Task> unscheduledTasks) {
+        if (!active) {
+            return;
+        }
         log.debug("--- unscheduledTasks BEGIN ---");
         for (Task t : unscheduledTasks) {
             log.debug("1 unscheduledTask: {} {} {}", t.getConfig().getTask(), t.getConfig().getName(),
@@ -236,6 +243,9 @@ public class TaskScaler {
     }
 
     public void afterWorkflow() {
+        if (!active) {
+            return;
+        }
         log.debug("afterWorkflow");
         long timestamp = System.currentTimeMillis();
         statistics.end = timestamp;
@@ -282,8 +292,13 @@ public class TaskScaler {
         try {
             client.pods().inNamespace(namespace).withName(podname).patch(patch);
         } catch (KubernetesClientException e) {
-            // this happens when the feature gate InPlacePodVerticalScaling was not enabled
-            log.error("Could not patch task: {}", e);
+            // this typically happens when the feature gate InPlacePodVerticalScaling was not enabled
+            if (e.toString().contains("Forbidden: pod updates may not change fields other than")) {
+                log.error("Could not patch task. Please make sure that the feature gate 'InPlacePodVerticalScaling' is enabled in Kubernetes. See https://github.com/kubernetes/enhancements/issues/1287 for details. Task scaling will now be disabled for the rest of this workflow execution.");
+                this.active = false;
+            } else {
+                log.error("Could not patch task: {}", e);
+            }
         }
     }
 
