@@ -155,10 +155,10 @@ public class TaskScaler {
                 .success( task.wasSuccessfullyExecuted() )
                 .inputSize( task.getInputSize() )
                 .ramRequest( task.getPod().getRequest().getRam() )
-                .peakVmem(peakVmem)
-                .peakRss(peakRss)
-                .realtime(realtime)
-                .node(task.getNode().getName())
+                .peakVmem( peakVmem )
+                .peakRss( peakRss )
+                .realtime( realtime )
+                .node( task.getNode().getName() )
                 .build();
         // @formatter:on
         log.info("taskWasFinished, observation={}", o);
