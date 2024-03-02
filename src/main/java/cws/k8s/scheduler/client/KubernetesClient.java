@@ -2,6 +2,7 @@ package cws.k8s.scheduler.client;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
+import cws.k8s.scheduler.model.Task;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -216,6 +217,57 @@ public class KubernetesClient extends DefaultKubernetesClient  {
             log.info( "Watcher was closed" );
         }
 
+    }
+
+    /**
+     * After some testing, this was found to be the only reliable way to patch a pod
+     * using the Kubernetes client.
+     * 
+     * It will create a patch for the memory limits and request values and submit it
+     * to the cluster.
+     * 
+     * @param t          the task to be patched
+     * @param value the value to be set
+     * @return false if patching failed because of InPlacePodVerticalScaling
+     */
+    public boolean patchTaskMemory(Task t, String value) {
+        String namespace = t.getPod().getMetadata().getNamespace();
+        String podname = t.getPod().getName();
+        log.debug("namespace: {}, podname: {}", namespace, podname);
+        // @formatter:off
+        String patch = "kind: Pod\n"
+                + "apiVersion: v1\n"
+                + "metadata:\n"
+                + "  name: PODNAME\n"
+                + "  namespace: NAMESPACE\n"
+                + "spec:\n"
+                + "  containers:\n"
+                + "    - name: PODNAME\n"
+                + "      resources:\n"
+                + "        limits:\n"
+                + "          memory: LIMIT\n"
+                + "        requests:\n"
+                + "          memory: REQUEST\n"
+                + "\n";
+        // @formatter:on
+        patch = patch.replace("NAMESPACE", namespace);
+        patch = patch.replace("PODNAME", podname);
+        patch = patch.replace("LIMIT", value);
+        patch = patch.replace("REQUEST", value);
+        log.debug(patch);
+
+        try {
+            this.pods().inNamespace(namespace).withName(podname).patch(patch);
+        } catch (KubernetesClientException e) {
+            // this typically happens when the feature gate InPlacePodVerticalScaling was not enabled
+            if (e.toString().contains("Forbidden: pod updates may not change fields other than")) {
+                log.error("Could not patch task. Please make sure that the feature gate 'InPlacePodVerticalScaling' is enabled in Kubernetes. See https://github.com/kubernetes/enhancements/issues/1287 for details. Task scaling will now be disabled for the rest of this workflow execution.");
+                return false;
+            } else {
+                log.error("Could not patch task: {}", e);
+            }
+        }
+        return true;
     }
 
 }
