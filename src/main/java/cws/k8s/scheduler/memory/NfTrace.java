@@ -60,7 +60,7 @@ public class NfTrace {
     static BigDecimal getNfPeakVmem(Task task) {
         String value = extractTraceFile(task, "peak_vmem");
         if (value == null) {
-            // extraction failed, return ZERO
+            // extraction failed, return -1
             return BigDecimal.valueOf(-1);
         } else {
             return new BigDecimal(value).multiply(BigDecimal.valueOf(1024l));
