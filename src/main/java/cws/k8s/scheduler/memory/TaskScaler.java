@@ -273,7 +273,7 @@ public class TaskScaler {
 
         // we don't trust the observation of the realtime was that low
         if (o.realtime == 0) {
-            log.error("realtime was zero, suspicious observation");
+            log.warn("realtime was zero, suspicious observation");
             return false;
         }
 
