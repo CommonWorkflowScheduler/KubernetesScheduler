@@ -264,31 +264,31 @@ public class TaskScaler {
             return false;
         }
         if (o.inputSize < 0) {
-            log.error("inputSize may not be negative");
+            log.error("{}: inputSize may not be negative", o.taskName);
             return false;
         }
         if (o.ramRequest.compareTo(BigDecimal.ZERO) < 0) {
-            log.error("ramRequest may not be negative");
+            log.error("{}: ramRequest may not be negative", o.taskName);
             return false;
         }
 
         // we don't trust the observation of the realtime was that low
         if (o.realtime == 0) {
-            log.warn("realtime was zero, suspicious observation");
+            log.warn("{}: realtime was zero, suspicious observation", o.taskName);
             return false;
         }
 
         // those are indicators that the .command.trace read has failed
         if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
-            log.warn("peakRss may not be negative (has the .command.trace read failed?)");
+            log.warn("{}: peakRss may not be negative (has the .command.trace read failed?)", o.taskName);
             return false;
         }
         if (o.peakRss.compareTo(BigDecimal.ZERO) < 0) {
-            log.warn("peakRss may not be negative (has the .command.trace read failed?)");
+            log.warn("{}: peakRss may not be negative (has the .command.trace read failed?)", o.taskName);
             return false;
         }
         if (o.realtime < 0) {
-            log.warn("realtime may not be negative (has the .command.trace read failed?)");
+            log.warn("{}: realtime may not be negative (has the .command.trace read failed?)", o.taskName);
             return false;
         }
         return true;
