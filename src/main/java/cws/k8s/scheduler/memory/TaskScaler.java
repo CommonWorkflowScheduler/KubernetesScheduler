@@ -44,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TaskScaler {
 
+    private static final long LOWEST_MEMORY_REQUEST = 256l*1024*1024;
     final KubernetesClient client;
     final Scheduler scheduler;
     final MemoryPredictor memoryPredictor;
@@ -210,7 +211,7 @@ public class TaskScaler {
                 log.debug("predictor proposes {} for task {}", prediction, t.getConfig().getName());
                 
                 // if our prediction is a very low value, the pod might not start. Make sure it has at least 256MiB
-                BigDecimal lowestRequest = BigDecimal.valueOf(256l*1024*1024);
+                BigDecimal lowestRequest = BigDecimal.valueOf(LOWEST_MEMORY_REQUEST);
                 if (newRequestValue.compareTo(lowestRequest) < 0) {
                     log.debug("Prediction of {} is lower than {}. Automatically increased.", newRequestValue, lowestRequest);
                     newRequestValue = lowestRequest;
