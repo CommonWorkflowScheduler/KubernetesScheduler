@@ -129,11 +129,10 @@ public class ConstantPredictorTest {
                 .build();
         // @formatter:on
         constantPredictor.addObservation(observation);
-        String suggestionStr = constantPredictor.queryPrediction(task);
-        log.debug("suggestion is: {}", suggestionStr);
+        BigDecimal suggestion = constantPredictor.queryPrediction(task);
+        log.debug("suggestion is: {}", suggestion);
         // 1. There is a suggestion at all
-        assertNotNull(suggestionStr);
-        BigDecimal suggestion = new BigDecimal(suggestionStr);
+        assertNotNull(suggestion);
         // 2. The suggestion is lower than the reserved value was
         assertTrue(suggestion.compareTo(reserved) < 0);
         // 3. The suggestion is higher than the used value was

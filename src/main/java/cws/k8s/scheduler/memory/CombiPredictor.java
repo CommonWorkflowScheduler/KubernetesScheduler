@@ -54,12 +54,12 @@ public class CombiPredictor implements MemoryPredictor {
     }
     
     @Override
-    public String queryPrediction(Task task) {
+    public BigDecimal queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
         log.debug("CombiPredictor.queryPrediction({},{})", taskName, task.getInputSize());
 
-        String constantPrediction = constantPredictor.queryPrediction(task);
-        String linearPrediction = linearPredictor.queryPrediction(task);
+        BigDecimal constantPrediction = constantPredictor.queryPrediction(task);
+        BigDecimal linearPrediction = linearPredictor.queryPrediction(task);
         
         if (constantPrediction==null && linearPrediction==null) {
             // no prediction available at all
@@ -76,7 +76,7 @@ public class CombiPredictor implements MemoryPredictor {
             return linearPrediction;
         }
         
-        log.debug("constantPrediction={}, linearPrediction={}, difference={}", constantPrediction, linearPrediction, new BigDecimal(constantPrediction).subtract(new BigDecimal(linearPrediction)));
+        log.debug("constantPrediction={}, linearPrediction={}, difference={}", constantPrediction, linearPrediction, constantPrediction.subtract(linearPrediction));
 
         // prefer linearPrediction if both would be available
         return linearPrediction;

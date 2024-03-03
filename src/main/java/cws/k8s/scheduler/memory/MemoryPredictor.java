@@ -17,6 +17,8 @@
 
 package cws.k8s.scheduler.memory;
 
+import java.math.BigDecimal;
+
 import cws.k8s.scheduler.model.Task;
 
 // @formatter:off
@@ -56,6 +58,6 @@ interface MemoryPredictor {
      * @param task the task to get a suggestion form
      * @return null, if no suggestion possible, otherwise the value to be used
      */
-    String queryPrediction(Task task);
+    BigDecimal queryPrediction(Task task);
 
 }

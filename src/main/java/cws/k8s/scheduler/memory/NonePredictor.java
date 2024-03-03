@@ -17,6 +17,8 @@
 
 package cws.k8s.scheduler.memory;
 
+import java.math.BigDecimal;
+
 import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +42,7 @@ public class NonePredictor implements MemoryPredictor {
     }
 
     @Override
-    public String queryPrediction(Task task) {
+    public BigDecimal queryPrediction(Task task) {
         log.debug("NonePredictor.queryPrediction({})", task);
         return null;
     }

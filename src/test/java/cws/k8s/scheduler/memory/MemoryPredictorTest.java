@@ -136,11 +136,10 @@ public class MemoryPredictorTest {
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(observation);
-        String suggestionStr = memoryPredictor.queryPrediction(task);
-        log.debug("suggestion is: {}", suggestionStr);
+        BigDecimal suggestion = memoryPredictor.queryPrediction(task);
+        log.debug("suggestion is: {}", suggestion);
         // 1. There is a suggestion at all
-        assertNotNull(suggestionStr);
-        BigDecimal suggestion = new BigDecimal(suggestionStr);
+        assertNotNull(suggestion);
         // 2. The suggestion is leq than the reserved value was
         assertTrue(suggestion.compareTo(reserved) <= 0);
         // 3. The suggestion is higher than the used value was
@@ -169,11 +168,10 @@ public class MemoryPredictorTest {
                 .build();
         // @formatter:on
         memoryPredictor.addObservation(observation);
-        String suggestionStr = memoryPredictor.queryPrediction(task);
-        log.info("suggestion is: {}", suggestionStr);
+        BigDecimal suggestion = memoryPredictor.queryPrediction(task);
+        log.info("suggestion is: {}", suggestion);
         // 1. There is a suggestion at all
-        assertNotNull(suggestionStr);
-        BigDecimal suggestion = new BigDecimal(suggestionStr);
+        assertNotNull(suggestion);
         // 2. The suggestion is higher than the reserved value was
         assertTrue(suggestion.compareTo(reserved) > 0);
         // 3. The suggestion is higher than the used value was

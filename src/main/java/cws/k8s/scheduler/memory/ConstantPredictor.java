@@ -85,12 +85,12 @@ class ConstantPredictor implements MemoryPredictor {
     }
 
     @Override
-    public String queryPrediction(Task task) {
+    public BigDecimal queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
         log.debug("ConstantPredictor.queryPrediction({})", taskName);
 
         if (model.containsKey(taskName)) {
-            return model.get(taskName).toPlainString();
+            return model.get(taskName);
         } else {
             return null;
         }

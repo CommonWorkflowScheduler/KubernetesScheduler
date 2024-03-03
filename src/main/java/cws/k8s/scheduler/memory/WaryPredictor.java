@@ -125,7 +125,7 @@ public class WaryPredictor implements MemoryPredictor {
     }
 
     @Override
-    public String queryPrediction(Task task) {
+    public BigDecimal queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
         log.debug("WaryPredictor.queryPrediction({},{})", taskName, task.getInputSize());
         
@@ -142,7 +142,7 @@ public class WaryPredictor implements MemoryPredictor {
         
         if (2 < errorCounter.get(taskName)) {
             log.warn("to many errors for {}, providing initial value", taskName);
-            return initialValue.get(taskName).toPlainString();
+            return initialValue.get(taskName);
         }
         
         SimpleRegression simpleRegression = model.get(taskName);
@@ -183,7 +183,7 @@ public class WaryPredictor implements MemoryPredictor {
         
         if (prediction > initialValue.get(taskName).doubleValue()) {
             log.warn("prediction would exceed initial value");
-            return initialValue.get(taskName).toPlainString();
+            return initialValue.get(taskName);
         }
 
         // this catches if the model underestimates the behavior
@@ -192,7 +192,7 @@ public class WaryPredictor implements MemoryPredictor {
             return null;
         }
 
-        return BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING).toPlainString();
+        return BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING);
     }
     
     

@@ -163,8 +163,8 @@ class WaryPredictorTest {
             waryPredictor.addObservation(observation);
         }
         
-        String prediction = waryPredictor.queryPrediction(task);
-        log.info(prediction);
+        BigDecimal prediction = waryPredictor.queryPrediction(task);
+        log.info("{}", prediction);
         assertNotNull(prediction);
 
         for (int i=0; i<3; i++) {
@@ -181,12 +181,12 @@ class WaryPredictorTest {
                     .realtime(1000)
                     .build();
             // @formatter:on
-            String p2 = waryPredictor.queryPrediction(task);
-            log.info(p2);
+            BigDecimal p2 = waryPredictor.queryPrediction(task);
+            log.info("{}", p2);
             assertNotNull(p2);
             waryPredictor.addObservation(observation);
         }
-        assertEquals(initialValue, Long.parseLong( waryPredictor.queryPrediction(task) ));
+        assertEquals(initialValue, Long.parseLong( waryPredictor.queryPrediction(task).toPlainString() ));
     }
     
     /**
@@ -257,7 +257,7 @@ class WaryPredictorTest {
         // @formatter:on
         waryPredictor.addObservation(o3);
         
-        assertTrue(BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(1.1)).setScale(0, RoundingMode.CEILING).compareTo(new BigDecimal( waryPredictor.queryPrediction(task) ) ) < 1 );
+        assertTrue(BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(1.1)).setScale(0, RoundingMode.CEILING).compareTo( waryPredictor.queryPrediction(task) ) < 1 );
 
     }
 
@@ -297,9 +297,9 @@ class WaryPredictorTest {
         // @formatter:on
         waryPredictor.addObservation(o1);
 
-        log.info(waryPredictor.queryPrediction(task));
+        log.info("{}", waryPredictor.queryPrediction(task));
         assertNull(waryPredictor.queryPrediction(task));
-        log.info(waryPredictor.queryPrediction(task3));
+        log.info("{}", waryPredictor.queryPrediction(task3));
         assertNull(waryPredictor.queryPrediction(task3));
         
         for (int i=0; i<4; i++) {
@@ -319,10 +319,10 @@ class WaryPredictorTest {
             waryPredictor.addObservation(observation);
         }
 
-        log.info(waryPredictor.queryPrediction(task3));
+        log.info("{}", waryPredictor.queryPrediction(task3));
         assertNotNull(waryPredictor.queryPrediction(task3));
 
-        log.info(waryPredictor.queryPrediction(task));
+        log.info("{}", waryPredictor.queryPrediction(task));
         assertNull(waryPredictor.queryPrediction(task));
 
     }

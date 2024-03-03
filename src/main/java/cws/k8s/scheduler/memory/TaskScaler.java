@@ -201,12 +201,12 @@ public class TaskScaler {
             }
 
             // query suggestion
-            String prediction = memoryPredictor.queryPrediction(t);
+            BigDecimal prediction = memoryPredictor.queryPrediction(t);
 
             // sanity check for our prediction
-            if (prediction != null && new BigDecimal(prediction).compareTo(maxRequest) < 0) {
+            if (prediction != null && prediction.compareTo(maxRequest) < 0) {
                 // we have a prediction and it fits into the cluster
-                newRequestValue = new BigDecimal(prediction);
+                newRequestValue = prediction;
                 log.debug("predictor proposes {} for task {}", prediction, t.getConfig().getName());
                 
                 // if our prediction is a very low value, the pod might not start. Make sure it has at least 256MiB

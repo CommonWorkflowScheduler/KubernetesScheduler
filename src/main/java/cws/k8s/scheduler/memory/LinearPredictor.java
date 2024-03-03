@@ -80,7 +80,7 @@ public class LinearPredictor implements MemoryPredictor {
     }
 
     @Override
-    public String queryPrediction(Task task) {
+    public BigDecimal queryPrediction(Task task) {
         String taskName = task.getConfig().getTask();
         log.debug("LinearPredictor.queryPrediction({},{})", taskName, task.getInputSize());
 
@@ -102,7 +102,7 @@ public class LinearPredictor implements MemoryPredictor {
             return null;
         }
 
-        return BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING).toPlainString();
+        return BigDecimal.valueOf(prediction).multiply(BigDecimal.valueOf(overprovisioning.get(taskName))).setScale(0, RoundingMode.CEILING);
     }
 
 }
