@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cws.k8s.scheduler.model.Task;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 // @formatter:off
@@ -43,15 +44,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 // @formatter:on
 @Slf4j
+@NoArgsConstructor
 class ConstantPredictor implements MemoryPredictor {
 
-    Map<String, BigDecimal> model;
-    Map<String, BigDecimal> initialValue;
-
-    public ConstantPredictor() {
-        model = new HashMap<>();
-        initialValue = new HashMap<>();
-    }
+    private final Map<String, BigDecimal> maxValueByTask = new HashMap<>();
+    private final Map<String, Integer> observations = new HashMap<>();
+    private final float maxMultiplicand = 0.1F;
+    private final float minMultiplicand = 0.05F;
 
     @Override
     public void addObservation(Observation o) {
@@ -61,27 +60,22 @@ class ConstantPredictor implements MemoryPredictor {
             return;
         }
 
-        // store initial ramRequest value per task
-        if (!initialValue.containsKey(o.task)) {
-            initialValue.put(o.task, o.getRamRequest());
-        }
-                
         if (Boolean.TRUE.equals(o.success)) {
             // set model to peakRss + 10%
-            if (model.containsKey(o.task)) {
-                model.replace(o.task, o.peakRss.multiply(new BigDecimal("1.1")).setScale(0, RoundingMode.CEILING));
-            } else {
-                model.put(o.task, o.peakRss.multiply(new BigDecimal("1.1")).setScale(0, RoundingMode.CEILING));
+            if ( !maxValueByTask.containsKey(o.task) || o.peakRss.compareTo(maxValueByTask.get(o.task)) > 0 ) {
+                maxValueByTask.put(o.task, o.peakRss);
             }
-        } else {
-            // reset to initialValue
-            if (model.containsKey(o.task)) {
-                model.replace(o.task, this.initialValue.get(o.task));
-            } else {
-                model.put(o.task, o.ramRequest.multiply(new BigDecimal(2)).setScale(0, RoundingMode.CEILING));
-            }
+            observations.compute( o.task, ( k, v ) -> v == null ? 1 : v + 1 );
         }
 
+    }
+
+    private BigDecimal getCurrentMultiplicationFactor( String taskName ) {
+        final Integer observation = observations.getOrDefault( taskName, 1 );
+        if ( observation > 10 ) {
+            return BigDecimal.ONE.add( BigDecimal.valueOf( minMultiplicand ) );
+        }
+        return BigDecimal.ONE.add( BigDecimal.valueOf( minMultiplicand + ( maxMultiplicand - minMultiplicand) / observation ) );
     }
 
     @Override
@@ -89,8 +83,14 @@ class ConstantPredictor implements MemoryPredictor {
         String taskName = task.getConfig().getTask();
         log.debug("ConstantPredictor.queryPrediction({})", taskName);
 
-        if (model.containsKey(taskName)) {
-            return model.get(taskName);
+        if ( task.getConfig().getRepetition() > 0 ) {
+            //if this task failed once the old maxValue was likely too small.
+            return null;
+        }
+        if ( maxValueByTask.containsKey(taskName) ) {
+            return maxValueByTask.get(taskName)
+                    .multiply( getCurrentMultiplicationFactor( task.getConfig().getTask() ) )
+                    .setScale( 0, RoundingMode.CEILING );
         } else {
             return null;
         }
