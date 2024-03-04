@@ -75,34 +75,33 @@ public class TaskScaler {
         if ("default".equalsIgnoreCase(predictor)) {
             predictor = System.getenv("MEMORY_PREDICTOR_DEFAULT");
         }
-        if (predictor == null) {
-            predictor = "none";
-        }
         switch (predictor.toLowerCase()) {
-        case "constant":
-            log.debug("using ConstantPredictor");
-            this.memoryPredictor = new ConstantPredictor();
-            break;
+            case "constant":
+                log.debug("using ConstantPredictor");
+                this.memoryPredictor = new ConstantPredictor();
+                break;
 
-        case "linear":
-            log.debug("using LinearPredictor");
-            this.memoryPredictor = new LinearPredictor();
-            break;
+            case "linear":
+                log.debug("using LinearPredictor");
+                this.memoryPredictor = new LinearPredictor();
+                break;
 
-        case "combi":
-            log.debug("using CombiPredictor");
-            this.memoryPredictor = new CombiPredictor();
-            break;
+            case "combi":
+                log.debug("using CombiPredictor");
+                this.memoryPredictor = new CombiPredictor();
+                break;
 
-        case "wary":
-            log.debug("using WaryPredictor");
-            this.memoryPredictor = new WaryPredictor();
-            break;
+            case "wary":
+                log.debug("using WaryPredictor");
+                this.memoryPredictor = new WaryPredictor();
+                break;
 
-        case "none":
-        default:
-            log.debug("using NonePredictor");
-            this.memoryPredictor = new NonePredictor();
+            case "none":
+                log.debug("using NonePredictor");
+                this.memoryPredictor = new NonePredictor();
+                break;
+            default:
+                throw new IllegalArgumentException("unrecognized memoryPredictor: " + predictor);
         }
         this.statistics = new Statistics(scheduler,memoryPredictor);
         
