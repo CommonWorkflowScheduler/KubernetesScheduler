@@ -21,6 +21,7 @@ public class TaskConfig {
     private final float cpus;
     private final long memoryInBytes;
     private final String workDir;
+    private final int repetition;
 
     private TaskConfig() {
         this( null );
@@ -38,6 +39,7 @@ public class TaskConfig {
         this.cpus = 0;
         this.memoryInBytes = 0;
         this.workDir = null;
+        this.repetition = 0;
     }
 
     @Getter
