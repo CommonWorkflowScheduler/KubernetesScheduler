@@ -122,6 +122,41 @@ spec:
       claimName: api-exp-data
 ```
 
+#### Profiles
+This is a Spring Boot application, that can be run with profiles. The "default" profile is used if no configuration is set. The "dev" profile can be enabled by setting the JVM System Parameter
+
+        -Dspring.profiles.active=dev
+or Environment Variable
+
+        export spring_profiles_active=dev
+or via the corresponding setting in your development environment or within the pod definition.
+
+Example:
+
+        $ SCHEDULER_NAME=workflow-scheduler java -Dspring.profiles.active=dev -jar cws-k8s-scheduler-1.2-SNAPSHOT.jar
+
+The "dev" profile is useful for debugging and reporting problems because it increases the log-level.
+
+---
+#### Memory Prediction and Task Scaling
+- Supported if used together with [nf-cws](https://github.com/CommonWorkflowScheduler/nf-cws) version 1.0.4 or newer.
+- Kubernetes Feature InPlacePodVerticalScaling must be enabled. This is available starting from Kubernetes v1.27. See [KEP 1287](https://github.com/kubernetes/enhancements/issues/1287) for the current status.
+- It is required to enable traces in Nextflow via `trace.enabled = true` in the config file, or the commandline option `-with-trace`.
+
+The memory predictor that shall be used for task scaling is set via the nf-cws configuration. If not set, task scaling is disabled.
+
+| cws.memoryPredictor | Behaviour                                                                                                                          |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| ""                  | Disabled if empty or not set.                                                                                                      |
+| none                | NonePredictor, will never make any predictions and consequently no task scaling will occur. Used for testing and benchmarking only.|
+| constant            | ConstantPredictor, will try to predict a constant memory usage pattern.                                                            |
+| linear              | LinearPredictor, will try to predict a memory usage that is linear to the task input size.                                         |
+| combi               | CombiPredictor, combines predictions from ConstantPredictor and LinearPredictor.                                                   |
+| wary                | WaryPredictor, behaves like LinearPredictor but is more cautious about its predictions.                                            |
+| default             | Query the environment variable "MEMORY_PREDICTOR_DEFAULT" and use the value that is set there.                                     |
+
+If a memory predictor is selected (i.e. setting is not disabled), the implementation will locally record statistics and print out the result after the workflow has finished. This can be disabled via the  environment variable "DISABLE_STATISTICS". If this is set to any string, the implementation will not collect and print out the results.
+
 ---
 
 If you use this software or artifacts in a publication, please cite it as:

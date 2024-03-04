@@ -2,3 +2,18 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant-path-matcher
+logging:
+  file:
+    path: "."
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: "dev"
+logging:
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%-5level) %clr(%-30.30logger{29}){cyan} %msg%n"
+  level:
+    "[cws.k8s.scheduler]": TRACE

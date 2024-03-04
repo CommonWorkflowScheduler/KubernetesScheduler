@@ -20,6 +20,7 @@ public class SchedulerConfig {
     public final String costFunction;
     public final String strategy;
     public final Map<String, JsonNode> additional;
+    public final String memoryPredictor;
 
     @ToString
     @NoArgsConstructor(access = AccessLevel.PRIVATE,force = true)
