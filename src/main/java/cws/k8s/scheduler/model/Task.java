@@ -56,7 +56,7 @@ public class Task {
         return config.getWorkDir();
     }
 
-    private Integer getExitCode(){
+    public Integer getExitCode(){
         return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode();
     }
 
