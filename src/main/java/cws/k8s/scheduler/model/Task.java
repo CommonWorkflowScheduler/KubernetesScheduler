@@ -56,8 +56,12 @@ public class Task {
         return config.getWorkDir();
     }
 
+    private Integer getExitCode(){
+        return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode();
+    }
+
     public boolean wasSuccessfullyExecuted(){
-        return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode() == 0;
+        return getExitCode() == 0;
     }
 
     public void writeTrace(){
