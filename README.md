@@ -141,7 +141,6 @@ The "dev" profile is useful for debugging and reporting problems because it incr
 #### Memory Prediction and Task Scaling
 - Supported if used together with [nf-cws](https://github.com/CommonWorkflowScheduler/nf-cws) version 1.0.4 or newer.
 - Kubernetes Feature InPlacePodVerticalScaling must be enabled. This is available starting from Kubernetes v1.27. See [KEP 1287](https://github.com/kubernetes/enhancements/issues/1287) for the current status.
-- It is required to enable traces in Nextflow via `trace.enabled = true` in the config file, or the commandline option `-with-trace`.
 
 The memory predictor that shall be used for task scaling is set via the nf-cws configuration. If not set, task scaling is disabled.
 
