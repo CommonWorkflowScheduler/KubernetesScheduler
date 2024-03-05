@@ -83,9 +83,6 @@ public class MemoryPredictorTest {
     public void testSanityChecksOnAllPredictors() {
         log.info(Thread.currentThread().getStackTrace()[1].getMethodName());
 
-        NonePredictor nonePredictor = new NonePredictor();
-        observationSanityCheck(nonePredictor);
-
         ConstantPredictor constantPredictor = new ConstantPredictor();
         observationSanityCheck(constantPredictor);
 

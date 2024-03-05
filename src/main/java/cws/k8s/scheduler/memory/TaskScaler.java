@@ -48,7 +48,6 @@ public class TaskScaler {
     final KubernetesClient client;
     final Scheduler scheduler;
     final MemoryPredictor memoryPredictor;
-    final Statistics statistics;
     BigDecimal maxRequest = null;
     List<String> blacklist;
     private boolean active = true;
@@ -96,15 +95,10 @@ public class TaskScaler {
                 this.memoryPredictor = new WaryPredictor();
                 break;
 
-            case "none":
-                log.debug("using NonePredictor");
-                this.memoryPredictor = new NonePredictor();
-                break;
             default:
                 throw new IllegalArgumentException("unrecognized memoryPredictor: " + predictor);
         }
-        this.statistics = new Statistics(scheduler,memoryPredictor);
-        
+
         // blacklist for failed tasks
         this.blacklist = new ArrayList<>();
         

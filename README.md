@@ -147,7 +147,6 @@ The memory predictor that shall be used for task scaling is set via the nf-cws c
 | cws.memoryPredictor | Behaviour                                                                                                                          |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | ""                  | Disabled if empty or not set.                                                                                                      |
-| none                | NonePredictor, will never make any predictions and consequently no task scaling will occur. Used for testing and benchmarking only.|
 | constant            | ConstantPredictor, will try to predict a constant memory usage pattern.                                                            |
 | linear              | LinearPredictor, will try to predict a memory usage that is linear to the task input size.                                         |
 | combi               | CombiPredictor, combines predictions from ConstantPredictor and LinearPredictor.                                                   |
