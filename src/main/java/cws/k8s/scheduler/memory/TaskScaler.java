@@ -156,12 +156,6 @@ public class TaskScaler {
         // @formatter:on
         log.info("taskWasFinished, observation={}", o);
         memoryPredictor.addObservation(o);
-        statistics.addObservation(o);
-
-        // Note: this is a workaround, because the SchedulerConfig does not contain the baseDir
-        if (statistics.baseDir == null) {
-            statistics.baseDir = task.getWorkingDir().substring(0, task.getWorkingDir().lastIndexOf("work"));
-        }
     }
 
     public synchronized void beforeTasksScheduled(final List<Task> unscheduledTasks) {
@@ -241,9 +235,6 @@ public class TaskScaler {
         }
         log.debug("afterWorkflow");
         long timestamp = System.currentTimeMillis();
-        statistics.end = timestamp;
-        log.info(statistics.summary(timestamp));
-        log.debug(statistics.exportCsv(timestamp));
     }
 
     /**
