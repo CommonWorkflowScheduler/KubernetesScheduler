@@ -2,6 +2,7 @@ package cws.k8s.scheduler.prediction;
 
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.prediction.extractor.InputExtractor;
 import cws.k8s.scheduler.prediction.extractor.MemoryExtractor;
 import cws.k8s.scheduler.prediction.offset.MaxOffset;
@@ -57,6 +58,16 @@ public class MemoryScaler extends TaskScaler {
         MAXIMUM_MEMORY_REQUEST = config.maxMemory;
         LOWEST_MEMORY_REQUEST = config.minMemory;
         log.info( "MemoryScaler initialized with minMemory: {}, maxMemory: {}", formatBytes(LOWEST_MEMORY_REQUEST), formatBytes(MAXIMUM_MEMORY_REQUEST) );
+    }
+
+    @Override
+    protected boolean isValid( Task task ) {
+        final TaskMetrics taskMetrics = task.getTaskMetrics();
+        return taskMetrics != null
+                // for short running tasks this can not always be measured
+                && taskMetrics.getPeakRss() > 0
+                // runtime should not be negative
+                && taskMetrics.getRealtime() >= 0;
     }
 
     @Override

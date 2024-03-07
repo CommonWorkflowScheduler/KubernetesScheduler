@@ -47,11 +47,21 @@ public abstract class TaskScaler {
         if (!active) {
             return;
         }
+        if ( !isValid( task ) ) {
+            return;
+        }
         synchronized ( predictors ) {
             final Predictor predictor = predictors.computeIfAbsent( task.getConfig().getTask(), this::createPredictor );
             predictor.addTask( task );
         }
     }
+
+    /**
+     * This method checks if the data is valid and the model should be trained using it.
+     * @param task that was finished
+     * @return true if the data is valid
+     */
+    protected abstract boolean isValid( Task task );
 
     protected boolean applyToThisTask( Task task ) {
         return true;
