@@ -80,7 +80,6 @@ public class MemoryScaler extends TaskScaler {
         final Predictor predictor = predictors.get( task.getConfig().getTask() );
 
         if ( predictor == null ) {
-            log.error( "no predictor for task {}", task.getConfig().getName() );
             return;
         }
 
