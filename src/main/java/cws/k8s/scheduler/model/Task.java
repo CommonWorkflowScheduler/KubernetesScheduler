@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -50,8 +51,13 @@ public class Task {
     @Getter
     private TaskMetrics taskMetrics = null;
 
+    @Getter
+    @Setter
+    private long plannedMemoryInBytes;
+
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
+        plannedMemoryInBytes = config.getMemoryInBytes();
         this.process = dag.getByProcess( config.getTask() );
     }
 
@@ -120,4 +126,12 @@ public class Task {
                 ", workDir='" + getWorkingDir() + '\'' +
                 '}';
     }
+
+    public BigDecimal getMemoryRequest(){
+        if ( getPod() == null ) {
+            return null;
+        }
+        return getPod().getRequest().getRam();
+    }
+
 }

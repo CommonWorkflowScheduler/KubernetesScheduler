@@ -15,22 +15,20 @@
  * this work. If not, see <https://www.gnu.org/licenses/>. 
  */
 
-package cws.k8s.scheduler.memory;
-
-import java.math.BigDecimal;
+package cws.k8s.scheduler.prediction;
 
 import cws.k8s.scheduler.model.Task;
 
 // @formatter:off
 /**
- * The MemoryPredictor has two important interfaces:
+ * The Predictor has two important interfaces:
  * 
- * 1) addObservation() 
- *    - "add a new observation" after a workflow task is finished, the 
- *    observation result will be collected in the MemoryPredictor 
+ * 1) addTask()
+ *    - "add a new task" after a workflow task is finished, the
+ *    observation result will be collected in the Predictor
  * 
  * 2) queryPrediction() 
- *    - "ask for a suggestion" at any time, the MemoryPredictor can be asked 
+ *    - "ask for a suggestion" at any time, the Predictor can be asked
  *    what its guess is on the resource requirement of a task
  * 
  * Different strategies can be tried and exchanged easily, they just have to 
@@ -41,23 +39,25 @@ import cws.k8s.scheduler.model.Task;
  *
  */
 // @formatter:on
-interface MemoryPredictor {
+public interface Predictor {
 
     /**
-     * input observation into the MemoryPredictor, to be used to learn memory usage
+     * input observation into the Predictor, to learn a value
      * of tasks to create suggestions
      * 
-     * @param o the observation that was made
+     * @param t the task to be observed
      */
-    void addObservation(Observation o);
+    void addTask( Task t );
 
     /**
-     * ask the MemoryPredictor for a suggestion on how much memory should be
+     * ask the Predictor for a suggestion on how resources should be
      * assigned to the task.
      * 
      * @param task the task to get a suggestion form
      * @return null, if no suggestion possible, otherwise the value to be used
      */
-    BigDecimal queryPrediction(Task task);
+    Double queryPrediction( Task task );
+
+    double getDependentValue( Task task );
 
 }

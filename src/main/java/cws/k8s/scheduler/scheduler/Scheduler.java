@@ -1,6 +1,7 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.dag.DAG;
+import cws.k8s.scheduler.prediction.MemoryScaler;
 import cws.k8s.scheduler.prediction.TaskScaler;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
@@ -56,7 +57,7 @@ public abstract class Scheduler implements Informable {
     final boolean traceEnabled;
 
     // TaskScaler will observe tasks and modify their memory assignments
-    final TaskScaler taskScaler;
+    final List<TaskScaler> taskScaler = new LinkedList<>();
     
     Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
@@ -82,9 +83,7 @@ public abstract class Scheduler implements Informable {
         
         if ( StringUtils.hasText(config.memoryPredictor) ) {
             // create a new TaskScaler for each Scheduler instance
-            taskScaler = new TaskScaler(this, config, client);
-        } else {
-            taskScaler = null;
+            taskScaler.add( new MemoryScaler( config ) );
         }
     }
 
@@ -99,9 +98,9 @@ public abstract class Scheduler implements Informable {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
         
-        if (taskScaler!=null) {
-            // change memory resource requests and limits here
-            taskScaler.beforeTasksScheduled(unscheduledTasks);
+        if ( !taskScaler.isEmpty() ) {
+            // change resource requests and limits here
+            taskScaler.parallelStream().forEach( x -> x.beforeTasksScheduled( unscheduledTasks ) );
         }
         
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
@@ -216,9 +215,9 @@ public abstract class Scheduler implements Informable {
         }
         task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
 
-        if (taskScaler!=null) {
+        if (!taskScaler.isEmpty()) {
             // this will collect the result of the task execution for future scaling
-            taskScaler.afterTaskFinished(task);
+            taskScaler.parallelStream().forEach(x -> x.afterTaskFinished(task));
         }
     }
 
@@ -516,11 +515,6 @@ public abstract class Scheduler implements Informable {
         schedulingThread.interrupt();
         finishThread.interrupt();
         this.close = true;
-        
-        if (taskScaler!=null) {
-            // save statistics after the workflow is completed
-            taskScaler.afterWorkflow();
-        }
     }
 
     static class PodWatcher implements Watcher<Pod> {
