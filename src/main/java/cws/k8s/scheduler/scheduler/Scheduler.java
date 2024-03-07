@@ -1,7 +1,7 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.dag.DAG;
-import cws.k8s.scheduler.memory.TaskScaler;
+import cws.k8s.scheduler.prediction.TaskScaler;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
@@ -199,6 +199,16 @@ public abstract class Scheduler implements Informable {
         }
     }
 
+    public boolean addTaskMetrics( int id, TaskMetrics metrics ) {
+
+        Task task = tasksById.get( id );
+        if ( task == null ) {
+            return false;
+        }
+        return true;
+
+    }
+
     void taskWasFinished( Task task ){
         synchronized (unfinishedTasks){
             unfinishedTasks.remove( task );
@@ -293,7 +303,7 @@ public abstract class Scheduler implements Informable {
         final Task task;
         synchronized ( tasksById ) {
             task = tasksById.get( id );
-            }
+        }
         if ( task == null ) {
             return false;
         }

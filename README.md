@@ -13,19 +13,20 @@ docker push <your docker account>/cws:<version>
 
 #### API Endpoints
 
-| #  | Resource                            | Method |
-| -- | :---------------------------------- | :----: |
-| 1  | /{version}/{execution}              | POST   |
-| 2  | /{version}/{execution}              | DELETE |
-| 3  | /{version}/{execution}/DAG/vertices | POST   |
-| 4  | /{version}/{execution}/DAG/vertices | DELETE |
-| 5  | /{version}/{execution}/DAG/edges    | POST   |
-| 6  | /{version}/{execution}/DAG/edges    | DELETE |
-| 7  | /{version}/{execution}/startBatch   | PUT    |
-| 8  | /{version}/{execution}/endBatch     | PUT    |
-| 9  | /{version}/{execution}/task/{id}    | POST   |
-| 10 | /{version}/{execution}/task/{id}    | GET    |
-| 11 | /{version}/{execution}/task/{id}    | DELETE |
+| #  | Resource                                           | Method |
+|----|:---------------------------------------------------|:------:|
+| 1  | /{version}/scheduler/{execution}                   |  POST  |
+| 2  | /{version}/scheduler/{execution}                   | DELETE |
+| 3  | /{version}/scheduler/{execution}/DAG/vertices      |  POST  |
+| 4  | /{version}/scheduler/{execution}/DAG/vertices      | DELETE |
+| 5  | /{version}/scheduler/{execution}/DAG/edges         |  POST  |
+| 6  | /{version}/scheduler/{execution}/DAG/edges         | DELETE |
+| 7  | /{version}/scheduler/{execution}/startBatch        |  PUT   |
+| 8  | /{version}/scheduler/{execution}/endBatch          |  PUT   |
+| 9  | /{version}/scheduler/{execution}/task/{id}         |  POST  |
+| 10 | /{version}/scheduler/{execution}/task/{id}         |  GET   |
+| 11 | /{version}/scheduler/{execution}/task/{id}         | DELETE |
+| 12 | /{version}/scheduler/{execution}/metrics/task/{id} |  POST  |
 
 SWAGGER:  /swagger-ui.html <br>
 API-DOCS: /v3/api-docs

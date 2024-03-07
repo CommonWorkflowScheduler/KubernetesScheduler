@@ -6,6 +6,7 @@ import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
+import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
 import cws.k8s.scheduler.scheduler.Scheduler;
 import cws.k8s.scheduler.scheduler.prioritize.*;
@@ -173,6 +174,28 @@ public class SchedulerRestController {
         Map<String, Object> schedulerParams = scheduler.getSchedulerParams( config.getTask(), config.getName() );
 
         return new ResponseEntity<>( schedulerParams, HttpStatus.OK );
+
+    }
+
+    @Operation(summary = "Submit task metrics after execution")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Metric successfully added",
+                    content = @Content)})
+    /**
+     * Submit task metrics after execution
+     * @param execution unique name of the execution
+     * @param id        unique id of task
+     * @param metrics   metrics of the task
+     */
+    @PostMapping("/v1/scheduler/{execution}/metrics/task/{id}")
+    ResponseEntity<String> taskMetrics( @PathVariable String execution, @PathVariable int id, @RequestBody TaskMetrics metrics ) {
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+
+        return new ResponseEntity<>( scheduler.addTaskMetrics( id, metrics ) ? HttpStatus.OK : HttpStatus.NOT_FOUND );
 
     }
 
