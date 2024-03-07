@@ -205,6 +205,10 @@ public abstract class Scheduler implements Informable {
             return false;
         }
         task.setTaskMetrics( metrics );
+        if (!taskScaler.isEmpty()) {
+            // this will collect the result of the task execution for future scaling
+            taskScaler.parallelStream().forEach(x -> x.afterTaskFinished(task));
+        }
         return true;
 
     }
@@ -214,11 +218,6 @@ public abstract class Scheduler implements Informable {
             unfinishedTasks.remove( task );
         }
         task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
-
-        if (!taskScaler.isEmpty()) {
-            // this will collect the result of the task execution for future scaling
-            taskScaler.parallelStream().forEach(x -> x.afterTaskFinished(task));
-        }
     }
 
     public void schedulePod(PodWithAge pod ) {
