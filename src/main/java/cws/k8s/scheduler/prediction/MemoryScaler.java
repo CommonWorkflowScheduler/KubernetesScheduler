@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 
+import static cws.k8s.scheduler.util.Formater.formatBytes;
+
 @Slf4j
 public class MemoryScaler extends TaskScaler {
 
@@ -54,7 +56,7 @@ public class MemoryScaler extends TaskScaler {
         }
         MAXIMUM_MEMORY_REQUEST = config.maxMemory;
         LOWEST_MEMORY_REQUEST = config.minMemory;
-        log.info( "MemoryScaler initialized with minMemory: {}, maxMemory: {}", LOWEST_MEMORY_REQUEST, MAXIMUM_MEMORY_REQUEST );
+        log.info( "MemoryScaler initialized with minMemory: {}, maxMemory: {}", formatBytes(LOWEST_MEMORY_REQUEST), formatBytes(MAXIMUM_MEMORY_REQUEST) );
     }
 
     @Override
@@ -73,7 +75,7 @@ public class MemoryScaler extends TaskScaler {
 
     protected void scaleTask( Task task ) {
         log.debug("1 unscheduledTask: {} {} {}", task.getConfig().getTask(), task.getConfig().getName(),
-                task.getMemoryRequest());
+                formatBytes(task.getMemoryRequest().longValue()));
 
         Double newRequestValue = null;
 
@@ -104,7 +106,7 @@ public class MemoryScaler extends TaskScaler {
         }
 
         if (newRequestValue != null) {
-            log.info("resizing {} to {} bytes", task.getConfig().getName(), newRequestValue);
+            log.info("resizing {} to {} bytes", task.getConfig().getName(), formatBytes(newRequestValue.longValue()));
             task.setPlannedMemoryInBytes( newRequestValue.longValue() );
         }
     }

@@ -5,8 +5,11 @@ import lombok.ToString;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
-@ToString
+import static cws.k8s.scheduler.util.Formater.formatBytes;
+
 public class Requirements implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -61,4 +64,11 @@ public class Requirements implements Serializable {
                 && this.ram.compareTo( requirements.ram ) >= 0;
     }
 
+    @Override
+    public String toString() {
+        return "Requirements{" +
+                "cpu=" + cpu +
+                ", ram=" + formatBytes( ram.longValue() )  +
+                '}';
+    }
 }
