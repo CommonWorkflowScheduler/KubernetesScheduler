@@ -47,9 +47,19 @@ public class Task {
     @Setter
     private boolean copiesDataToNode = false;
 
+    @Getter
+    private TaskMetrics taskMetrics = null;
+
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
         this.process = dag.getByProcess( config.getTask() );
+    }
+
+    public synchronized void setTaskMetrics( TaskMetrics taskMetrics ){
+        if ( this.taskMetrics != null ){
+            throw new IllegalArgumentException( "TaskMetrics already set for task: " + this.getConfig().getName() );
+        }
+        this.taskMetrics = taskMetrics;
     }
 
     public String getWorkingDir(){

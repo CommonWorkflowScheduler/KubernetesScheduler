@@ -205,6 +205,7 @@ public abstract class Scheduler implements Informable {
         if ( task == null ) {
             return false;
         }
+        task.setTaskMetrics( metrics );
         return true;
 
     }
