@@ -1,12 +1,9 @@
 package cws.k8s.scheduler.model;
 
 import lombok.Getter;
-import lombok.ToString;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 
 import static cws.k8s.scheduler.util.Formater.formatBytes;
 

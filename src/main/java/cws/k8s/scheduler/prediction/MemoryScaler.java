@@ -76,7 +76,7 @@ public class MemoryScaler extends TaskScaler {
             log.debug( "task {} is a repetition, not changing it", task.getConfig().getName() );
             return false;
         }
-        BigDecimal taskRequest = task.getMemoryRequest();
+        BigDecimal taskRequest = task.getOriginalMemoryRequest();
         if (taskRequest.compareTo(BigDecimal.ZERO) == 0) {
             log.debug( "task {} had no prior requirements", task.getConfig().getName() );
             return false;
@@ -86,7 +86,7 @@ public class MemoryScaler extends TaskScaler {
 
     protected void scaleTask( Task task ) {
         log.debug("1 unscheduledTask: {} {} {}", task.getConfig().getTask(), task.getConfig().getName(),
-                formatBytes(task.getMemoryRequest().longValue()));
+                formatBytes(task.getOriginalMemoryRequest().longValue()));
 
         Double newRequestValue = null;
 

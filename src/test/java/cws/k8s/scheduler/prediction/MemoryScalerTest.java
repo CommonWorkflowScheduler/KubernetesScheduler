@@ -56,14 +56,33 @@ public class MemoryScalerTest {
         task.setTaskMetrics( getTaskMetric( 1, 1 ) );
         memoryScaler.afterTaskFinished( task );
         final TestTask task2 = new TestTask( 2, 2 );
-        assertEquals( 2, task2.getPlannedMemoryInBytes() );
+        assertEquals( 2, task2.getNewMemoryRequest() );
         memoryScaler.scaleTask( task2 );
-        assertEquals( 2, task2.getPlannedMemoryInBytes() );
+        assertEquals( 2, task2.getNewMemoryRequest() );
 
     }
 
     @Test
     public void predictAfterTwoTasks() {
+
+        final MemoryScaler memoryScaler = new MemoryScaler( getSchedulerConfig( 0, 2048, "linear" ) );
+        final TestTask task = new TestTask( 4, 1 );
+        task.setTaskMetrics( getTaskMetric( 1, 1 ) );
+        memoryScaler.afterTaskFinished( task );
+
+        final TestTask task2 = new TestTask( 4, 2 );
+        task2.setTaskMetrics( getTaskMetric( 2, 2 ) );
+        memoryScaler.afterTaskFinished( task2 );
+
+        final TestTask taskToPredict = new TestTask( 4, 3 );
+        assertEquals( 4, taskToPredict.getNewMemoryRequest() );
+        memoryScaler.scaleTask( taskToPredict );
+        assertEquals( 3, taskToPredict.getNewMemoryRequest() );
+
+    }
+
+    @Test
+    public void considerMin() {
 
         final MemoryScaler memoryScaler = new MemoryScaler( getSchedulerConfig( 1024, 2048, "linear" ) );
         final TestTask task = new TestTask( 4, 1 );
@@ -75,9 +94,28 @@ public class MemoryScalerTest {
         memoryScaler.afterTaskFinished( task2 );
 
         final TestTask taskToPredict = new TestTask( 4, 3 );
-        assertEquals( 4, taskToPredict.getPlannedMemoryInBytes() );
+        assertEquals( 4, taskToPredict.getNewMemoryRequest() );
         memoryScaler.scaleTask( taskToPredict );
-        assertEquals( 4, taskToPredict.getPlannedMemoryInBytes() );
+        assertEquals( 1024, taskToPredict.getNewMemoryRequest() );
+
+    }
+
+    @Test
+    public void considerMax() {
+
+        final MemoryScaler memoryScaler = new MemoryScaler( getSchedulerConfig( 0, 2, "linear" ) );
+        final TestTask task = new TestTask( 4, 1 );
+        task.setTaskMetrics( getTaskMetric( 1, 1 ) );
+        memoryScaler.afterTaskFinished( task );
+
+        final TestTask task2 = new TestTask( 4, 2 );
+        task2.setTaskMetrics( getTaskMetric( 2, 2 ) );
+        memoryScaler.afterTaskFinished( task2 );
+
+        final TestTask taskToPredict = new TestTask( 4, 3 );
+        assertEquals( 4, taskToPredict.getNewMemoryRequest() );
+        memoryScaler.scaleTask( taskToPredict );
+        assertEquals( 2, taskToPredict.getNewMemoryRequest() );
 
     }
 
@@ -86,9 +124,9 @@ public class MemoryScalerTest {
 
         final MemoryScaler memoryScaler = new MemoryScaler( getSchedulerConfig( 1024, 2048, "linear" ) );
         final TestTask task2 = new TestTask( 2, 2 );
-        assertEquals( 2, task2.getPlannedMemoryInBytes() );
+        assertEquals( 2, task2.getNewMemoryRequest() );
         memoryScaler.scaleTask( task2 );
-        assertEquals( 2, task2.getPlannedMemoryInBytes() );
+        assertEquals( 2, task2.getNewMemoryRequest() );
 
     }
 
