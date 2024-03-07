@@ -57,6 +57,7 @@ public class MemoryScaler extends TaskScaler {
         log.info( "MemoryScaler initialized with minMemory: {}, maxMemory: {}", LOWEST_MEMORY_REQUEST, MAXIMUM_MEMORY_REQUEST );
     }
 
+    @Override
     protected boolean applyToThisTask( Task task ) {
         if ( task.getConfig().getRepetition() > 0 ) {
             log.debug( "task {} is a repetition, not changing it", task.getConfig().getName() );
@@ -72,11 +73,16 @@ public class MemoryScaler extends TaskScaler {
 
     protected void scaleTask( Task task ) {
         log.debug("1 unscheduledTask: {} {} {}", task.getConfig().getTask(), task.getConfig().getName(),
-                task.getPod().getRequest());
+                task.getMemoryRequest());
 
         Double newRequestValue = null;
 
         final Predictor predictor = predictors.get( task.getConfig().getTask() );
+
+        if ( predictor == null ) {
+            log.error( "no predictor for task {}", task.getConfig().getName() );
+            return;
+        }
 
         // query suggestion
         Double prediction = predictor.queryPrediction(task);

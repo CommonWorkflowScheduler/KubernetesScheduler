@@ -6,12 +6,12 @@ import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 import java.util.List;
 
-public class PercentilOffset extends OffsetApplier {
+public class PercentileOffset extends OffsetApplier {
 
     private final Percentile percentile = new Percentile();
     private final double percentileValue;
 
-    public PercentilOffset( Predictor predictor, double percentileValue ) {
+    public PercentileOffset( Predictor predictor, double percentileValue ) {
         super( predictor );
         if ( percentileValue < 0 ) {
             throw new AssertionError( "Percentile value must be greater than 0" );

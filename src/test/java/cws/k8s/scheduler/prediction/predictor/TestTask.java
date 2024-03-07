@@ -6,6 +6,7 @@ import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.TaskConfig;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class TestTask extends Task {
@@ -22,14 +23,28 @@ public class TestTask extends Task {
     public final double x;
     public final double y;
 
+    private BigDecimal memoryRequest;
+    private long inputSize;
+
     public TestTask( double x, double y) {
         super( tc, dag );
         this.x = x;
         this.y = y;
     }
 
-    public TestTask() {
-        this( 0, 0 );
+    public TestTask( long memoryRequest, long inputsize ) {
+        this( 0d, 0d );
+        this.memoryRequest = BigDecimal.valueOf( memoryRequest );
+        setPlannedMemoryInBytes( memoryRequest );
+        this.inputSize = inputsize;
     }
 
+    public long getInputSize(){
+        return 0;
+    }
+
+    @Override
+    public BigDecimal getMemoryRequest() {
+        return memoryRequest;
+    }
 }
