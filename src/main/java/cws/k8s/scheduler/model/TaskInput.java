@@ -1,12 +1,14 @@
 package cws.k8s.scheduler.model;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @NoArgsConstructor( access = AccessLevel.PRIVATE, force = true )
+@Getter
 /**
  * Only for testing
  */

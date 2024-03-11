@@ -149,7 +149,7 @@ public abstract class Scheduler implements Informable {
         return true;
     }
 
-    abstract ScheduleObject getTaskNodeAlignment(
+    public abstract ScheduleObject getTaskNodeAlignment(
             final List<Task> unscheduledTasks,
             final Map<NodeWithAlloc, Requirements> availableByNode
     );
@@ -453,6 +453,7 @@ public abstract class Scheduler implements Informable {
         }
         logInfo.add("------------------------------------");
         log.info(String.join("\n", logInfo));
+
         return availableByNode;
     }
 

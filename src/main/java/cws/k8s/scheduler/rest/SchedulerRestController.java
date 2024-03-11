@@ -6,10 +6,12 @@ import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
+import cws.k8s.scheduler.scheduler.NodeLabelAssign;
 import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
 import cws.k8s.scheduler.scheduler.Scheduler;
 import cws.k8s.scheduler.scheduler.prioritize.*;
 import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
+import cws.k8s.scheduler.scheduler.nodeassign.LabelAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RoundRobinAssign;
@@ -31,6 +33,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @Slf4j
@@ -99,16 +103,23 @@ public class SchedulerRestController {
 
         Scheduler scheduler;
 
+        // ObjectMapper objetMapper = new ObjectMapper();
+        // Map<String,String> nodelabel = objectMapper.convertValue(config.additional.get("tasklabelconfig"),Map.class);
 
         if ( schedulerHolder.containsKey( execution ) ) {
             return noSchedulerFor( execution );
         }
 
+
+        Prioritize prioritize;
+        NodeAssign assign;
+
         switch ( strategy.toLowerCase() ){
+            case "nodelabelassign":  
+                scheduler = new NodeLabelAssign(execution, client, namespace, config);
+                break;
             default: {
                 final String[] split = strategy.split( "-" );
-                Prioritize prioritize;
-                NodeAssign assign;
                 if ( split.length <= 2 ) {
                     switch ( split[0].toLowerCase() ) {
                         case "fifo": prioritize = new FifoPrioritize(); break;
