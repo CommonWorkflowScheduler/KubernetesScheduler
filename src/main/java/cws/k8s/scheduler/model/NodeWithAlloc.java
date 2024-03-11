@@ -88,8 +88,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         return maxResources.sub(getRequestedResources());
     }
 
-    public boolean canSchedule( PodWithAge pod ){
-        final Requirements request = pod.getRequest();
+    public boolean canSchedule( final Requirements request ){
         Requirements availableResources = getAvailableResources();
         return request.getCpu().compareTo(availableResources.getCpu()) <= 0
                 && request.getRam().compareTo(availableResources.getRam()) <= 0;

@@ -4,17 +4,12 @@ import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.Process;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
 import cws.k8s.scheduler.util.Batch;
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -54,9 +49,13 @@ public class Task {
 
     private final Requirements oldRequirements;
 
+    @Getter
+    private Requirements planedRequirements;
+
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
         oldRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
+        planedRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
         this.process = dag.getByProcess( config.getTask() );
     }
 
@@ -128,34 +127,19 @@ public class Task {
     }
 
     public long getNewMemoryRequest(){
-        return getNewRequest().getRam().longValue();
-    }
-
-    public Requirements getNewRequest(){
-        if ( getPod() == null ) {
-            return null;
-        }
-        return getPod().getRequest();
+        return getPlanedRequirements().getRam().longValue();
     }
 
     public BigDecimal getOriginalMemoryRequest(){
         return oldRequirements.getRam();
     }
 
-    public Requirements getOriginalRequest(){
-        return oldRequirements;
+    public void setPlannedMemoryInBytes( long memory ){
+        planedRequirements = new Requirements( planedRequirements.getCpu(), BigDecimal.valueOf(memory) );
     }
 
-    public void setPlannedMemoryInBytes( long memory ){
-        List<Container> l = getPod().getSpec().getContainers();
-        // This will result in wrong memory request and limit values if more than one container is present
-        for (Container c : l) {
-            ResourceRequirements req = c.getResources();
-            Map<String, Quantity> limits = req.getLimits();
-            limits.replace("memory", new Quantity( String.valueOf( memory ) ));
-            Map<String, Quantity> requests = req.getRequests();
-            requests.replace("memory", new Quantity( String.valueOf( memory ) ));
-        }
+    public void setPlanedCpuInCores( double cpu ){
+        planedRequirements = new Requirements( BigDecimal.valueOf(cpu), planedRequirements.getRam() );
     }
 
 }

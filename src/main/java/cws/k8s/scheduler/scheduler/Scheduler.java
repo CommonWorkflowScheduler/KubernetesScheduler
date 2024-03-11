@@ -157,7 +157,7 @@ public abstract class Scheduler implements Informable {
             if ( requirements == null ) {
                 return false;
             }
-            requirements.subFromThis(nodeTaskAlignment.task.getPod().getRequest());
+            requirements.subFromThis(nodeTaskAlignment.task.getPlanedRequirements());
         }
         for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
             if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) {
@@ -338,13 +338,13 @@ public abstract class Scheduler implements Informable {
      * - enough resources available <br>
      * - Affinities match
      */
-    public boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+    public boolean canScheduleTaskOnNode( Requirements availableByNode, Task task, NodeWithAlloc node ) {
         if ( availableByNode == null ) {
             return false;
         }
         return node.canScheduleNewPod()
-                && availableByNode.higherOrEquals( pod.getRequest() )
-                && affinitiesMatch( pod, node );
+                && availableByNode.higherOrEquals( task.getPlanedRequirements() )
+                && affinitiesMatch( task.getPod(), node );
     }
 
     boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
@@ -374,8 +374,8 @@ public abstract class Scheduler implements Informable {
     /**
      * You may extend this method
      */
-    boolean canPodBeScheduled( PodWithAge pod, NodeWithAlloc node ){
-        return node.canSchedule( pod );
+    boolean canPodBeScheduled( Requirements requests, NodeWithAlloc node ){
+        return node.canSchedule( requests );
     }
 
     boolean assignTaskToNode( NodeTaskAlignment alignment ){
@@ -495,7 +495,7 @@ public abstract class Scheduler implements Informable {
     public Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
         Set<NodeWithAlloc> result = new HashSet<>();
         for (Map.Entry<NodeWithAlloc, Requirements> entry : availableByNode.entrySet()) {
-            if ( this.canSchedulePodOnNode( entry.getValue(), task.getPod(), entry.getKey() ) ){
+            if ( this.canScheduleTaskOnNode( entry.getValue(), task, entry.getKey() ) ){
                 result.add( entry.getKey() );
             }
         }

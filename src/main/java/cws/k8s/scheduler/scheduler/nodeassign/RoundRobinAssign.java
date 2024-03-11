@@ -26,8 +26,7 @@ public class RoundRobinAssign extends NodeAssign implements Informable {
 
         LinkedList<NodeTaskAlignment> alignment = new LinkedList<>();
         for ( final Task task : unscheduledTasks ) {
-            final PodWithAge pod = task.getPod();
-            log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
+            log.info("Pod: " + task.getPod().getName() + " Requested Resources: " + task.getPlanedRequirements() );
             int nodesTried = 0;
             synchronized ( this ) {
                 int firstTrial = nextNode;
@@ -36,9 +35,9 @@ public class RoundRobinAssign extends NodeAssign implements Informable {
                     final NodeWithAlloc node = nodes.get( nextNode );
                     log.info( "Next node: " + node.getName() + "--( " + nextNode + " )" );
                     nextNode = ( nextNode + 1 ) % nodes.size();
-                    if ( scheduler.canSchedulePodOnNode( availableByNode.get( node ), pod, node ) ) {
+                    if ( scheduler.canScheduleTaskOnNode( availableByNode.get( node ), task, node ) ) {
                         alignment.add( new NodeTaskAlignment( node, task ) );
-                        availableByNode.get( node ).subFromThis( pod.getRequest() );
+                        availableByNode.get( node ).subFromThis( task.getPlanedRequirements() );
                         log.info( "--> " + node.getName() );
                         task.getTraceRecord().foundAlignment();
                         break;
