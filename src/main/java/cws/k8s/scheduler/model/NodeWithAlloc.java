@@ -24,8 +24,6 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     private final Map<String, Requirements> assignedPods;
 
-    private final List<PodWithAge> startingTaskCopyingData = new LinkedList<>();
-
     public NodeWithAlloc( String name ) {
         this.kubernetesClient = null;
         this.maxResources = null;
@@ -57,52 +55,21 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         log.info("Node {} has RAM: {} and CPU: {}", node.getMetadata().getName(), maxRam, maxCpu);
     }
 
-    public void addPod( PodWithAge pod, boolean withStartingTasks ) {
+    public void addPod( PodWithAge pod ) {
         Requirements request = pod.getRequest();
-        if ( withStartingTasks ) {
-            synchronized ( startingTaskCopyingData ) {
-                if ( !startingTaskCopyingData.contains( pod ) ) {
-                    startingTaskCopyingData.add( pod );
-                }
-            }
-        }
         synchronized (assignedPods) {
             assignedPods.put( pod.getMetadata().getUid(), request );
         }
     }
 
-    private void removeStartingTaskCopyingDataByUid( String uid ) {
-        synchronized ( startingTaskCopyingData ) {
-            final Iterator<PodWithAge> iterator = startingTaskCopyingData.iterator();
-            while ( iterator.hasNext() ) {
-                final PodWithAge podWithAge = iterator.next();
-                if ( podWithAge.getMetadata().getUid().equals( uid ) ) {
-                    iterator.remove();
-                    break;
-                }
-            }
-        }
-    }
-
     public boolean removePod( Pod pod ){
-        removeStartingTaskCopyingDataByUid( pod.getMetadata().getUid() );
         synchronized (assignedPods) {
             return assignedPods.remove( pod.getMetadata().getUid() ) != null;
         }
     }
 
-
-    public void startingTaskCopyingDataFinished( Task task ) {
-        final String uid = task.getPod().getMetadata().getUid();
-        removeStartingTaskCopyingDataByUid( uid );
-    }
-
     public int getRunningPods(){
         return assignedPods.size();
-    }
-
-    public int getStartingPods(){
-        return startingTaskCopyingData.size();
     }
 
     /**

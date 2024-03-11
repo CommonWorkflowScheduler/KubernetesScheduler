@@ -393,7 +393,7 @@ public abstract class Scheduler implements Informable {
 
         final PodWithAge pod = alignment.task.getPod();
 
-        alignment.node.addPod( pod, alignment.task.isCopiesDataToNode() );
+        alignment.node.addPod( pod );
 
         log.info ( "Assign pod: " + pod.getMetadata().getName() + " to node: " + alignment.node.getMetadata().getName() );
 

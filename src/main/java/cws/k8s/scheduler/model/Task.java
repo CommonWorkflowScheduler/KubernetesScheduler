@@ -50,10 +50,6 @@ public class Task {
     private long timeAddedToQueue;
 
     @Getter
-    @Setter
-    private boolean copiesDataToNode = false;
-
-    @Getter
     private TaskMetrics taskMetrics = null;
 
     private final Requirements oldRequirements;
