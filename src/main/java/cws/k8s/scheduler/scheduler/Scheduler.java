@@ -1,5 +1,6 @@
 package cws.k8s.scheduler.scheduler;
 
+import cws.k8s.scheduler.client.CannotPatchException;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.prediction.MemoryScaler;
 import cws.k8s.scheduler.prediction.TaskScaler;
@@ -133,7 +134,8 @@ public abstract class Scheduler implements Informable {
                 log.info( "Could not schedule task: {} undo all", nodeTaskAlignment.task.getConfig().getRunName() );
                 e.printStackTrace();
                 undoTaskScheduling( nodeTaskAlignment.task );
-                if ( scheduleObject.isStopSubmitIfOneFails() ) {
+                //If the task failed because scaling is impossible, the schedule plan is not valid anymore
+                if ( scheduleObject.isStopSubmitIfOneFails() || e instanceof CannotPatchException ) {
                     return taskNodeAlignment.size() - scheduled;
                 }
                 continue;
@@ -387,6 +389,10 @@ public abstract class Scheduler implements Informable {
             printWriter.write( '\n' );
         } catch (IOException e) {
             log.error( "Cannot read " + nodeFile, e);
+        }
+
+        if ( alignment.task.requirementsChanged() ){
+            client.patchTaskMemory( alignment.task );
         }
 
         alignment.task.setNode( alignment.node );

@@ -142,4 +142,8 @@ public class Task {
         planedRequirements = new Requirements( BigDecimal.valueOf(cpu), planedRequirements.getRam() );
     }
 
+    public boolean requirementsChanged(){
+        return !oldRequirements.equals( planedRequirements );
+    }
+
 }

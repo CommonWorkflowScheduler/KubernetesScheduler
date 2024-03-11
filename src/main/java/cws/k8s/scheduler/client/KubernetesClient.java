@@ -19,7 +19,6 @@ public class KubernetesClient extends DefaultKubernetesClient  {
     private final Map<String, NodeWithAlloc> nodeHolder= new HashMap<>();
     private final List<Informable> informables = new LinkedList<>();
 
-
     public KubernetesClient(){
         for( Node node : this.nodes().list().getItems() ){
             nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node,this) );
@@ -227,45 +226,53 @@ public class KubernetesClient extends DefaultKubernetesClient  {
      * to the cluster.
      * 
      * @param t          the task to be patched
-     * @param value the value to be set
      * @return false if patching failed because of InPlacePodVerticalScaling
      */
-    public boolean patchTaskMemory(Task t, String value) {
-        String namespace = t.getPod().getMetadata().getNamespace();
-        String podname = t.getPod().getName();
-        log.debug("namespace: {}, podname: {}", namespace, podname);
+    public boolean patchTaskMemory( Task t ) {
+        final PodWithAge pod = t.getPod();
+        String namespace = pod.getMetadata().getNamespace();
+        String podname = pod.getName();
+        final String valueAsString = t.getPlanedRequirements().getRam().toPlainString();
+        log.info("namespace: {}, podname: {}", namespace, podname);
         // @formatter:off
         String patch = "kind: Pod\n"
                 + "apiVersion: v1\n"
                 + "metadata:\n"
-                + "  name: PODNAME\n"
-                + "  namespace: NAMESPACE\n"
+                + "  name: " + podname + "\n"
+                + "  namespace: " + namespace + "\n"
                 + "spec:\n"
                 + "  containers:\n"
-                + "    - name: PODNAME\n"
+                + "    - name: " + podname + "\n"
                 + "      resources:\n"
                 + "        limits:\n"
-                + "          memory: LIMIT\n"
+                + "          memory: " + valueAsString + "\n"
                 + "        requests:\n"
-                + "          memory: REQUEST\n"
+                + "          memory: " + valueAsString + "\n"
                 + "\n";
         // @formatter:on
-        patch = patch.replace("NAMESPACE", namespace);
-        patch = patch.replace("PODNAME", podname);
-        patch = patch.replace("LIMIT", value);
-        patch = patch.replace("REQUEST", value);
-        log.debug(patch);
-
+        log.info(patch);
         try {
             this.pods().inNamespace(namespace).withName(podname).patch(patch);
         } catch (KubernetesClientException e) {
             // this typically happens when the feature gate InPlacePodVerticalScaling was not enabled
             if (e.toString().contains("Forbidden: pod updates may not change fields other than")) {
                 log.error("Could not patch task. Please make sure that the feature gate 'InPlacePodVerticalScaling' is enabled in Kubernetes. See https://github.com/kubernetes/enhancements/issues/1287 for details. Task scaling will now be disabled for the rest of this workflow execution.");
-                return false;
             } else {
-                log.error("Could not patch task: {}", e);
+                log.error("Could not patch task: {}", t.getConfig().getName(), e);
             }
+            throw new CannotPatchException( e.getMessage() );
+        }
+        List<Container> l = t.getPod().getSpec().getContainers();
+        for (Container c : l) {
+            if ( c.getName() == null || !c.getName().equals(podname) ) {
+                continue;
+            }
+            ResourceRequirements req = c.getResources();
+            Map<String, Quantity> limits = req.getLimits();
+            limits.replace("memory", new Quantity(valueAsString));
+            Map<String, Quantity> requests = req.getRequests();
+            requests.replace("memory", new Quantity(valueAsString));
+            log.info("container: {}", req);
         }
         return true;
     }

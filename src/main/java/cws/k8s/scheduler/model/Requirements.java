@@ -68,4 +68,20 @@ public class Requirements implements Serializable {
                 ", ram=" + formatBytes( ram.longValue() )  +
                 '}';
     }
+
+    @Override
+    public boolean equals( Object o ) {
+        if ( this == o ) return true;
+        if ( !(o instanceof Requirements that) ) return false;
+
+        if ( getCpu() != null ? !getCpu().equals( that.getCpu() ) : that.getCpu() != null ) return false;
+        return getRam() != null ? getRam().equals( that.getRam() ) : that.getRam() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getCpu() != null ? getCpu().hashCode() : 0;
+        result = 31 * result + (getRam() != null ? getRam().hashCode() : 0);
+        return result;
+    }
 }
