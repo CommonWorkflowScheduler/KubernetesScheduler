@@ -233,7 +233,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         String namespace = pod.getMetadata().getNamespace();
         String podname = pod.getName();
         final String valueAsString = t.getPlanedRequirements().getRam().toPlainString();
-        log.info("namespace: {}, podname: {}", namespace, podname);
+        log.debug("namespace: {}, podname: {}", namespace, podname);
         // @formatter:off
         String patch = "kind: Pod\n"
                 + "apiVersion: v1\n"
@@ -250,7 +250,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 + "          memory: " + valueAsString + "\n"
                 + "\n";
         // @formatter:on
-        log.info(patch);
+        log.debug(patch);
         try {
             this.pods().inNamespace(namespace).withName(podname).patch(patch);
         } catch (KubernetesClientException e) {
