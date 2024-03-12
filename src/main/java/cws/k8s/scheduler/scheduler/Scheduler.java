@@ -83,8 +83,12 @@ public abstract class Scheduler implements Informable {
         log.info("Watching");
         
         if ( StringUtils.hasText(config.memoryPredictor) ) {
-            // create a new TaskScaler for each Scheduler instance
-            taskScaler.add( new MemoryScaler( config ) );
+            if ( client.inPlacePodVerticalScalingActive() ) {
+                // create a new TaskScaler for each Scheduler instance
+                taskScaler.add( new MemoryScaler( config ) );
+            } else {
+                log.warn( "InPlacePodVerticalScaling is not active. MemoryScaler will not be used." );
+            }
         }
     }
 

@@ -218,6 +218,28 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     }
 
+    public boolean inPlacePodVerticalScalingActive() {
+        return featureGateActive("InPlacePodVerticalScaling");
+    }
+
+    public boolean featureGateActive( String featureGate ){
+        return pods()
+                .inNamespace( "kube-system" )
+                .list()
+                .getItems()
+                .stream()
+                .filter( p -> p.getMetadata().getName().startsWith( "kube-apiserver" ) )
+                .anyMatch( p -> p
+                        .getSpec()
+                        .getContainers()
+                        .stream()
+                        .anyMatch( c -> c
+                                .getCommand()
+                                .contains( "--feature-gates=" + featureGate + "=true" )
+                        )
+                );
+    }
+
     /**
      * After some testing, this was found to be the only reliable way to patch a pod
      * using the Kubernetes client.
