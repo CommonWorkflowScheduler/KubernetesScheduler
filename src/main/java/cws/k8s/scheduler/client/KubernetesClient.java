@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
@@ -241,41 +242,44 @@ public class KubernetesClient extends DefaultKubernetesClient  {
     }
 
     /**
-     * After some testing, this was found to be the only reliable way to patch a pod
-     * using the Kubernetes client.
-     * 
      * It will create a patch for the memory limits and request values and submit it
      * to the cluster.
+     * Moreover, it updates the task with the new pod.
      * 
      * @param t          the task to be patched
      * @return false if patching failed because of InPlacePodVerticalScaling
      */
     public boolean patchTaskMemory( Task t ) {
-        final PodWithAge pod = t.getPod();
-        String namespace = pod.getMetadata().getNamespace();
-        String podname = pod.getName();
-        final String valueAsString = t.getPlanedRequirements().getRam().toPlainString();
-        log.debug("namespace: {}, podname: {}", namespace, podname);
-        // @formatter:off
-        String patch = "kind: Pod\n"
-                + "apiVersion: v1\n"
-                + "metadata:\n"
-                + "  name: " + podname + "\n"
-                + "  namespace: " + namespace + "\n"
-                + "spec:\n"
-                + "  containers:\n"
-                + "    - name: " + podname + "\n"
-                + "      resources:\n"
-                + "        limits:\n"
-                + "          memory: " + valueAsString + "\n"
-                + "        requests:\n"
-                + "          memory: " + valueAsString + "\n"
-                + "\n";
-        // @formatter:on
-        log.debug(patch);
         try {
-            this.pods().inNamespace(namespace).withName(podname).patch(patch);
-        } catch (KubernetesClientException e) {
+            final String valueAsString = t.getPlanedRequirements().getRam().toPlainString();
+            final PodWithAge pod = t.getPod();
+            String namespace = pod.getMetadata().getNamespace();
+            String podname = pod.getName();
+            Resource<Pod> podResource = pods()
+                    .inNamespace( namespace )
+                    .withName( podname );
+            Container container = podResource.get().getSpec().getContainers().get(0); // Assuming only one container
+            Container modifiedContainer = new ContainerBuilder(container)
+                    .editOrNewResources()
+                    .removeFromLimits( "memory" )
+                    .removeFromRequests( "memory" )
+                    .addToLimits("memory", new Quantity(valueAsString))
+                    .addToRequests("memory", new Quantity(valueAsString))
+                    .endResources()
+                    .build();
+
+            Pod modifiedPod = new PodBuilder( podResource.get() )
+                    .editOrNewSpec()
+                    .removeFromContainers( container )
+                    .addToContainers(modifiedContainer)
+                    .endSpec()
+                    .build();
+
+            t.setPod( new PodWithAge( modifiedPod ) );
+
+            podResource.patch(modifiedPod);
+
+        } catch ( KubernetesClientException e ) {
             // this typically happens when the feature gate InPlacePodVerticalScaling was not enabled
             if (e.toString().contains("Forbidden: pod updates may not change fields other than")) {
                 log.error("Could not patch task. Please make sure that the feature gate 'InPlacePodVerticalScaling' is enabled in Kubernetes. See https://github.com/kubernetes/enhancements/issues/1287 for details. Task scaling will now be disabled for the rest of this workflow execution.");
@@ -283,18 +287,6 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 log.error("Could not patch task: {}", t.getConfig().getName(), e);
             }
             throw new CannotPatchException( e.getMessage() );
-        }
-        List<Container> l = t.getPod().getSpec().getContainers();
-        for (Container c : l) {
-            if ( c.getName() == null || !c.getName().equals(podname) ) {
-                continue;
-            }
-            ResourceRequirements req = c.getResources();
-            Map<String, Quantity> limits = req.getLimits();
-            limits.replace("memory", new Quantity(valueAsString));
-            Map<String, Quantity> requests = req.getRequests();
-            requests.replace("memory", new Quantity(valueAsString));
-            log.info("container: {}", req);
         }
         return true;
     }
