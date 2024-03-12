@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 @Slf4j
@@ -251,7 +252,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
      */
     public boolean patchTaskMemory( Task t ) {
         try {
-            final String valueAsString = t.getPlanedRequirements().getRam().toPlainString();
+            final String valueAsString = t.getPlanedRequirements().getRam()
+                    .divide( BigDecimal.valueOf( 1024L * 1024L ) )
+                    .setScale( 0, RoundingMode.CEILING ).toPlainString() + "Mi";
             final PodWithAge pod = t.getPod();
             String namespace = pod.getMetadata().getNamespace();
             String podname = pod.getName();

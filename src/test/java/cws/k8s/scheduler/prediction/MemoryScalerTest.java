@@ -130,4 +130,17 @@ public class MemoryScalerTest {
 
     }
 
+    @Test
+    public void roundUpToFullMB() {
+        long mb = 1024 * 1024;
+        assertEquals( 0, MemoryScaler.roundUpToFullMB( 0 ) );
+        assertEquals( mb, MemoryScaler.roundUpToFullMB( 1024 ) );
+        assertEquals( mb, MemoryScaler.roundUpToFullMB( 1024 + 1 ) );
+        assertEquals( mb, MemoryScaler.roundUpToFullMB( mb ) );
+        assertEquals( mb * 2, MemoryScaler.roundUpToFullMB( mb + 1 ) );
+        assertEquals( mb * 2, MemoryScaler.roundUpToFullMB( 2 * mb ) );
+        assertEquals( mb * 3, MemoryScaler.roundUpToFullMB( 2 * mb + 1 ) );
+
+
+    }
 }

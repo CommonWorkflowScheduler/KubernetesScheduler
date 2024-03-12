@@ -117,9 +117,16 @@ public class MemoryScaler extends TaskScaler {
         }
 
         if (newRequestValue != null) {
-            log.info("resizing {} to {} bytes", task.getConfig().getName(), formatBytes(newRequestValue.longValue()));
-            task.setPlannedMemoryInBytes( newRequestValue.longValue() );
+            long newValue = roundUpToFullMB(newRequestValue.longValue());
+            log.info("resizing {} to {} bytes", task.getConfig().getName(), formatBytes(newValue));
+            task.setPlannedMemoryInBytes( newValue );
         }
+    }
+
+    static long roundUpToFullMB( long bytes ) {
+        final long MB = 1024L * 1024L;
+        final long l = bytes % MB;
+        return l == 0 ? bytes : bytes + MB - l;
     }
 
     @Override
