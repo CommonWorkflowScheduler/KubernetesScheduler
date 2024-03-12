@@ -36,10 +36,10 @@ public class TestTask extends Task {
         this.y = y;
     }
 
-    public TestTask( long memoryRequest, long inputsize ) {
+    public TestTask( long memoryRequestInMb, long inputsize ) {
         this( 0d, 0d );
-        this.memoryRequest = BigDecimal.valueOf( memoryRequest );
-        planedMemory = memoryRequest;
+        this.memoryRequest = BigDecimal.valueOf( memoryRequestInMb * 1048576 );
+        planedMemory = memoryRequestInMb * 1048576;
         this.inputSize = inputsize;
     }
 
