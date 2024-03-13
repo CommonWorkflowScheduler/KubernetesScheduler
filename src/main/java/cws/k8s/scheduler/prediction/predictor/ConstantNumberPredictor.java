@@ -23,4 +23,10 @@ public class ConstantNumberPredictor implements Predictor {
     public double getDependentValue( Task task ) {
         return outputExtractor.extractVariable( task );
     }
+
+    @Override
+    public long getVersion() {
+        return 0;
+    }
+
 }

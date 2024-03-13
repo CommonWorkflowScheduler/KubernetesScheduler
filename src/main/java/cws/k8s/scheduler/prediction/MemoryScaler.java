@@ -84,42 +84,23 @@ public class MemoryScaler extends TaskScaler {
         return true;
     }
 
-    protected void scaleTask( Task task ) {
-        log.debug("1 unscheduledTask: {} {} {}", task.getConfig().getTask(), task.getConfig().getName(),
-                formatBytes(task.getOriginalMemoryRequest().longValue()));
+    protected void scaleTask( Task task, Double prediction, long predictorVersion ) {
 
-        Double newRequestValue = null;
-
-        final Predictor predictor = predictors.get( task.getConfig().getTask() );
-
-        if ( predictor == null ) {
-            return;
-        }
-
-        // query suggestion
-        Double prediction = predictor.queryPrediction(task);
-
-        // sanity check for our prediction
         if ( prediction != null ) {
-            // we have a prediction and it fits into the cluster
-            newRequestValue = prediction;
+            long newRequestValue = prediction.longValue();
             log.debug("predictor proposes {} for task {}", prediction, task.getConfig().getName());
 
             // if our prediction is a very low value, the pod might not start. Make sure it has at least 256MiB
             if ( LOWEST_MEMORY_REQUEST != null && newRequestValue < LOWEST_MEMORY_REQUEST ) {
                 log.debug("Prediction of {} is lower than {}. Automatically increased.", newRequestValue, LOWEST_MEMORY_REQUEST);
-                newRequestValue = (double) LOWEST_MEMORY_REQUEST;
+                newRequestValue = LOWEST_MEMORY_REQUEST;
             } else if ( MAXIMUM_MEMORY_REQUEST != null && newRequestValue > MAXIMUM_MEMORY_REQUEST ) {
                 log.debug("Prediction of {} is higher than {}. Automatically decreased.", newRequestValue, MAXIMUM_MEMORY_REQUEST);
-                newRequestValue = (double) MAXIMUM_MEMORY_REQUEST;
+                newRequestValue = MAXIMUM_MEMORY_REQUEST;
             }
-
-        }
-
-        if (newRequestValue != null) {
-            long newValue = roundUpToFullMB(newRequestValue.longValue());
+            long newValue = roundUpToFullMB( newRequestValue );
             log.info("resizing {} to {} bytes", task.getConfig().getName(), formatBytes(newValue));
-            task.setPlannedMemoryInBytes( newValue );
+            task.setPlannedMemoryInBytes( newValue, predictorVersion );
         }
     }
 

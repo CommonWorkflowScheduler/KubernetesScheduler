@@ -24,6 +24,8 @@ import java.util.Map;
 import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
 
+import static cws.k8s.scheduler.util.Formater.formatBytes;
+
 /**
  * The TaskScaler offers the interfaces that are used by the Scheduler
  * 
@@ -67,20 +69,40 @@ public abstract class TaskScaler {
         return true;
     }
 
-    protected abstract void scaleTask( Task task );
+    protected abstract void scaleTask( Task task, Double prediction, long predictorVersion );
 
     protected abstract Predictor createPredictor( String taskName );
+
+    private void scaleTaskIntern( Task task ) {
+        log.debug("1 unscheduledTask: {} {} {}", task.getConfig().getTask(), task.getConfig().getName(),
+                formatBytes(task.getOriginalMemoryRequest().longValue()));
+
+        final Predictor predictor = predictors.get( task.getConfig().getTask() );
+
+        final long predictorVersion;
+        //Do not predict if the predictor is not set or if the task was already predicted with the same version
+        if ( predictor == null || (predictorVersion = predictor.getVersion()) == task.getMemoryPredictionVersion() ) {
+            return;
+        }
+
+        // query suggestion
+        Double prediction = predictor.queryPrediction(task);
+        log.info( "predictorVersion: {} task: {} prediction: {}", predictorVersion, task, prediction );
+
+        scaleTask( task, prediction, predictorVersion );
+    }
 
 
     public synchronized void beforeTasksScheduled( final List<Task> unscheduledTasks ) {
         if (!active) {
             return;
         }
+        log.info( unscheduledTasks.size() + " unscheduledTasks" );
         log.debug("--- unscheduledTasks BEGIN ---");
         unscheduledTasks
                 .parallelStream()
                 .filter( this::applyToThisTask )
-                .forEach( this::scaleTask );
+                .forEach( this::scaleTaskIntern );
         log.debug("--- unscheduledTasks END ---");
     }
 

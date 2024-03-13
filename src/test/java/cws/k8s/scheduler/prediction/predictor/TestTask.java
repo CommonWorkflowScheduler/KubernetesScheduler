@@ -48,10 +48,12 @@ public class TestTask extends Task {
         return memoryRequest;
     }
 
-    public void setPlannedMemoryInBytes( long memory ){
+    @Override
+    public void setPlannedMemoryInBytes( long memory, long version ) {
         this.planedMemory = memory;
     }
 
+    @Override
     public long getNewMemoryRequest(){
         return planedMemory;
     }

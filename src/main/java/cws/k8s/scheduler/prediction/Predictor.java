@@ -60,4 +60,6 @@ public interface Predictor {
 
     double getDependentValue( Task task );
 
+    long getVersion();
+
 }

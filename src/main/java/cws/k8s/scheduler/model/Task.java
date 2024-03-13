@@ -52,6 +52,12 @@ public class Task {
     @Getter
     private Requirements planedRequirements;
 
+    @Getter
+    private long memoryPredictionVersion = -1;
+
+    @Getter
+    private long cpuPredictionVersion = -1;
+
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
         oldRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
@@ -134,12 +140,14 @@ public class Task {
         return oldRequirements.getRam();
     }
 
-    public void setPlannedMemoryInBytes( long memory ){
+    public void setPlannedMemoryInBytes( long memory, long version ){
         planedRequirements = new Requirements( planedRequirements.getCpu(), BigDecimal.valueOf(memory) );
+        memoryPredictionVersion = version;
     }
 
-    public void setPlanedCpuInCores( double cpu ){
+    public void setPlanedCpuInCores( double cpu, long version ){
         planedRequirements = new Requirements( BigDecimal.valueOf(cpu), planedRequirements.getRam() );
+        cpuPredictionVersion = version;
     }
 
     public boolean requirementsChanged(){

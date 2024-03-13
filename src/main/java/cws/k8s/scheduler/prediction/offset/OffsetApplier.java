@@ -62,4 +62,9 @@ public abstract class OffsetApplier implements Predictor {
      */
     protected abstract double getOffset( List<Task> observedTasks );
 
+    @Override
+    public long getVersion() {
+        return predictor.getVersion();
+    }
+
 }

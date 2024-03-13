@@ -7,6 +7,8 @@ import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.prediction.predictor.TestTask;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MemoryScalerTest {
@@ -59,7 +61,7 @@ public class MemoryScalerTest {
         memoryScaler.afterTaskFinished( task );
         final TestTask task2 = new TestTask( 2, 2 );
         assertEquals( 2 * MB, task2.getNewMemoryRequest() );
-        memoryScaler.scaleTask( task2 );
+        memoryScaler.beforeTasksScheduled( List.of(task2) );
         assertEquals( 2 * MB, task2.getNewMemoryRequest() );
 
     }
@@ -78,7 +80,7 @@ public class MemoryScalerTest {
 
         final TestTask taskToPredict = new TestTask( 4, 3 );
         assertEquals( 4 * MB, taskToPredict.getNewMemoryRequest() );
-        memoryScaler.scaleTask( taskToPredict );
+        memoryScaler.beforeTasksScheduled( List.of(taskToPredict) );
         assertEquals( 3 * MB, taskToPredict.getNewMemoryRequest() );
 
     }
@@ -97,7 +99,7 @@ public class MemoryScalerTest {
 
         final TestTask taskToPredict = new TestTask( 4, 3 );
         assertEquals( 4 * MB, taskToPredict.getNewMemoryRequest() );
-        memoryScaler.scaleTask( taskToPredict );
+        memoryScaler.beforeTasksScheduled( List.of(taskToPredict) );
         assertEquals( 1024 * MB, taskToPredict.getNewMemoryRequest() );
 
     }
@@ -116,7 +118,7 @@ public class MemoryScalerTest {
 
         final TestTask taskToPredict = new TestTask( 4, 3 );
         assertEquals( 4 * MB, taskToPredict.getNewMemoryRequest() );
-        memoryScaler.scaleTask( taskToPredict );
+        memoryScaler.beforeTasksScheduled( List.of(taskToPredict) );
         assertEquals( 2 * MB, taskToPredict.getNewMemoryRequest() );
 
     }
@@ -127,7 +129,7 @@ public class MemoryScalerTest {
         final MemoryScaler memoryScaler = new MemoryScaler( getSchedulerConfig( 1024 * MB, 2048 * MB, "linear" ) );
         final TestTask task2 = new TestTask( 2, 2 );
         assertEquals( 2 * MB, task2.getNewMemoryRequest() );
-        memoryScaler.scaleTask( task2 );
+        memoryScaler.beforeTasksScheduled( List.of(task2) );
         assertEquals( 2 * MB, task2.getNewMemoryRequest() );
 
     }
