@@ -115,4 +115,9 @@ public class MemoryScaler extends TaskScaler {
         return predictorBuilder.build();
     }
 
+    @Override
+    protected long getTaskVersionForPredictor( Task task ) {
+        return task.getMemoryPredictionVersion();
+    }
+
 }

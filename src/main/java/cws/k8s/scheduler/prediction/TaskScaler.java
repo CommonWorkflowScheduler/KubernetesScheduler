@@ -81,7 +81,7 @@ public abstract class TaskScaler {
 
         final long predictorVersion;
         //Do not predict if the predictor is not set or if the task was already predicted with the same version
-        if ( predictor == null || (predictorVersion = predictor.getVersion()) == task.getMemoryPredictionVersion() ) {
+        if ( predictor == null || (predictorVersion = predictor.getVersion()) == getTaskVersionForPredictor(task) ) {
             return;
         }
 
@@ -105,6 +105,8 @@ public abstract class TaskScaler {
                 .forEach( this::scaleTaskIntern );
         log.debug("--- unscheduledTasks END ---");
     }
+
+    protected abstract long getTaskVersionForPredictor( Task task );
 
     public void deactivate(){
         active = false;
