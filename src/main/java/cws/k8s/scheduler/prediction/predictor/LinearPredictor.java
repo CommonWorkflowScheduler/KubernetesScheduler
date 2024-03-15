@@ -11,10 +11,10 @@ import java.util.concurrent.atomic.AtomicLong;
 @RequiredArgsConstructor
 public class LinearPredictor implements Predictor {
 
+    private final AtomicLong version = new AtomicLong( 0 );
     private final VariableExtractor inputExtractor;
     private final VariableExtractor outputExtractor;
     private final SimpleRegression regression = new SimpleRegression();
-    AtomicLong version = new AtomicLong( 0 );
 
 
     @Override
@@ -44,6 +44,12 @@ public class LinearPredictor implements Predictor {
     @Override
     public long getVersion() {
         return version.get();
+    }
+
+    double getR() {
+        synchronized ( regression ) {
+            return regression.getR();
+        }
     }
 
 }
