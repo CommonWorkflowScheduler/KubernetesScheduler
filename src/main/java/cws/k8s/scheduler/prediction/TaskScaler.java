@@ -111,5 +111,18 @@ public abstract class TaskScaler {
     public void deactivate(){
         active = false;
     }
+
+    protected Map<String,String> parsePredictorParams( String predictorParams ) {
+        final String[] split = predictorParams.split( "," );
+        final Map<String,String> params = new HashMap<>();
+        for ( String s : split ) {
+            final String[] split1 = s.split( "=" );
+            if ( split1.length != 2 ) {
+                throw new IllegalArgumentException( "predictorParams must be a comma separated list of key=value pairs" );
+            }
+            params.put( split1[0].toLowerCase(), split1[1].toLowerCase() );
+        }
+        return params;
+    }
     
 }

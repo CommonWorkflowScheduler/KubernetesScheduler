@@ -6,11 +6,13 @@ import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.prediction.extractor.InputExtractor;
 import cws.k8s.scheduler.prediction.extractor.MemoryExtractor;
 import cws.k8s.scheduler.prediction.offset.MaxOffset;
+import cws.k8s.scheduler.prediction.offset.PercentileOffset;
 import cws.k8s.scheduler.prediction.predictor.LinearPredictor;
 import io.fabric8.kubernetes.api.builder.Builder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 import static cws.k8s.scheduler.util.Formater.formatBytes;
 
@@ -38,26 +40,57 @@ public class MemoryScaler extends TaskScaler {
         if ("default".equalsIgnoreCase(memoryPredictorString)) {
             memoryPredictorString = System.getenv("MEMORY_PREDICTOR_DEFAULT");
         }
-        String memoryPredictorParameter = null;
+        Map<String,String> memoryPredictorParameter = null;
+        String predictorString = memoryPredictorString;
+        String parameterString = "";
         if ( memoryPredictorString.contains( "-" ) ) {
-            memoryPredictorString = memoryPredictorString.substring( 0, memoryPredictorString.indexOf("-") );
-            memoryPredictorParameter = memoryPredictorString.substring( memoryPredictorString.indexOf("-") + 1 );
+            predictorString = memoryPredictorString.substring( 0, memoryPredictorString.indexOf("-") );
+            parameterString = memoryPredictorString.substring( memoryPredictorString.indexOf("-") + 1 );
         }
-        final InputExtractor inputExtractor = new InputExtractor();
-        final MemoryExtractor outputExtractor = new MemoryExtractor();
+        memoryPredictorParameter = parsePredictorParams( parameterString );
 
-        switch (memoryPredictorString.toLowerCase()) {
-            case "linear":
-                log.debug("using LinearPredictor");
-                this.predictorBuilder = () -> new MaxOffset( new LinearPredictor( inputExtractor, outputExtractor ) );
-                break;
+        Builder<Predictor> cBuilder = applyPredictor( predictorString );
 
-            default:
-                throw new IllegalArgumentException("unrecognized memoryPredictorString: " + memoryPredictorString);
+        cBuilder = applyOffset( cBuilder, memoryPredictorParameter.remove( "offset" ) );
+
+        this.predictorBuilder = cBuilder;
+
+        if ( !memoryPredictorParameter.isEmpty() ) {
+            log.warn("unrecognized memoryPredictorParameter: " + memoryPredictorParameter );
         }
+
         MAXIMUM_MEMORY_REQUEST = config.maxMemory;
         LOWEST_MEMORY_REQUEST = config.minMemory;
         log.info( "MemoryScaler initialized with minMemory: {}, maxMemory: {}", formatBytes(LOWEST_MEMORY_REQUEST), formatBytes(MAXIMUM_MEMORY_REQUEST) );
+    }
+
+    private Builder<Predictor> applyOffset( final Builder<Predictor> builder, final String offsetValue ) {
+        if ( offsetValue != null ) {
+            if ( offsetValue.endsWith( "percentile" ) ) {
+                final String substring = offsetValue.substring( 0, offsetValue.length() - "percentile".length() );
+                int percentile = Integer.parseInt( substring );
+                return () -> new PercentileOffset( builder.build(), percentile );
+            } else if ( offsetValue.equals( "max" ) ) {
+                return () -> new MaxOffset( builder.build() );
+            } else if ( offsetValue.equals( "none" ) ) {
+                return builder;
+            } else {
+                throw new IllegalArgumentException("unrecognized offset parameter: " + offsetValue );
+            }
+        } else {
+            return () -> new MaxOffset( builder.build() );
+        }
+    }
+
+    private Builder<Predictor> applyPredictor( String predictorString ) {
+        final InputExtractor inputExtractor = new InputExtractor();
+        final MemoryExtractor outputExtractor = new MemoryExtractor();
+        if ( predictorString.equalsIgnoreCase( "linear" )) {
+            log.debug( "using LinearPredictor" );
+            return () -> new LinearPredictor( inputExtractor, outputExtractor );
+        } else {
+            throw new IllegalArgumentException("unrecognized memoryPredictorString: " + predictorString);
+        }
     }
 
     @Override
