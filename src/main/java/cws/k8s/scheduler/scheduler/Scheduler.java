@@ -1,13 +1,13 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.client.CannotPatchException;
-import cws.k8s.scheduler.dag.DAG;
-import cws.k8s.scheduler.prediction.MemoryScaler;
-import cws.k8s.scheduler.prediction.TaskScaler;
-import cws.k8s.scheduler.model.*;
-import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.dag.DAG;
+import cws.k8s.scheduler.model.*;
+import cws.k8s.scheduler.prediction.MemoryScaler;
+import cws.k8s.scheduler.prediction.TaskScaler;
+import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watch;
@@ -15,14 +15,13 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-
-import org.springframework.util.StringUtils;
 
 @Slf4j
 public abstract class Scheduler implements Informable {

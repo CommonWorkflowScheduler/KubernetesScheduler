@@ -1,19 +1,19 @@
 package cws.k8s.scheduler.rest;
 
+import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.InputEdge;
-import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
 import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
 import cws.k8s.scheduler.scheduler.Scheduler;
-import cws.k8s.scheduler.scheduler.prioritize.*;
 import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RoundRobinAssign;
+import cws.k8s.scheduler.scheduler.prioritize.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

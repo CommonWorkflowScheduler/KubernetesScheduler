@@ -17,12 +17,12 @@
 
 package cws.k8s.scheduler.prediction;
 
+import cws.k8s.scheduler.model.Task;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import cws.k8s.scheduler.model.Task;
-import lombok.extern.slf4j.Slf4j;
 
 import static cws.k8s.scheduler.util.Formater.formatBytes;
 
