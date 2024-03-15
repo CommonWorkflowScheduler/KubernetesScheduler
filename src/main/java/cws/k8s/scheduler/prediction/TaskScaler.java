@@ -87,7 +87,6 @@ public abstract class TaskScaler {
 
         // query suggestion
         Double prediction = predictor.queryPrediction(task);
-        log.info( "predictorVersion: {} task: {} prediction: {}", predictorVersion, task, prediction );
 
         scaleTask( task, prediction, predictorVersion );
     }
