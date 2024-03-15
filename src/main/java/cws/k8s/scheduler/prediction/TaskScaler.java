@@ -113,8 +113,11 @@ public abstract class TaskScaler {
     }
 
     protected Map<String,String> parsePredictorParams( String predictorParams ) {
-        final String[] split = predictorParams.split( "," );
         final Map<String,String> params = new HashMap<>();
+        if ( predictorParams == null ) {
+            return params;
+        }
+        final String[] split = predictorParams.split( "," );
         for ( String s : split ) {
             final String[] split1 = s.split( "=" );
             if ( split1.length != 2 ) {

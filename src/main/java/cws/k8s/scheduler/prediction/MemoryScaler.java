@@ -42,7 +42,7 @@ public class MemoryScaler extends TaskScaler {
         }
         Map<String,String> memoryPredictorParameter = null;
         String predictorString = memoryPredictorString;
-        String parameterString = "";
+        String parameterString = null;
         if ( memoryPredictorString.contains( "-" ) ) {
             predictorString = memoryPredictorString.substring( 0, memoryPredictorString.indexOf("-") );
             parameterString = memoryPredictorString.substring( memoryPredictorString.indexOf("-") + 1 );
