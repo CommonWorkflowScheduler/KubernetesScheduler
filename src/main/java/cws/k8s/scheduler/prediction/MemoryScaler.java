@@ -118,17 +118,16 @@ public class MemoryScaler extends TaskScaler {
     }
 
     protected void scaleTask( Task task, Double prediction, long predictorVersion ) {
-
         if ( prediction != null ) {
             long newRequestValue = prediction.longValue();
             log.debug("predictor proposes {} for task {}", prediction, task.getConfig().getName());
 
             // if our prediction is a very low value, the pod might not start. Make sure it has at least 256MiB
             if ( LOWEST_MEMORY_REQUEST != null && newRequestValue < LOWEST_MEMORY_REQUEST ) {
-                log.debug("Prediction of {} is lower than {}. Automatically increased.", newRequestValue, LOWEST_MEMORY_REQUEST);
+                log.debug("Prediction of {} is lower than {}. Automatically increased.", formatBytes( newRequestValue), formatBytes( LOWEST_MEMORY_REQUEST));
                 newRequestValue = LOWEST_MEMORY_REQUEST;
             } else if ( MAXIMUM_MEMORY_REQUEST != null && newRequestValue > MAXIMUM_MEMORY_REQUEST ) {
-                log.debug("Prediction of {} is higher than {}. Automatically decreased.", newRequestValue, MAXIMUM_MEMORY_REQUEST);
+                log.debug("Prediction of {} is higher than {}. Automatically decreased.", formatBytes( newRequestValue), formatBytes( MAXIMUM_MEMORY_REQUEST));
                 newRequestValue = MAXIMUM_MEMORY_REQUEST;
             }
             long newValue = roundUpToFullMB( newRequestValue );
