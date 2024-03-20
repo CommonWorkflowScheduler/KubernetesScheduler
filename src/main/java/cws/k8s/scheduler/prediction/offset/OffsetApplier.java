@@ -67,4 +67,22 @@ public abstract class OffsetApplier implements Predictor {
         return predictor.getVersion();
     }
 
+    /**
+     * Convert the observed tasks to an array of differences between the observed value and the prediction
+     * @param observedTasks the observed tasks
+     * @param array the array to be filled with the differences
+     * @return the number of differences added to the array
+     */
+    protected int observationsToDifferenceArray( List<Task> observedTasks, double[] array ){
+        int n = 0;
+        for ( Task observedTask : observedTasks ) {
+            final Double v = getPredictor().queryPrediction( observedTask );
+            if ( v == null ) {
+                continue;
+            }
+            array[n++] = getDependentValue( observedTask ) - v;
+        }
+        return n;
+    }
+
 }

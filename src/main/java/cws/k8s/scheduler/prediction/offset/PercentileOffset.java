@@ -25,14 +25,7 @@ public class PercentileOffset extends OffsetApplier {
     @Override
     protected double getOffset( List<Task> observedTasks ) {
         double[] observedValues = new double[observedTasks.size()];
-        int i = 0;
-        for ( Task observedTask : observedTasks ) {
-            final Double v = getPredictor().queryPrediction( observedTask );
-            if ( v == null ) {
-                continue;
-            }
-            observedValues[i++] = getDependentValue( observedTask ) - v;
-        }
-        return Math.max( 0, percentile.evaluate( observedValues, 0, i, percentileValue ) );
+        int n = observationsToDifferenceArray( observedTasks, observedValues );
+        return Math.max( 0, percentile.evaluate( observedValues, 0, n, percentileValue ) );
     }
 }
