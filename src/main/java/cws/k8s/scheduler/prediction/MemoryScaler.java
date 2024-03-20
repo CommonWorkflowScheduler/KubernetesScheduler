@@ -7,7 +7,12 @@ import cws.k8s.scheduler.prediction.extractor.InputExtractor;
 import cws.k8s.scheduler.prediction.extractor.MemoryExtractor;
 import cws.k8s.scheduler.prediction.offset.MaxOffset;
 import cws.k8s.scheduler.prediction.offset.PercentileOffset;
+import cws.k8s.scheduler.prediction.offset.StandardDeviationOffset;
+import cws.k8s.scheduler.prediction.offset.VarianceOffset;
+import cws.k8s.scheduler.prediction.predictor.ConstantNumberPredictor;
 import cws.k8s.scheduler.prediction.predictor.LinearPredictor;
+import cws.k8s.scheduler.prediction.predictor.PolynomialPredictor;
+import cws.k8s.scheduler.prediction.predictor.PonderingPredictor;
 import io.fabric8.kubernetes.api.builder.Builder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,6 +79,10 @@ public class MemoryScaler extends TaskScaler {
                 return () -> new MaxOffset( builder.build() );
             } else if ( offsetValue.equals( "none" ) ) {
                 return builder;
+            } else if ( offsetValue.equals( "var" ) ) {
+                return () -> new VarianceOffset( builder.build() );
+            } else if ( offsetValue.equals( "std" ) ) {
+                return () -> new StandardDeviationOffset( builder.build() );
             } else {
                 throw new IllegalArgumentException("unrecognized offset parameter: " + offsetValue );
             }
@@ -88,6 +97,19 @@ public class MemoryScaler extends TaskScaler {
         if ( predictorString.equalsIgnoreCase( "linear" )) {
             log.debug( "using LinearPredictor" );
             return () -> new LinearPredictor( inputExtractor, outputExtractor );
+        } else if ( predictorString.equalsIgnoreCase( "ponder" )) {
+            log.debug( "using PonderingPredictor" );
+            return () -> new PonderingPredictor( inputExtractor, outputExtractor );
+        } else if ( predictorString.toLowerCase().startsWith( "const" ) ) {
+            final String substring = predictorString.substring( "const".length() );
+            final long value = substring.length() == 0 ? 0 : Long.parseLong( substring );
+            log.debug( "using ConstantPredictor with value: {}", value );
+            return () -> new ConstantNumberPredictor( outputExtractor, value );
+        } else if ( predictorString.toLowerCase().startsWith( "poly" ) ) {
+            final String substring = predictorString.substring( "poly".length() );
+            final int value = substring.length() == 0 ? 0 : Integer.parseInt( substring );
+            log.debug( "using PolyPredictor with value: {}", value );
+            return () -> new PolynomialPredictor( inputExtractor, outputExtractor, value );
         } else {
             throw new IllegalArgumentException("unrecognized memoryPredictorString: " + predictorString);
         }
