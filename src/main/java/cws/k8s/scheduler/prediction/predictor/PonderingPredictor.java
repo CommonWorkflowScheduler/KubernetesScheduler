@@ -28,6 +28,9 @@ public class PonderingPredictor implements Predictor {
 
     @Override
     public void addTask( Task t ) {
+        if ( t == null ) {
+            throw new IllegalArgumentException( "Task cannot be null" );
+        }
         double output = outputExtractor.extractVariable( t );
         synchronized ( linearPredictor ) {
             version.incrementAndGet();

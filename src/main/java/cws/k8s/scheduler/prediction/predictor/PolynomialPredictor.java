@@ -29,6 +29,9 @@ public class PolynomialPredictor implements Predictor {
 
     @Override
     public void addTask( Task t ) {
+        if ( t == null ) {
+            throw new IllegalArgumentException( "Task cannot be null" );
+        }
         double input = inputExtractor.extractVariable( t );
         double output = outputExtractor.extractVariable( t );
         synchronized ( fitter ) {
