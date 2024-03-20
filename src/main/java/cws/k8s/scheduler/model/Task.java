@@ -69,7 +69,6 @@ public class Task {
         if ( this.taskMetrics != null ){
             throw new IllegalArgumentException( "TaskMetrics already set for task: " + this.getConfig().getName() );
         }
-        log.info( "Setting taskMetrics for task: " + this.getConfig().getName() );
         this.taskMetrics = taskMetrics;
     }
 
@@ -108,6 +107,9 @@ public class Task {
     private long inputSize = -1;
 
     public long getInputSize(){
+        if ( config.getInputSize() != null ) {
+            return config.getInputSize();
+        }
         synchronized ( this ) {
             if ( inputSize == -1 ) {
                 //calculate
