@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.exception.NullArgumentException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
+import org.apache.commons.math3.linear.SingularMatrixException;
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public class PolynomialPredictor implements Predictor {
     private final List<double[]> observationsX = new ArrayList<>();
     private final List<Double> observationsY = new ArrayList<>();
     private final int polynomialDegree;
-    double[] fitted;
+    private double[] fitted;
 
     @Override
     public void addTask( Task t ) {
@@ -36,12 +37,15 @@ public class PolynomialPredictor implements Predictor {
         double output = outputExtractor.extractVariable( t );
         synchronized ( fitter ) {
             addPoint( input, output );
-            if ( observationsX.size() <= polynomialDegree ) {
+            if ( observationsX.size() <= polynomialDegree  ) {
                 return;
             }
-            version.incrementAndGet();
-            fitter.newSampleData( constructY(), constructX() );
-            fitted = fitter.estimateRegressionParameters();
+            try {
+                fitter.newSampleData( constructY(), constructX() );
+                final double[] fittedValues = fitter.estimateRegressionParameters();
+                version.incrementAndGet();
+                fitted = fittedValues;
+            } catch ( SingularMatrixException ignored ){}
         }
     }
 
