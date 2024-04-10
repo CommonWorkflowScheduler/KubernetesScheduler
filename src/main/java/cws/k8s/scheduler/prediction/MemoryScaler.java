@@ -81,8 +81,10 @@ public class MemoryScaler extends TaskScaler {
                 return builder;
             } else if ( offsetValue.equals( "var" ) ) {
                 return () -> new VarianceOffset( builder.build() );
-            } else if ( offsetValue.equals( "std" ) ) {
-                return () -> new StandardDeviationOffset( builder.build() );
+            } else if ( offsetValue.endsWith( "std" ) ) {
+                final String substring = offsetValue.substring( 0, offsetValue.length() - "std".length() );
+                double factor = substring.isEmpty() ? 1 : Double.parseDouble( substring );
+                return () -> new StandardDeviationOffset( factor, builder.build() );
             } else {
                 throw new IllegalArgumentException("unrecognized offset parameter: " + offsetValue );
             }

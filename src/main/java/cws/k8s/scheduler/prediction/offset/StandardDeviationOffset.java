@@ -7,13 +7,17 @@ import java.util.List;
 
 public class StandardDeviationOffset extends VarianceOffset {
 
-    public StandardDeviationOffset( Predictor predictor ) {
+    private final double factor;
+
+    public StandardDeviationOffset( double factor, Predictor predictor ) {
         super( predictor );
+        this.factor = factor;
     }
 
     @Override
     public double getOffset( List<Task> observedTasks ) {
-        return Math.sqrt( super.getOffset( observedTasks ) );
+        final double offset = super.getOffset( observedTasks );
+        return factor * Math.sqrt( offset );
     }
 
 }
