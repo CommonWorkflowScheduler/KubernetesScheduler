@@ -28,7 +28,12 @@ public class VarianceOffset extends OffsetApplier {
      * @return the variance of the first n elements of the array
      */
     protected double calculateVariance( double[] values, int n ) {
-        assert n > 1 && n <= values.length;
+        if ( n <= 1 ) {
+            return 0;
+        }
+        if ( n > values.length ) {
+            throw new IllegalArgumentException( "n cannot be greater than the length of the array" );
+        }
         double mean = 0;
         for (int i = 0; i < n; i++) {
             mean += values[i];
