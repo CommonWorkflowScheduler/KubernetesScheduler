@@ -102,9 +102,15 @@ public class MemoryScaler extends TaskScaler {
         } else if ( predictorString.equalsIgnoreCase( "mean" )) {
             log.debug( "using MeanPredictor" );
             return () -> new MeanPredictor( outputExtractor );
+        } else if ( predictorString.equalsIgnoreCase( "ponder2special" )) {
+            log.debug( "using PonderingPredictor" );
+            return () -> new PonderingPredictorSpecial( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ) );
         } else if ( predictorString.equalsIgnoreCase( "ponderSpecial" )) {
             log.debug( "using PonderingPredictor" );
             return () -> new PonderingPredictorSpecial( new LinearPredictorSquaredLoss( inputExtractor, outputExtractor ) );
+        } else if ( predictorString.equalsIgnoreCase( "ponder2" )) {
+            log.debug( "using PonderingPredictor" );
+            return () -> new PonderingPredictor( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ) );
         } else if ( predictorString.equalsIgnoreCase( "ponder" )) {
             log.debug( "using PonderingPredictor" );
             return () -> new PonderingPredictor( new LinearPredictorSquaredLoss( inputExtractor, outputExtractor ) );
