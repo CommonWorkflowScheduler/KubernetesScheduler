@@ -96,7 +96,7 @@ public abstract class TaskScaler {
         if (!active) {
             return;
         }
-        log.info( unscheduledTasks.size() + " unscheduledTasks" );
+        log.debug( unscheduledTasks.size() + " unscheduledTasks" );
         log.debug("--- unscheduledTasks BEGIN ---");
         unscheduledTasks
                 .parallelStream()
