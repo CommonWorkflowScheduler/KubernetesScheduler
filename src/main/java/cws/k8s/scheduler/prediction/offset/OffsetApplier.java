@@ -14,13 +14,14 @@ public abstract class OffsetApplier implements Predictor {
 
     @Getter(AccessLevel.PROTECTED)
     private final Predictor predictor;
+    @Getter(AccessLevel.PROTECTED)
     private final List<Task> observedTasks = new LinkedList<>();
     private Double recentOffset = null;
 
 
     @Override
     public void addTask( Task t ) {
-        synchronized ( this ) {
+        synchronized ( observedTasks ) {
             predictor.addTask( t );
             observedTasks.add( t );
             recentOffset = null;
@@ -29,7 +30,7 @@ public abstract class OffsetApplier implements Predictor {
 
     @Override
     public Double queryPrediction( Task task ) {
-        synchronized ( this ) {
+        synchronized ( observedTasks ) {
             final Double prediction = predictor.queryPrediction( task );
             return prediction == null ? null : applyOffset( prediction, determineOffset() );
         }
@@ -40,7 +41,7 @@ public abstract class OffsetApplier implements Predictor {
         return predictor.getDependentValue( task );
     }
 
-    private double determineOffset() {
+    protected double determineOffset() {
         if ( recentOffset == null ) {
             recentOffset = getOffset( observedTasks );
         }
