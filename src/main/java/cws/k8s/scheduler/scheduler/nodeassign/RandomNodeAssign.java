@@ -16,7 +16,7 @@ public class RandomNodeAssign extends NodeAssign {
         LinkedList<NodeTaskAlignment> alignment = new LinkedList<>();
         final ArrayList<Map.Entry<NodeWithAlloc, Requirements>> entries = new ArrayList<>( availableByNode.entrySet() );
         for ( final Task task : unscheduledTasks ) {
-            log.info("Pod: " + task.getPod().getName() + " Requested Resources: " + task.getPlanedRequirements() );
+            log.debug("Pod: " + task.getPod().getName() + " Requested Resources: " + task.getPlanedRequirements() );
             Collections.shuffle( entries );
             boolean assigned = false;
             int nodesTried = 0;
@@ -26,7 +26,7 @@ public class RandomNodeAssign extends NodeAssign {
                     nodesTried++;
                     alignment.add(new NodeTaskAlignment( node, task));
                     availableByNode.get( node ).subFromThis(task.getPlanedRequirements());
-                    log.info("--> " + node.getName());
+                    log.debug("--> " + node.getName());
                     assigned = true;
                     task.getTraceRecord().foundAlignment();
                     break;
