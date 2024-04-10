@@ -2,6 +2,8 @@ package cws.k8s.scheduler.util;
 
 import lombok.NoArgsConstructor;
 
+import java.util.Locale;
+
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class Formater {
 
@@ -14,7 +16,7 @@ public class Formater {
     }
 
     private static String formatNumber( long number, double divisor, int decimals ) {
-        return String.format( "%." + decimals + "f", (double) number / divisor );
+        return String.format( Locale.ENGLISH, "%." + decimals + "f", (double) number / divisor );
     }
 
 }
