@@ -3,6 +3,7 @@ package cws.k8s.scheduler.prediction.predictor;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.prediction.Predictor;
 import cws.k8s.scheduler.prediction.extractor.VariableExtractor;
+import cws.k8s.scheduler.util.Formater;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -15,15 +16,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PonderingPredictor implements Predictor {
 
     private final AtomicLong version = new AtomicLong( 0 );
-    private final VariableExtractor outputExtractor;
     private final LinearPredictor linearPredictor;
     boolean isLinear = false;
     double mean = 0;
     long n = 0;
 
-    public PonderingPredictor( VariableExtractor inputExtractor, VariableExtractor outputExtractor ) {
-        this.outputExtractor = outputExtractor;
-        linearPredictor = new LinearPredictor( inputExtractor, outputExtractor );
+    public PonderingPredictor( LinearPredictor predictor ) {
+        linearPredictor = predictor;
     }
 
     @Override
@@ -31,13 +30,15 @@ public class PonderingPredictor implements Predictor {
         if ( t == null ) {
             throw new IllegalArgumentException( "Task cannot be null" );
         }
-        double output = outputExtractor.extractVariable( t );
+        double output = getDependentValue( t );
         synchronized ( linearPredictor ) {
             version.incrementAndGet();
             mean = ( mean * n + output ) / ( n + 1 );
             n++;
             linearPredictor.addTask( t );
-            isLinear = linearPredictor.getR() > 0.3 || linearPredictor.getR() < -0.3;
+            if ( n >= 2 ){
+                isLinear = linearPredictor.getR() > 0.3 || linearPredictor.getR() < -0.3;
+            }
         }
     }
 
@@ -45,10 +46,13 @@ public class PonderingPredictor implements Predictor {
     public Double queryPrediction( Task task ) {
         synchronized ( linearPredictor ) {
             if ( isLinear ) {
-                return linearPredictor.queryPrediction( task );
+                final Double v = linearPredictor.queryPrediction( task );
+                log.info( "Using linear predictor: {}", Formater.formatBytes( v.longValue() ) );
+                return v;
             } else if ( n == 0 ) {
                 return null;
             } else {
+                log.info( "Using Mean predictor: {}", Formater.formatBytes( (long) mean ) );
                 return mean;
             }
         }
@@ -56,7 +60,7 @@ public class PonderingPredictor implements Predictor {
 
     @Override
     public double getDependentValue( Task task ) {
-        return outputExtractor.extractVariable( task );
+        return linearPredictor.getDependentValue( task );
     }
 
     @Override

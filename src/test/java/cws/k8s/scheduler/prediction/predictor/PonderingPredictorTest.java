@@ -53,7 +53,7 @@ public class PonderingPredictorTest {
 
     @NotNull
     private static Predictor getPredictor() {
-        return new PonderingPredictor( t -> ((TestTask) t).x, t -> ((TestTask) t).y );
+        return new PonderingPredictor( new LinearPredictorSquaredLoss( t -> ((TestTask) t).x, t -> ((TestTask) t).y) );
     }
 
 }

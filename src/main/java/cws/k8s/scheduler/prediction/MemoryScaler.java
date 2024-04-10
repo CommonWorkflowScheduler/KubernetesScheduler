@@ -9,10 +9,7 @@ import cws.k8s.scheduler.prediction.offset.MaxOffset;
 import cws.k8s.scheduler.prediction.offset.PercentileOffset;
 import cws.k8s.scheduler.prediction.offset.StandardDeviationOffset;
 import cws.k8s.scheduler.prediction.offset.VarianceOffset;
-import cws.k8s.scheduler.prediction.predictor.ConstantNumberPredictor;
-import cws.k8s.scheduler.prediction.predictor.LinearPredictor;
-import cws.k8s.scheduler.prediction.predictor.PolynomialPredictor;
-import cws.k8s.scheduler.prediction.predictor.PonderingPredictor;
+import cws.k8s.scheduler.prediction.predictor.*;
 import io.fabric8.kubernetes.api.builder.Builder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -96,12 +93,21 @@ public class MemoryScaler extends TaskScaler {
     private Builder<Predictor> applyPredictor( String predictorString ) {
         final InputExtractor inputExtractor = new InputExtractor();
         final MemoryExtractor outputExtractor = new MemoryExtractor();
-        if ( predictorString.equalsIgnoreCase( "linear" )) {
+        if ( predictorString.equalsIgnoreCase( "linear2" )) {
+            log.debug( "using LinearPredictor2" );
+            return () -> new LinearPredictorCustomLoss( inputExtractor, outputExtractor );
+        } if ( predictorString.equalsIgnoreCase( "linear" )) {
             log.debug( "using LinearPredictor" );
-            return () -> new LinearPredictor( inputExtractor, outputExtractor );
+            return () -> new LinearPredictorSquaredLoss( inputExtractor, outputExtractor );
+        } else if ( predictorString.equalsIgnoreCase( "mean" )) {
+            log.debug( "using MeanPredictor" );
+            return () -> new MeanPredictor( outputExtractor );
+        } else if ( predictorString.equalsIgnoreCase( "ponderSpecial" )) {
+            log.debug( "using PonderingPredictor" );
+            return () -> new PonderingPredictorSpecial( new LinearPredictorSquaredLoss( inputExtractor, outputExtractor ) );
         } else if ( predictorString.equalsIgnoreCase( "ponder" )) {
             log.debug( "using PonderingPredictor" );
-            return () -> new PonderingPredictor( inputExtractor, outputExtractor );
+            return () -> new PonderingPredictor( new LinearPredictorSquaredLoss( inputExtractor, outputExtractor ) );
         } else if ( predictorString.toLowerCase().startsWith( "const" ) ) {
             final String substring = predictorString.substring( "const".length() );
             final long value = substring.length() == 0 ? 0 : Long.parseLong( substring );
@@ -153,6 +159,9 @@ public class MemoryScaler extends TaskScaler {
             } else if ( MAXIMUM_MEMORY_REQUEST != null && newRequestValue > MAXIMUM_MEMORY_REQUEST ) {
                 log.debug("Prediction of {} is higher than {}. Automatically decreased.", formatBytes( newRequestValue), formatBytes( MAXIMUM_MEMORY_REQUEST));
                 newRequestValue = MAXIMUM_MEMORY_REQUEST;
+            } else if ( newRequestValue > task.getOriginalMemoryRequest().longValue() ) {
+                log.debug("Prediction of {} is higher than original request {}. Automatically decreased.", formatBytes( newRequestValue), formatBytes( task.getOriginalMemoryRequest().longValue()));
+                newRequestValue = task.getOriginalMemoryRequest().longValue();
             }
             long newValue = roundUpToFullMB( newRequestValue );
             log.info("resizing {} to {} bytes", task.getConfig().getName(), formatBytes(newValue));

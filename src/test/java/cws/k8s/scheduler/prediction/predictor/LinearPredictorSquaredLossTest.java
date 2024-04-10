@@ -6,18 +6,18 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class LinearPredictorTest {
+public class LinearPredictorSquaredLossTest {
 
     @Test
     public void testOneTask() {
-        LinearPredictor lp = getLinearPredictor();
+        LinearPredictorSquaredLoss lp = getLinearPredictor();
         lp.addTask( new TestTask( 1d, 1d ) );
         assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
     }
 
     @Test
     public void testTwoTasks() {
-        LinearPredictor lp = getLinearPredictor();
+        LinearPredictorSquaredLoss lp = getLinearPredictor();
         lp.addTask( new TestTask( 1d, 1d ) );
         lp.addTask( new TestTask( 2d, 2d ) );
         assertEquals( (Double) 4d, lp.queryPrediction( new TestTask( 4d, 4d ) ) );
@@ -25,7 +25,7 @@ public class LinearPredictorTest {
 
     @Test
     public void testPredict() {
-        LinearPredictor lp = getLinearPredictor();
+        LinearPredictorSquaredLoss lp = getLinearPredictor();
         lp.addTask( new TestTask( 1d, 1d ) );
         lp.addTask( new TestTask( 2d, 2d ) );
         lp.addTask( new TestTask( 3d, 3d ) );
@@ -35,13 +35,13 @@ public class LinearPredictorTest {
 
     @Test
     public void noData() {
-        LinearPredictor lp = getLinearPredictor();
+        LinearPredictorSquaredLoss lp = getLinearPredictor();
         assertNull(lp.queryPrediction( new TestTask( 4d, 4d ) ));
     }
 
     @NotNull
-    private static LinearPredictor getLinearPredictor() {
-        return new LinearPredictor( t -> ((TestTask) t).x, t -> ((TestTask) t).y );
+    private static LinearPredictorSquaredLoss getLinearPredictor() {
+        return new LinearPredictorSquaredLoss( t -> ((TestTask) t).x, t -> ((TestTask) t).y );
     }
 
 }
