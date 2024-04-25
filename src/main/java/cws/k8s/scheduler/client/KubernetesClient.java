@@ -276,6 +276,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                     .removeFromContainers( container )
                     .addToContainers(modifiedContainer)
                     .endSpec()
+                    .editOrNewMetadata()
+                    .addToLabels( "commonworkflowscheduler/memoryscaled", "true" )
+                    .endMetadata()
                     .build();
 
             t.setPod( new PodWithAge( modifiedPod ) );
