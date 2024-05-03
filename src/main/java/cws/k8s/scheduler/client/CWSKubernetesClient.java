@@ -23,7 +23,8 @@ public class CWSKubernetesClient {
 
 
     public CWSKubernetesClient(){
-        this.client = new DefaultKubernetesClient();
+        KubernetesClientBuilder builder = new KubernetesClientBuilder();
+        this.client = builder.build();
         for( Node node : this.nodes().list().getItems() ){
             nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node,this) );
         }
