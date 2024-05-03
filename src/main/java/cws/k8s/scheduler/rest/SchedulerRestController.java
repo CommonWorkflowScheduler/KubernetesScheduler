@@ -2,7 +2,7 @@ package cws.k8s.scheduler.rest;
 
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.InputEdge;
-import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
@@ -37,7 +37,7 @@ import java.util.Map;
 @EnableScheduling
 public class SchedulerRestController {
 
-    private final KubernetesClient client;
+    private final CWSKubernetesClient client;
     private final boolean autoClose;
     private final ApplicationContext appContext;
     private long closedLastScheduler = -1;
@@ -50,7 +50,7 @@ public class SchedulerRestController {
     private static final Map<String, Scheduler> schedulerHolder = new HashMap<>();
 
     public SchedulerRestController(
-            @Autowired KubernetesClient client,
+            @Autowired CWSKubernetesClient client,
             @Value("#{environment.AUTOCLOSE}") String autoClose,
             @Autowired ApplicationContext appContext ){
         this.client = client;

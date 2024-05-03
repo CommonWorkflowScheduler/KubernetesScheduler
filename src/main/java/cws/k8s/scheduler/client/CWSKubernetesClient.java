@@ -3,28 +3,44 @@ package cws.k8s.scheduler.client;
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
+import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.util.*;
 
 @Slf4j
-public class KubernetesClient extends DefaultKubernetesClient  {
+public class CWSKubernetesClient {
 
-    private final Map<String, NodeWithAlloc> nodeHolder= new HashMap<>();
+    private final KubernetesClient client;
+    private final Map<String, NodeWithAlloc> nodeHolder = new HashMap<>();
     private final List<Informable> informables = new LinkedList<>();
 
 
-    public KubernetesClient(){
+    public CWSKubernetesClient(){
+        this.client = new DefaultKubernetesClient();
         for( Node node : this.nodes().list().getItems() ){
             nodeHolder.put( node.getMetadata().getName(), new NodeWithAlloc(node,this) );
         }
         this.pods().inAnyNamespace().watch( new PodWatcher( this ) );
         this.nodes().watch( new NodeWatcher( this ) );
+    }
+
+    public NonNamespaceOperation<Node, NodeList, Resource<Node>> nodes() {
+        return client.nodes();
+    }
+
+    public MixedOperation<Pod, PodList, PodResource> pods() {
+        return client.pods();
+    }
+
+    public Config getConfiguration() {
+        return client.getConfiguration();
     }
 
     public void addInformable( Informable informable ){
@@ -83,7 +99,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                         .withApiVersion( nodeWithAlloc.getApiVersion() )
                         .withName( node ).endTarget()
                         .build();
-                bindings()
+                client.bindings()
                         .inNamespace( pod.getMetadata().getNamespace() )
                         .resource( build )
                         .create();
@@ -106,7 +122,7 @@ public class KubernetesClient extends DefaultKubernetesClient  {
     }
 
     public BigDecimal getMemoryOfNode(NodeWithAlloc node ){
-        final Quantity memory = this
+        final Quantity memory = client
                 .top()
                 .nodes()
                 .metrics(node.getName())
@@ -117,9 +133,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     static class NodeWatcher implements Watcher<Node>{
 
-        private final KubernetesClient kubernetesClient;
+        private final CWSKubernetesClient kubernetesClient;
 
-        public NodeWatcher(KubernetesClient kubernetesClient) {
+        public NodeWatcher(CWSKubernetesClient kubernetesClient) {
             this.kubernetesClient = kubernetesClient;
         }
 
@@ -173,9 +189,9 @@ public class KubernetesClient extends DefaultKubernetesClient  {
 
     static class PodWatcher implements Watcher<Pod> {
 
-        private final KubernetesClient kubernetesClient;
+        private final CWSKubernetesClient kubernetesClient;
 
-        public PodWatcher(KubernetesClient kubernetesClient) {
+        public PodWatcher(CWSKubernetesClient kubernetesClient) {
             this.kubernetesClient = kubernetesClient;
         }
 

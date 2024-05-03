@@ -4,7 +4,7 @@ import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.client.Informable;
-import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watch;
@@ -40,7 +40,7 @@ public abstract class Scheduler implements Informable {
     private int currentBatch = 0;
     private Batch currentBatchInstance = null;
 
-    final KubernetesClient client;
+    final CWSKubernetesClient client;
     private final Set<Task> upcomingTasks = new HashSet<>();
     private final List<Task> unscheduledTasks = new ArrayList<>( 100 );
     private final List<Task> unfinishedTasks = new ArrayList<>( 100 );
@@ -52,7 +52,7 @@ public abstract class Scheduler implements Informable {
 
     final boolean traceEnabled;
 
-    Scheduler(String execution, KubernetesClient client, String namespace, SchedulerConfig config){
+    Scheduler(String execution, CWSKubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
         this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + execution;
         this.namespace = namespace;
