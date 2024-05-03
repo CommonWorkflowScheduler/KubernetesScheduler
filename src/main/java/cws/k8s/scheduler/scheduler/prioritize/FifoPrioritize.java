@@ -9,7 +9,7 @@ public class FifoPrioritize implements Prioritize {
 
     @Override
     public void sortTasks( List<Task> tasks ) {
-        tasks.sort( Comparator.comparing( Task::getId ) );
+        tasks.sort( Comparator.comparingInt( Task::getId ) );
     }
 
 }
