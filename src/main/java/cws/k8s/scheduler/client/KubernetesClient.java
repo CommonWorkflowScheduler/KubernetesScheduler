@@ -130,6 +130,13 @@ public class KubernetesClient extends DefaultKubernetesClient  {
             boolean change = false;
             NodeWithAlloc processedNode = null;
             switch (action) {
+                case MODIFIED:
+                    final NodeWithAlloc nodeWithAlloc = kubernetesClient.nodeHolder.get( node.getMetadata().getName() );
+                    if ( nodeWithAlloc != null ){
+                        nodeWithAlloc.update( node );
+                        break;
+                    }
+                    // If the node is not in the nodeHolder, it is a new node
                 case ADDED:
                     log.info("New Node {} was added", node.getMetadata().getName());
                     synchronized ( kubernetesClient.nodeHolder ){
@@ -158,10 +165,6 @@ public class KubernetesClient extends DefaultKubernetesClient  {
                 case ERROR:
                     log.info("Node {} has an error", node.getMetadata().getName());
                     //todo deal with error
-                    break;
-                case MODIFIED:
-                    log.info("Node {} was modified", node.getMetadata().getName());
-                    //todo deal with changed state
                     break;
                 default: log.warn("No implementation for {}", action);
             }
