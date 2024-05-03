@@ -222,7 +222,13 @@ public abstract class Scheduler implements Informable {
         synchronized (unfinishedTasks){
             unfinishedTasks.remove( task );
         }
-        task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
+        if ( task.wasSuccessfullyExecuted() ){
+            task.getState().setState( State.FINISHED );
+            task.getProcess().incrementSuccessfullyFinished();
+        } else {
+            task.getState().setState( State.FINISHED_WITH_ERROR );
+            task.getProcess().incrementFailed();
+        }
     }
 
     public void schedulePod(PodWithAge pod ) {
