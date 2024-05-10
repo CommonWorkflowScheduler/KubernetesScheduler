@@ -18,11 +18,12 @@ import java.util.*;
 public class CWSKubernetesClient {
 
     private final KubernetesClient client;
+
     private final Map<String, NodeWithAlloc> nodeHolder = new HashMap<>();
     private final List<Informable> informables = new LinkedList<>();
 
 
-    public CWSKubernetesClient(){
+    public CWSKubernetesClient() {
         KubernetesClientBuilder builder = new KubernetesClientBuilder();
         this.client = builder.build();
         for( Node node : this.nodes().list().getItems() ){
