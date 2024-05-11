@@ -65,7 +65,7 @@ class LeastFinishedFirstPrioritizeTest {
 
         final List<Task> tasks = new ArrayList<>(List.of( a, b, c, d ));
         new LeastFinishedFirstPrioritize().sortTasks( tasks );
-        assertEquals( List.of( c, a, d, b ), tasks);
+        assertEquals( List.of( a, c, b, d ), tasks);
 
     }
 

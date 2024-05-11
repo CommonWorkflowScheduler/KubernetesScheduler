@@ -13,12 +13,12 @@ public class LeastFinishedFirstPrioritize implements Prioritize {
 
     @Override
     public void sortTasks( List<Task> tasks ) {
-        final RankMaxComparator rankMaxComparator = new RankMaxComparator();
+        final RankMinComparator rankMinComparator = new RankMinComparator();
         tasks.sort( ( o1, o2 ) -> {
             final int o1Finished = o1.getProcess().getSuccessfullyFinished();
             final int o2Finished = o2.getProcess().getSuccessfullyFinished();
             if ( o1Finished == o2Finished ) {
-                return rankMaxComparator.compare( o1, o2 );
+                return rankMinComparator.compare( o1, o2 );
             } else {
                 return Integer.compare( o1Finished, o2Finished );
             }
