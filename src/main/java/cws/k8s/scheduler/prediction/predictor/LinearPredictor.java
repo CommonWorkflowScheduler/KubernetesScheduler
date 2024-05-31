@@ -7,6 +7,4 @@ public interface LinearPredictor extends Predictor {
 
     double getR();
 
-    double getIndependentValue( Task task );
-
 }
