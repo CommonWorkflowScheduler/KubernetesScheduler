@@ -86,4 +86,8 @@ public abstract class OffsetApplier implements Predictor {
         return n;
     }
 
+    @Override
+    public double getIndependentValue( Task task ) {
+        return predictor.getIndependentValue( task );
+    }
 }

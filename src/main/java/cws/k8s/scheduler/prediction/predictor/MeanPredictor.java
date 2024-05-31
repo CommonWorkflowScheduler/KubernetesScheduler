@@ -40,6 +40,11 @@ public class MeanPredictor implements Predictor {
     }
 
     @Override
+    public double getIndependentValue( Task task ) {
+        return mean;
+    }
+
+    @Override
     public long getVersion() {
         return version.get();
     }

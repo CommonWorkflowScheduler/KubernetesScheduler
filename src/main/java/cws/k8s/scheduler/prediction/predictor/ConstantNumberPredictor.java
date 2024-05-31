@@ -25,6 +25,11 @@ public class ConstantNumberPredictor implements Predictor {
     }
 
     @Override
+    public double getIndependentValue( Task task ) {
+        return 0;
+    }
+
+    @Override
     public long getVersion() {
         return 0;
     }

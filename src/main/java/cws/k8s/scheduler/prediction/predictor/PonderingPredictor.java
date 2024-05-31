@@ -63,6 +63,10 @@ public class PonderingPredictor implements Predictor {
         return linearPredictor.getDependentValue( task );
     }
 
+    public double getIndependentValue( Task task ) {
+        return linearPredictor.getIndependentValue( task );
+    }
+
     @Override
     public long getVersion() {
         return version.get();

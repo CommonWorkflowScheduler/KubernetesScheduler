@@ -91,6 +91,11 @@ public class PolynomialPredictor implements Predictor {
     }
 
     @Override
+    public double getIndependentValue( Task task ) {
+        return inputExtractor.extractVariable( task );
+    }
+
+    @Override
     public long getVersion() {
         return version.get();
     }
