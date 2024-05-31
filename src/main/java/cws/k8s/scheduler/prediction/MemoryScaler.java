@@ -93,10 +93,10 @@ public class MemoryScaler extends TaskScaler {
     private Builder<Predictor> applyPredictor( String predictorString ) {
         final InputExtractor inputExtractor = new InputExtractor();
         final MemoryExtractor outputExtractor = new MemoryExtractor();
-        if ( predictorString.equalsIgnoreCase( "linear2" )) {
+        if ( predictorString.equalsIgnoreCase( "linear2" ) || predictorString.equalsIgnoreCase( "lr2" ) ) {
             log.debug( "using LinearPredictor2" );
             return () -> new LinearPredictorCustomLoss( inputExtractor, outputExtractor );
-        } if ( predictorString.equalsIgnoreCase( "linear" )) {
+        } if ( predictorString.equalsIgnoreCase( "linear" ) || predictorString.equalsIgnoreCase( "lr" ) ) {
             log.debug( "using LinearPredictor" );
             return () -> new LinearPredictorSquaredLoss( inputExtractor, outputExtractor );
         } else if ( predictorString.equalsIgnoreCase( "mean" )) {
