@@ -2,10 +2,10 @@ package cws.k8s.scheduler.prediction.predictor;
 
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.prediction.Predictor;
-import cws.k8s.scheduler.prediction.offset.OffsetApplier;
 import cws.k8s.scheduler.prediction.offset.VarianceOffset;
 import cws.k8s.scheduler.util.Formater;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -91,27 +91,7 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
             //if positive linear relationship
             if ( r > 0.3 ) {
                 final Double prediction = linearPredictor.queryPrediction( task );
-                if ( prediction == null ) {
-                    return null;
-                }
-                if ( prediction < min ) {
-                    log.info( "Using Min predictor: {}", Formater.formatBytes( (long) min ) );
-                    final double offset = 2 * Math.sqrt( determineOffset() );
-                    return applyOffset( min,  Math.max( fixedOffset, offset ) );
-                }
-                if ( prediction > max && getIndependentValue( task ) < maxX ) {
-                    log.info( "Using Max predictor: {}", Formater.formatBytes( (long) max ) );
-                    final double offset = 2 * Math.sqrt( determineOffset() );
-                    return applyOffset( max,  Math.max( fixedOffset, offset ) );
-                }
-                if ( getIndependentValue( task ) >= maxX && prediction < max ) {
-                    log.info( "Using Max predictor: {}", Formater.formatBytes( (long) max ) );
-                    final double offset = 2 * Math.sqrt( determineOffset() );
-                    return applyOffset( max,  Math.max( fixedOffset, offset ) );
-                }
-                log.info( "Using linear predictor: {}", Formater.formatBytes( prediction.longValue() ) );
-                final double offset = 2 * Math.sqrt( determineOffset() );
-                return applyOffset( prediction,  Math.max( fixedOffset, offset ) );
+                return checkPrediction( task, prediction );
             }
 
             // if no relationship
@@ -124,6 +104,25 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
             log.info( "Using Max predictor: {}", Formater.formatBytes( (long) max ) );
             return max + fixedOffset;
         }
+    }
+
+    @Nullable
+    private Double checkPrediction( Task task, Double prediction ) {
+        if ( prediction == null ) {
+            return null;
+        } else if ( prediction < min ) {
+            log.info( "Using Min predictor: {}", Formater.formatBytes( (long) min ) );
+            prediction = min;
+        } else if ( prediction > max && getIndependentValue( task ) < maxX ) {
+            log.info( "Using Max predictor: {}", Formater.formatBytes( (long) max ) );
+            prediction = max;
+        } else if ( getIndependentValue( task ) >= maxX && prediction < max ) {
+            log.info( "Using Max predictor: {}", Formater.formatBytes( (long) max ) );
+            prediction = max;
+        }
+        log.info( "Using linear predictor: {}", Formater.formatBytes( prediction.longValue() ) );
+        final double offset = 2 * Math.sqrt( determineOffset() );
+        return applyOffset( prediction, Math.max( fixedOffset, offset ) );
     }
 
     @Override
