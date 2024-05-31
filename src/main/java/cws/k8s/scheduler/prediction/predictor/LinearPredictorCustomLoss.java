@@ -17,17 +17,27 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
-@RequiredArgsConstructor
 public class LinearPredictorCustomLoss implements LinearPredictor {
 
     private final AtomicLong version = new AtomicLong( 0 );
     private final VariableExtractor inputExtractor;
     private final VariableExtractor outputExtractor;
-    private final UnequalLossFunction unequalLossFunction = new UnequalLossFunction();
+    private final UnequalLossFunction unequalLossFunction;
     private double[] optimizedParameters = null;
     private final SimpleRegression regression = new SimpleRegression();
 
     private static final int BYTES_IN_GB = 1024 * 1024 * 1024;
+
+
+    public LinearPredictorCustomLoss( VariableExtractor inputExtractor, VariableExtractor outputExtractor, double weightOverprediction ) {
+        this.inputExtractor = inputExtractor;
+        this.outputExtractor = outputExtractor;
+        unequalLossFunction = new UnequalLossFunction(weightOverprediction);
+    }
+
+    public LinearPredictorCustomLoss( VariableExtractor inputExtractor, VariableExtractor outputExtractor ) {
+        this( inputExtractor, outputExtractor, 0.02 );
+    }
 
 
     @Override
