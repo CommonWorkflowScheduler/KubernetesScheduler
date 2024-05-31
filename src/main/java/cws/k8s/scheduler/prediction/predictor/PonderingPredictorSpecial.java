@@ -22,6 +22,8 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
     double mean = 0;
     double max = 0;
     double min = Double.MAX_VALUE;
+    double maxX = 0;
+    double minX = Double.MAX_VALUE;
     long n = 0;
     private long fixedOffset = 1024L * 1024L * 128L;
 
@@ -38,6 +40,7 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
             throw new IllegalArgumentException( "Task cannot be null" );
         }
         double output = getDependentValue( t );
+        double input = getIndependentValue( t );
         synchronized ( linearPredictor ) {
             version.incrementAndGet();
             mean = ( mean * n + output ) / ( n + 1 );
@@ -49,6 +52,12 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
             }
             if ( n < firstTasks.length ) {
                 firstTasks[(int) n] = t;
+            }
+            if ( input > maxX ) {
+                maxX = input;
+            }
+            if ( input < minX ) {
+                minX = input;
             }
             n++;
             linearPredictor.addTask( t );
@@ -64,14 +73,13 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
 
             // If we have less than 5 tasks, predict using rules
             if ( n < firstTasks.length ) {
-                boolean foundBigger = false;
                 for ( int i = 0; i < n; i++ ) {
                     if ( linearPredictor.getIndependentValue( firstTasks[i] ) > linearPredictor.getIndependentValue( task ) ) {
-                        foundBigger = true;
+                        // Assuming that a larger input leads to a larger output
+                        return max + fixedOffset;
                     }
                 }
-                // Assuming that a larger input leads to a larger output
-                return foundBigger ? max + fixedOffset : null;
+                return null;
             }
 
             if ( r == null ) {
@@ -82,17 +90,28 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
 
             //if positive linear relationship
             if ( r > 0.3 ) {
-                final Double v = linearPredictor.queryPrediction( task );
-                if ( v == null ) {
+                final Double prediction = linearPredictor.queryPrediction( task );
+                if ( prediction == null ) {
                     return null;
                 }
-                if ( v < min ) {
+                if ( prediction < min ) {
                     log.info( "Using Min predictor: {}", Formater.formatBytes( (long) min ) );
-                    return min + fixedOffset;
+                    final double offset = 2 * Math.sqrt( determineOffset() );
+                    return applyOffset( min,  Math.max( fixedOffset, offset ) );
                 }
-                log.info( "Using linear predictor: {}", Formater.formatBytes( v.longValue() ) );
+                if ( prediction > max && getIndependentValue( task ) < maxX ) {
+                    log.info( "Using Max predictor: {}", Formater.formatBytes( (long) max ) );
+                    final double offset = 2 * Math.sqrt( determineOffset() );
+                    return applyOffset( max,  Math.max( fixedOffset, offset ) );
+                }
+                if ( getIndependentValue( task ) >= maxX && prediction < max ) {
+                    log.info( "Using Max predictor: {}", Formater.formatBytes( (long) max ) );
+                    final double offset = 2 * Math.sqrt( determineOffset() );
+                    return applyOffset( max,  Math.max( fixedOffset, offset ) );
+                }
+                log.info( "Using linear predictor: {}", Formater.formatBytes( prediction.longValue() ) );
                 final double offset = 2 * Math.sqrt( determineOffset() );
-                return applyOffset( v,  Math.max( fixedOffset, offset ) );
+                return applyOffset( prediction,  Math.max( fixedOffset, offset ) );
             }
 
             // if no relationship
@@ -110,6 +129,10 @@ public class PonderingPredictorSpecial extends VarianceOffset implements Predict
     @Override
     public double getDependentValue( Task task ) {
         return linearPredictor.getDependentValue( task );
+    }
+
+    public double getIndependentValue( Task task ) {
+        return linearPredictor.getIndependentValue( task );
     }
 
     @Override
