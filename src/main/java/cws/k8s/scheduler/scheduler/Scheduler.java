@@ -211,6 +211,7 @@ public abstract class Scheduler implements Informable {
         if ( task.getBatch() == null ){
             synchronized (unscheduledTasks){
                 unscheduledTasks.add( task );
+                tasksWhereAddedToQueue( List.of(task) );
                 unscheduledTasks.notifyAll();
                 synchronized ( upcomingTasks ){
                     upcomingTasks.remove( task );
@@ -233,6 +234,7 @@ public abstract class Scheduler implements Informable {
             synchronized (unscheduledTasks){
                 final List<Task> tasksToScheduleAndDestroy = batch.getTasksToScheduleAndDestroy();
                 unscheduledTasks.addAll(tasksToScheduleAndDestroy);
+                tasksWhereAddedToQueue( tasksToScheduleAndDestroy );
                 unscheduledTasks.notifyAll();
                 synchronized ( upcomingTasks ){
                     tasksToScheduleAndDestroy.forEach(upcomingTasks::remove);
@@ -241,6 +243,18 @@ public abstract class Scheduler implements Informable {
         }
     }
 
+    /**
+     * This methode is called whenever new task(s) are available to be scheduled.
+     * E.g. when a batch is full.
+     * The methode is called, before the scheduling is performed.
+     * @param newTasks the tasks that are now ready.
+     */
+    protected void tasksWhereAddedToQueue( List<Task> newTasks ){}
+
+    /**
+     * This method is called whenever a task was scheduled and the assignment is final.
+     * @param task the task that was scheduled
+     */
     void taskWasScheduled(Task task ) {
         synchronized (unscheduledTasks){
             unscheduledTasks.remove( task );
