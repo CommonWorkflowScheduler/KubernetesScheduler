@@ -413,6 +413,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         super.close();
     }
 
+    @Override
     Task createTask( TaskConfig conf ){
         return new Task( conf, getDag(), hierarchyWrapper );
     }

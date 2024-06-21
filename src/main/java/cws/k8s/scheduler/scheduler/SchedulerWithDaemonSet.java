@@ -19,8 +19,6 @@ import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.scheduler.copystrategy.CopyStrategy;
 import cws.k8s.scheduler.scheduler.copystrategy.FTPstrategy;
-import cws.k8s.scheduler.scheduler.outlabel.OutLabelHolder;
-import cws.k8s.scheduler.scheduler.outlabel.HolderMaxTasks;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
 import io.fabric8.kubernetes.api.model.*;
@@ -50,7 +48,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long, LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     final String localWorkDir;
-    protected final OutLabelHolder outLabelHolder = new HolderMaxTasks() ;
 
     /**
      * Which node is currently copying files from which node

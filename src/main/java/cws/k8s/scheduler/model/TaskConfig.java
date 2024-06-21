@@ -20,7 +20,7 @@ public class TaskConfig {
     private final String runName;
     private final float cpus;
     private final long memoryInBytes;
-    private final OutLabel outLabel;
+    private final String[] outLabel;
     private final String workDir;
 
     private TaskConfig() {
