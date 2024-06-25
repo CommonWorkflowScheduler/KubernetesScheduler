@@ -344,27 +344,7 @@ public abstract class Scheduler implements Informable {
     }
 
     public boolean canSchedulePodOnNode(PodWithAge pod, NodeWithAlloc node ) {
-        return node.canScheduleNewPod() && affinitiesMatch( pod, node );
-    }
-
-    boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
-
-        final boolean nodeCouldRunThisPod = node.getMaxResources().higherOrEquals( pod.getRequest() );
-        if ( !nodeCouldRunThisPod ){
-            return false;
-        }
-
-        final Map<String, String> podsNodeSelector = pod.getSpec().getNodeSelector();
-        final Map<String, String> nodesLabels = node.getMetadata().getLabels();
-        if ( podsNodeSelector == null || podsNodeSelector.isEmpty() ) {
-            return true;
-        }
-        //cannot be fulfilled if podsNodeSelector is not empty
-        if ( nodesLabels == null || nodesLabels.isEmpty() ) {
-            return false;
-        }
-
-        return nodesLabels.entrySet().containsAll( podsNodeSelector.entrySet() );
+        return node.canScheduleNewPod() && node.affinitiesMatch( pod );
     }
 
     public void newNode(NodeWithAlloc node) {
