@@ -64,7 +64,6 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
         int index = 0;
         for ( TaskInputsNodes taskInputsNodes : taskWithAllData ) {
             List<Literal> onlyOnOneNode = new ArrayList<>();
-            final long score = calculateScore.getScore( taskInputsNodes.getTask(), taskInputsNodes.getTaskSize() );
             final Requirements request = taskInputsNodes.getTask().getRequest();
             final long ram = request.getRam().longValue();
             final long cpu = request.getCpu().multiply( MILLION ).longValue();
@@ -76,6 +75,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
                         onlyOnOneNode.add( boolVar );
                         memUsed.get(node).addTerm( boolVar, ram );
                         cpuUsed.get(node).addTerm( boolVar, cpu );
+                        final long score = calculateScore.getScore( taskInputsNodes.getTask(), node.getNodeLocation(), taskInputsNodes.getTaskSize() );
                         objective.addTerm( boolVar, score );
                         taskNodeBoolVars.add( new TaskNodeBoolVar( taskInputsNodes, node, boolVar ) );
                 }
