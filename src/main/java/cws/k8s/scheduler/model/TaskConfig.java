@@ -8,6 +8,7 @@ import lombok.ToString;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @ToString
@@ -20,7 +21,7 @@ public class TaskConfig {
     private final String runName;
     private final float cpus;
     private final long memoryInBytes;
-    private final String[] outLabel;
+    private final Set<String> outLabel;
     private final String workDir;
 
     private TaskConfig() {

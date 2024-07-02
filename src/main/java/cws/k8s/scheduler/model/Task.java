@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -111,7 +112,7 @@ public class Task {
         traceRecord.setSchedulerTimeInQueue( System.currentTimeMillis() - timeAddedToQueue );
     }
 
-    public String[] getOutLabel(){
+    public Set<String> getOutLabel(){
         return config.getOutLabel();
     }
 
