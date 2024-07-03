@@ -52,8 +52,10 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private final CopyInAdvance copyInAdvance;
 
-    private final TaskStatComparator phaseTwoComparator;
-    private final TaskStatComparator phaseThreeComparator;
+    @Setter(AccessLevel.PACKAGE)
+    private TaskStatComparator phaseTwoComparator;
+    @Setter(AccessLevel.PACKAGE)
+    private TaskStatComparator phaseThreeComparator;
 
     private final int copySameTaskInParallel;
     private final int maxHeldCopyTaskReady;
@@ -79,20 +81,42 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
             String namespace,
             SchedulerConfig config,
             InputAlignment inputAlignment,
-            ReadyToRunToNode readyToRunToNode ) {
+            ReadyToRunToNode readyToRunToNode
+    ) {
+        this(
+                name,
+                client,
+                namespace,
+                config,
+                inputAlignment,
+                readyToRunToNode,
+                new FileSizeRankScore()
+        );
+        setPhaseTwoComparator( new MinCopyingComparator( MinSizeComparator.INSTANCE ) );
+        setPhaseThreeComparator( new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE ) );
+    }
+
+    LocationAwareSchedulerV2(
+            String name,
+            KubernetesClient client,
+            String namespace,
+            SchedulerConfig config,
+            InputAlignment inputAlignment,
+            ReadyToRunToNode readyToRunToNode,
+            FileSizeRankScore calculateScore
+    ) {
         super( name, client, namespace, config );
         this.inputAlignment = inputAlignment;
         this.maxCopyTasksPerNode = config.maxCopyTasksPerNode == null ? 1 : config.maxCopyTasksPerNode;
         this.maxWaitingCopyTasksPerNode = config.maxWaitingCopyTasksPerNode == null ? 1 : config.maxWaitingCopyTasksPerNode;
         this.readyToRunToNode = readyToRunToNode;
-        final FileSizeRankScore calculateScore = new FileSizeRankScore();
-        this.readyToRunToNode.init(  calculateScore );
+        if ( calculateScore != null ) {
+            this.readyToRunToNode.init( calculateScore );
+        }
         readyToRunToNode.setLogger( logCopyTask );
         this.copyRunner = new ShellCopy( client, this, logCopyTask );
         this.copySameTaskInParallel = 2;
         this.capacityAvailableToNode = new SimpleCapacityAvailableToNode( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
-        this.phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
-        this.phaseThreeComparator = new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE );
         this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.maxHeldCopyTaskReady = config.maxHeldCopyTaskReady == null ? 3 : config.maxHeldCopyTaskReady;
         this.prioPhaseThree = config.prioPhaseThree == null ? 70 : config.prioPhaseThree;
