@@ -128,6 +128,15 @@ public class SchedulerRestController {
                 }
                 scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
                 break;
+            case "lagroup" :
+                if ( !config.locationAware ) {
+                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
+                }
+                if ( costFunction == null ) {
+                    costFunction = new MinSizeCost( 0 );
+                }
+                scheduler = new LocationAwareSchedulerGroups( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
+                break;
             default: {
                 final String[] split = strategy.split( "-" );
                 Prioritize prioritize;
