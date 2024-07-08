@@ -12,22 +12,22 @@ import java.util.*;
 @NoArgsConstructor( access = AccessLevel.PACKAGE )
 public class LabelCount {
 
-        @Getter
-        private int countFinished = 0;
-        @Getter
-        private int countStarted = 0;
-        @Getter
-        private int countWaiting = 0;
+    @Getter
+    private int countFinished = 0;
+    @Getter
+    private int countStarted = 0;
+    @Getter
+    private int countWaiting = 0;
 
-        @Getter
-        private final Set<Task> waitingTasks = new HashSet<>();
-        private final Set<Task> runningTasks = new HashSet<>();
-        private final Set<Task> finishedTasks = new HashSet<>();
-        private final Set<Task> tasks = new HashSet<>();
-        @Getter
-        private final Queue<TasksOnNodeWrapper> runningOrfinishedOnNodes = new PriorityQueue<>();
-        private final Map<NodeWithAlloc, TasksOnNodeWrapper> nodeToShare = new HashMap<>();
-        private final Map<Task,Set<NodeLocation>> taskHasDataOnNode = new HashMap<>();
+    @Getter
+    private final Set<Task> waitingTasks = new HashSet<>();
+    private final Set<Task> runningTasks = new HashSet<>();
+    private final Set<Task> finishedTasks = new HashSet<>();
+    private final Set<Task> tasks = new HashSet<>();
+    @Getter
+    private final Queue<TasksOnNodeWrapper> runningOrfinishedOnNodes = new PriorityQueue<>();
+    private final Map<NodeWithAlloc, TasksOnNodeWrapper> nodeToShare = new HashMap<>();
+    private final Map<Task,Set<NodeLocation>> taskHasDataOnNode = new HashMap<>();
 
     /**
      * Get the number of tasks with this label
