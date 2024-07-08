@@ -10,7 +10,6 @@ import cws.k8s.scheduler.model.taskinputs.PathFileLocationTriple;
 import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -103,7 +102,7 @@ public class InputFileCollectorTest {
         assertEquals( 3, inputsOfTaskFiles.size() );
         assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
         assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertTrue( inputsOfTask.getExcludedNodes().isEmpty() );
+        assertFalse( inputsOfTask.hasExcludedNodes() );
 
         //Not existing file
         final InputParam<FileHolder> c = new InputParam<>("c", new FileHolder(null, root2 + "a.txt", null));
@@ -114,7 +113,7 @@ public class InputFileCollectorTest {
         assertEquals( 3, inputsOfTaskFiles.size() );
         assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
         assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertTrue( inputsOfTask.getExcludedNodes().isEmpty() );
+        assertFalse( inputsOfTask.hasExcludedNodes() );
 
         //Symlink
         final InputParam<FileHolder> d = new InputParam<>("d", new FileHolder(null, root2 + "b/c.txt", null));
@@ -126,7 +125,7 @@ public class InputFileCollectorTest {
         assertEquals( 4, inputsOfTaskFiles.size() );
         assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
         assertEquals( Set.of( symlink ), new HashSet<>(inputsOfTask.getSymlinks()) );
-        assertTrue( inputsOfTask.getExcludedNodes().isEmpty() );
+        assertFalse( inputsOfTask.hasExcludedNodes() );
 
 
     }
@@ -177,9 +176,8 @@ public class InputFileCollectorTest {
         assertEquals( 1, inputsOfTaskFiles.size() );
         assertEquals( file1, inputsOfTaskFiles.get(0) );
         assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertEquals( 1, inputsOfTask.getExcludedNodes().size() );
-        Assert.assertEquals( NodeLocation.getLocation( "Node1" ), inputsOfTask.getExcludedNodes().iterator().next() );
-
+        assertTrue( inputsOfTask.hasExcludedNodes() );
+        assertFalse( inputsOfTask.canRunOnLoc( NodeLocation.getLocation( "Node1" ) ) );
     }
 
     @Test
@@ -229,7 +227,7 @@ public class InputFileCollectorTest {
         assertEquals( 1, inputsOfTaskFiles.size() );
         assertEquals( file1, inputsOfTaskFiles.get(0) );
         assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertTrue( inputsOfTask.getExcludedNodes().isEmpty() );
+        assertFalse( inputsOfTask.hasExcludedNodes() );
 
     }
 

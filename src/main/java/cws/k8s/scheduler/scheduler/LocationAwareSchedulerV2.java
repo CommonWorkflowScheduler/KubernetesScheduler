@@ -139,7 +139,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                             .filter( node -> {
                                 final CurrentlyCopyingOnNode copyingFilesToNode = getCurrentlyCopying().get( node.getNodeLocation() );
                                 //File version does not match and is in use
-                                return !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() )
+                                return inputsOfTask.canRunOnLoc( node.getNodeLocation() )
                                         //Affinities are correct and the node can run new pods
                                         && canSchedulePodOnNode( task.getPod(), node )
                                         //All files are on the node and no copy task is overwriting them
@@ -382,7 +382,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         TaskStat taskStats = new TaskStat( task, inputsOfTask );
         final CurrentlyCopying currentlyCopying = getCurrentlyCopying();
         for ( NodeWithAlloc node : allNodes ) {
-            if ( !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() ) && node.affinitiesMatch( task.getPod() ) ) {
+            if ( inputsOfTask.canRunOnLoc( node.getNodeLocation() ) && node.affinitiesMatch( task.getPod() ) ) {
                 final CurrentlyCopyingOnNode currentlyCopyingOnNode = currentlyCopying.get( node.getNodeLocation() );
                 final TaskNodeStats taskNodeStats = inputsOfTask.calculateMissingData( node.getNodeLocation(), currentlyCopyingOnNode );
                 if ( taskNodeStats != null ) {

@@ -408,14 +408,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
      * Remove all Nodes with a location contained in taskInputs.excludedNodes
      */
     void filterNotMatchingNodesForTask(Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
-        final Iterator<NodeWithAlloc> iterator = matchingNodes.iterator();
-        final Set<Location> excludedNodes = taskInputs.getExcludedNodes();
-        while ( iterator.hasNext() ){
-            final NodeWithAlloc next = iterator.next();
-            if( excludedNodes.contains( next.getNodeLocation() ) ){
-                iterator.remove();
-            }
-        }
+        matchingNodes.removeIf( next -> !taskInputs.canRunOnLoc( next.getNodeLocation() ) );
     }
 
     public void taskHasFinishedCopyTask( String name ){
