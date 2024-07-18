@@ -192,7 +192,7 @@ public class CopyInAdvanceNodeWithMostDataIntelligent extends CopyInAdvance {
                     .calculateDataOnNode( node.getNodeLocation() );
             final long dataInSharedFS = task.getInputSize();
             //The input should be similar to the first scheduling phase
-            return new TaskWithScore( task, calculateScore.getScore( task, node.getNodeLocation(), dataOnNode + dataInSharedFS ) );
+            return new TaskWithScore( task, calculateScore.getScore( task, node, dataOnNode + dataInSharedFS ) );
         }
 
         void addPlaned( Task task ) {

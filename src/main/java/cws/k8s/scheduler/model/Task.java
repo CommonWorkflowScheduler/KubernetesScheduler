@@ -2,8 +2,10 @@ package cws.k8s.scheduler.model;
 
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.Process;
+import cws.k8s.scheduler.model.cluster.OutputFiles;
 import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
+import cws.k8s.scheduler.model.outfiles.PathLocationWrapperPair;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
@@ -70,6 +72,10 @@ public class Task {
 
     private final HierarchyWrapper hierarchyWrapper;
 
+    @Getter
+    @Setter
+    private OutputFiles outputFiles;
+
     public Task( TaskConfig config, DAG dag ) {
         this( config, dag, null );
     }
@@ -78,6 +84,15 @@ public class Task {
         this.config = config;
         this.process = dag.getByProcess( config.getTask() );
         this.hierarchyWrapper = hierarchyWrapper;
+    }
+
+    /**
+     * Constructor for inheritance
+     */
+    protected Task( TaskConfig config, Process process ){
+        this.config = config;
+        this.process = process;
+        this.hierarchyWrapper = null;
     }
 
     public int getCurrentCopyTaskId() {

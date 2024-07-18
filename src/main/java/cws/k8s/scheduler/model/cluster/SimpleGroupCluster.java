@@ -2,20 +2,20 @@ package cws.k8s.scheduler.model.cluster;
 
 import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.model.NodeWithAlloc;
-import cws.k8s.scheduler.model.location.NodeLocation;
-import lombok.RequiredArgsConstructor;
+import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 public class SimpleGroupCluster extends GroupCluster {
 
-    private final KubernetesClient client;
+    public SimpleGroupCluster( HierarchyWrapper hierarchyWrapper, KubernetesClient client ) {
+        super( hierarchyWrapper, client );
+    }
 
     @Override
     void recalculate() {
-        final List<NodeWithAlloc> allNodes = client.getAllNodes();
+        final List<NodeWithAlloc> allNodes = getClient().getAllNodes();
 
         // Filter labels that have waiting tasks.
         final List<Map.Entry<String, LabelCount>> labelsWithWaitingTasks = countPerLabel
@@ -30,7 +30,7 @@ public class SimpleGroupCluster extends GroupCluster {
 
         // store how many tasks would have been executed on every with the current alignment
         // this is an approximation since tasks can have multiple labels and would appear multiple times
-        Map<NodeLocation,Integer> tasksOnNode = new HashMap<>();
+        Map<NodeWithAlloc,Integer> tasksOnNode = new HashMap<>();
 
         // For every label and node count how many tasks could run (affinities match), we ignore the current load completely
         for ( Map.Entry<String, LabelCount> labelWithWaitingTasks : labelsWithWaitingTasks ) {
@@ -43,15 +43,15 @@ public class SimpleGroupCluster extends GroupCluster {
                         .filter( task -> node.affinitiesMatch( task.getPod() ) )
                         .count();
                 if ( count > 0 ) {
-                    final TasksOnNodeWrapper tasksOnNodeWrapper = new TasksOnNodeWrapper( node.getNodeLocation(), (int) count );
+                    final TasksOnNodeWrapper tasksOnNodeWrapper = new TasksOnNodeWrapper( node, (int) count );
                     xTasksCanRunOnNode.add( tasksOnNodeWrapper );
                 }
             }
             if ( !xTasksCanRunOnNode.isEmpty() ) {
-                final NodeLocation nodeLocation = calculateBestFittingNode( labelWithWaitingTasks.getKey(), xTasksCanRunOnNode, labelWithWaitingTasks.getValue(), tasksOnNode );
-                if ( nodeLocation != null ) {
-                    addNodeToLabel( nodeLocation, labelWithWaitingTasks.getKey() );
-                    tasksOnNode.put( nodeLocation, tasksOnNode.getOrDefault( nodeLocation, 0 ) + labelWithWaitingTasks.getValue().getCountWaiting() );
+                final NodeWithAlloc node = calculateBestFittingNode( labelWithWaitingTasks.getKey(), xTasksCanRunOnNode, labelWithWaitingTasks.getValue(), tasksOnNode );
+                if ( node != null ) {
+                    addNodeToLabel( node, labelWithWaitingTasks.getKey() );
+                    tasksOnNode.put( node, tasksOnNode.getOrDefault( node, 0 ) + labelWithWaitingTasks.getValue().getCountWaiting() );
                 }
             }
         }
@@ -65,11 +65,11 @@ public class SimpleGroupCluster extends GroupCluster {
      * @param tasksOnNode
      * @return
      */
-    private NodeLocation calculateBestFittingNode( String label, Queue<TasksOnNodeWrapper> xTasksCanRunOnNode, LabelCount labelCount, Map<NodeLocation, Integer> tasksOnNode ) {
+    private NodeWithAlloc calculateBestFittingNode( String label, Queue<TasksOnNodeWrapper> xTasksCanRunOnNode, LabelCount labelCount, Map<NodeWithAlloc, Integer> tasksOnNode ) {
         if ( xTasksCanRunOnNode.isEmpty() ) {
             return null;
         }
-        final Set<NodeLocation> bestFittingNodes = new HashSet<>();
+        final Set<NodeWithAlloc> bestFittingNodes = new HashSet<>();
         final TasksOnNodeWrapper bestFittingNode = xTasksCanRunOnNode.poll();
         bestFittingNodes.add( bestFittingNode.getNode() );
         while( !xTasksCanRunOnNode.isEmpty() && xTasksCanRunOnNode.peek().getShare() == bestFittingNode.getShare() ){
@@ -88,7 +88,7 @@ public class SimpleGroupCluster extends GroupCluster {
             }
         }
 
-        final NodeLocation nodeLocation = calculateBestFittingNode( label, xTasksCanRunOnNode, labelCount, tasksOnNode );
+        final NodeWithAlloc nodeLocation = calculateBestFittingNode( label, xTasksCanRunOnNode, labelCount, tasksOnNode );
         if ( nodeLocation != null ) {
             return nodeLocation;
         }
@@ -103,9 +103,9 @@ public class SimpleGroupCluster extends GroupCluster {
      * @param tasksOnNode map of tasks on each node
      * @return
      */
-    private NodeLocation findBestFittingNode( final Set<NodeLocation> bestFittingNodes, Map<NodeLocation, Integer> tasksOnNode ) {
-        NodeLocation best = null;
-        for ( NodeLocation fittingNode : bestFittingNodes ) {
+    private NodeWithAlloc findBestFittingNode( final Set<NodeWithAlloc> bestFittingNodes, Map<NodeWithAlloc, Integer> tasksOnNode ) {
+        NodeWithAlloc best = null;
+        for ( NodeWithAlloc fittingNode : bestFittingNodes ) {
             if ( best == null || tasksOnNode.getOrDefault( fittingNode, 0 ) < tasksOnNode.getOrDefault( best, 0 ) ) {
                 best = fittingNode;
             }

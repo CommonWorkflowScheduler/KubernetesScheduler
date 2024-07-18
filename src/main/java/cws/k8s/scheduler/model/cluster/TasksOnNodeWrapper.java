@@ -1,6 +1,6 @@
 package cws.k8s.scheduler.model.cluster;
 
-import cws.k8s.scheduler.model.location.NodeLocation;
+import cws.k8s.scheduler.model.NodeWithAlloc;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 @AllArgsConstructor
 public class TasksOnNodeWrapper implements Comparable<TasksOnNodeWrapper> {
 
-    private final NodeLocation node;
+    private final NodeWithAlloc node;
     private int share = 0;
 
     @Override

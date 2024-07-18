@@ -200,6 +200,9 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                                     currentlyCopyingTasksOnNode,
                                                     100
                                                 );
+            for ( TaskStat taskStat : getAdditionalTaskStatPhaseThree() ) {
+                taskStats.add( taskStat );
+            }
             taskStats.setComparator( phaseThreeComparator );
             //Generate copy tasks for tasks that cannot yet run.
             copyInAdvance.createAlignmentForTasksWithEnoughCapacity(
@@ -218,7 +221,12 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }
 
-    private void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
+    List<TaskStat> getAdditionalTaskStatPhaseThree(){
+        return new LinkedList<>();
+    }
+
+
+    void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
         nodeTaskFilesAlignment.task.getTraceRecord().copyTask();
         final CopyTask copyTask = initializeCopyTask( nodeTaskFilesAlignment );
         //Files that will be copied

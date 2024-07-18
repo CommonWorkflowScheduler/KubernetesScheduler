@@ -17,8 +17,8 @@ public class MostOutLabelsComparator implements Comparator<TaskStat.NodeAndStatW
         final TaskNodeStats o2Stats = o2.getTaskNodeStats();
         //same task does not necessarily have the same size
         if ( o1.getTask() == o2.getTask() || o1Stats.getTaskSize() == o2Stats.getTaskSize() ) {
-            double ratingO1 = groupCluster.getScoreForTaskOnNode( o1.getTask(), o1.getNode().getNodeLocation() );
-            double ratingO2 = groupCluster.getScoreForTaskOnNode( o2.getTask(), o2.getNode().getNodeLocation() );
+            double ratingO1 = groupCluster.getScoreForTaskOnNode( o1.getTask(), o1.getNode() );
+            double ratingO2 = groupCluster.getScoreForTaskOnNode( o2.getTask(), o2.getNode() );
             // Use the node with a higher rating
             if ( ratingO1 != ratingO2 ) {
                 return Double.compare( ratingO2, ratingO1 );

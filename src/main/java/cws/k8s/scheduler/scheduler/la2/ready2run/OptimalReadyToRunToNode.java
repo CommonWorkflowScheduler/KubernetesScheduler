@@ -75,7 +75,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
                         onlyOnOneNode.add( boolVar );
                         memUsed.get(node).addTerm( boolVar, ram );
                         cpuUsed.get(node).addTerm( boolVar, cpu );
-                        final long score = calculateScore.getScore( taskInputsNodes.getTask(), node.getNodeLocation(), taskInputsNodes.getTaskSize() );
+                        final long score = calculateScore.getScore( taskInputsNodes.getTask(), node, taskInputsNodes.getTaskSize() );
                         objective.addTerm( boolVar, score );
                         taskNodeBoolVars.add( new TaskNodeBoolVar( taskInputsNodes, node, boolVar ) );
                 }

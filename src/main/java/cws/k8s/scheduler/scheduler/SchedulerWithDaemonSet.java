@@ -2,6 +2,7 @@ package cws.k8s.scheduler.scheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cws.k8s.scheduler.model.*;
+import cws.k8s.scheduler.model.cluster.OutputFiles;
 import cws.k8s.scheduler.model.location.hierachy.*;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
@@ -143,12 +144,14 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                 !finishedTask.wasSuccessfullyExecuted(),
                                 finishedTask
                         );
+                        final Set<PathLocationWrapperPair> outputFiles = new HashSet<>();
                         for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
                             if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
                                 hierarchyWrapper.addFile(
                                         newAndUpdatedFile.getPath(),
                                         ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
                                 );
+                                outputFiles.add( (PathLocationWrapperPair) newAndUpdatedFile );
                             } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
                                 hierarchyWrapper.addSymlink(
                                         newAndUpdatedFile.getPath(),
@@ -156,6 +159,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                 );
                             }
                         }
+                        finishedTask.setOutputFiles( new OutputFiles( outputFiles ) );
                     }
                 }
             } catch ( Exception e ){
