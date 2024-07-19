@@ -134,27 +134,66 @@ or via the corresponding setting in your development environment or within the p
 
 Example:
 
-        $ SCHEDULER_NAME=workflow-scheduler java -Dspring.profiles.active=dev -jar cws-k8s-scheduler-1.2-SNAPSHOT.jar
+        $ SCHEDULER_NAME=workflow-scheduler java -Dspring.profiles.active=dev -jar cws-k8s-scheduler-1.2.jar
 
 The "dev" profile is useful for debugging and reporting problems because it increases the log-level.
 
 ---
 #### Memory Prediction and Task Scaling
-- Supported if used together with [nf-cws](https://github.com/CommonWorkflowScheduler/nf-cws) version 1.0.4 or newer.
 - Kubernetes Feature InPlacePodVerticalScaling must be enabled. This is available starting from Kubernetes v1.27. See [KEP 1287](https://github.com/kubernetes/enhancements/issues/1287) for the current status.
+- Supported if used together with [nf-cws](https://github.com/CommonWorkflowScheduler/nf-cws) version 1.0.5 or newer.
 
-The memory predictor that shall be used for task scaling is set via the nf-cws configuration. If not set, task scaling is disabled.
+The memory predictor that shall be used for task scaling is set via the configuration. If not set, task scaling is disabled.
+The memory predictor is provided as a string following the pattern "&lt;memory predictor&gt;-[&lt;additional&gt;=&lt;parameter&gt;]", e.g., "linear-offset=std".
+The following strategies are available:
 
-| cws.memoryPredictor | Behaviour                                                                                                                          |
-|---------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| ""                  | Disabled if empty or not set.                                                                                                      |
-| constant            | ConstantPredictor, will try to predict a constant memory usage pattern.                                                            |
-| linear              | LinearPredictor, will try to predict a memory usage that is linear to the task input size.                                         |
-| combi               | CombiPredictor, combines predictions from ConstantPredictor and LinearPredictor.                                                   |
-| wary                | WaryPredictor, behaves like LinearPredictor but is more cautious about its predictions.                                            |
-| default             | Query the environment variable "MEMORY_PREDICTOR_DEFAULT" and use the value that is set there.                                     |
+| Memory Predictor | Behaviour                                                                                                                                                                               |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| linear/lr        | The Linear predictor, will try to predict a memory usage that is linear to the task input size.                                                                                         |
+| linear2/lr2      | The Linear predictor with an unequal loss function. The loss penalizes underprediction more than overprediction.                                                                        |
+| mean             | The Mean predictor predicts the mean memory seen so far. Prediction is independent of the input size.                                                                                   |
+| ponder           | The Ponder predictor is an advanced memory prediction strategy that ponders between linear regression with unequal loss and historic values. Details are provided in our paper [tbd](). |
+| constX           | Predicts a constant value (X), if no X is given, it predicts 0.                                                                                                                         |
+| polyX            | Prediction will be based on the Xth polynomial function based on a task's input size. If no X is provided, it uses X=2.                                                                 |
 
-If a memory predictor is selected (i.e. setting is not disabled), the implementation will locally record statistics and print out the result after the workflow has finished. This can be disabled via the  environment variable "DISABLE_STATISTICS". If this is set to any string, the implementation will not collect and print out the results.
+
+The offset uses the current prediction model and based on that it predicts the memory for all finished tasks.
+Then, it calculates the difference between the observed memory and the predicted memory.
+
+| Offset      | Behaviour                                                                                                     |
+|-------------|---------------------------------------------------------------------------------------------------------------|
+| none        | No additional offset will be applied.                                                                         |
+| ""          | If no offset is defined, the max offset will be used.                                                         |
+| max         | The max offset returns the largest underprediction.                                                           |
+| Xpercentile | X is an integer between 1 and 100, over all prediction differences, it will use the Xth percentile as offset. |
+| var         | This offset applies the variance as an offset.                                                                |
+| Xstd        | This offset applies X times the standard deviation as an offset. If no X is provided, it uses X=1.            |
+
+#### Scheduling strategies
+
+The scheduling strategy can be set via the configuration.
+The scheduling strategy is provided as a string following the pattern "&lt;scheduling strategy&gt;[-&lt;node assignment strategy&gt;]".
+The following strategies are available:
+
+| Scheduling Strategy | Behaviour                                                                                                                                                |
+|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| fifo                | Tasks that have been submitted earlier, will be scheduled earlier.                                                                                       |
+| rank                | Tasks will be prioritized based on their rank in the DAG.                                                                                                |
+| rank_min            | Rank (min) Same as rank but solves ties such that tasks with smaller input size are preferred.                                                           |
+| rank_max            | Rank (max) Same as rank but solves ties such that tasks with larger input size are preferred.                                                            |
+| lff_min             | Least finished first (min): prioritizes abstract tasks where less instances have finished, solves ties with rank_min                                     |
+| lff_max             | Least finished first (max): prioritizes abstract tasks where less instances have finished, solves ties with rank_max                                     |
+| gs_min              | Generate Samples (min) Hybrid of LFF (min) and Rank (max), prioritize abstract tasks with less than five finished instances. Afterwards, use Rank (max). |
+| gs_max              | Generate Samples (max) Hybrid of LFF (max) and Rank (max), prioritize abstract tasks with less than five finished instances. Afterwards, use Rank (max). |
+| random              | Randomly prioritize tasks.                                                                                                                               |
+| max                 | Prioritize tasks with larger input size.                                                                                                                 |
+| min                 | Prioritize tasks with smaller input size.                                                                                                                |
+
+| Node Assignment Strategy | Behaviour                                                                               |
+|--------------------------|-----------------------------------------------------------------------------------------|
+| random                   | Randomly distributes the tasks to nodes.                                                |
+| roundrobin               | (default) Assigns tasks in a round robin fashion to the nodes.                          |
+| fair                     | Distributes the tasks fairly to the nodes trying to achieve equal load on all machines. |
 
 ---
 
