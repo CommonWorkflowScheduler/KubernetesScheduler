@@ -1,6 +1,6 @@
 package cws.k8s.scheduler.model;
 
-import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -17,7 +17,7 @@ import java.util.Map;
 @Slf4j
 public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
-    private final transient KubernetesClient kubernetesClient;
+    private final transient CWSKubernetesClient kubernetesClient;
 
     private static final long serialVersionUID = 1L;
 
@@ -33,7 +33,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         this.getMetadata().setName( name );
     }
 
-    public NodeWithAlloc( Node node, KubernetesClient kubernetesClient ) {
+    public NodeWithAlloc( Node node, CWSKubernetesClient kubernetesClient ) {
 
         this.kubernetesClient = kubernetesClient;
 

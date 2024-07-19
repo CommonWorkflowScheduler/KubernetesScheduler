@@ -1,8 +1,8 @@
 package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.client.Informable;
-import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.model.*;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.prioritize.Prioritize;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
@@ -18,7 +18,7 @@ public class PrioritizeAssignScheduler extends Scheduler {
     private final NodeAssign nodeAssigner;
 
     public PrioritizeAssignScheduler( String execution,
-                                      KubernetesClient client,
+                                      CWSKubernetesClient client,
                                       String namespace,
                                       SchedulerConfig config,
                                       Prioritize prioritize,
