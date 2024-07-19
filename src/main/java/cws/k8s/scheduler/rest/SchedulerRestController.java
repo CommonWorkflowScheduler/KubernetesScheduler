@@ -116,9 +116,9 @@ public class SchedulerRestController {
                         case "rank": prioritize = new RankPrioritize(); break;
                         case "rank_min": prioritize = new RankMinPrioritize(); break;
                         case "rank_max": prioritize = new RankMaxPrioritize(); break;
-                        case "leastfinishedfirst", "lff", "leastfinishedfirstmin", "lffmin": prioritize = new LeastFinishedFirstPrioritize(); break;
-                        case "leastfinishedfirstmax", "lffmax": prioritize = new LeastFinishedFirstMaxPrioritize(); break;
-                        case "getsamples", "gs": prioritize = new GetSamplesPrioritize(); break;
+                        case "leastfinishedfirst", "lff", "leastfinishedfirstmin", "lff_min": prioritize = new LeastFinishedFirstPrioritize(); break;
+                        case "leastfinishedfirstmax", "lff_max": prioritize = new LeastFinishedFirstMaxPrioritize(); break;
+                        case "getsamples", "gs": prioritize = new GetSamplesMinPrioritize(); break;
                         case "getsamplesmax", "gsm": prioritize = new GetSamplesMaxPrioritize(); break;
                         case "random", "r": prioritize = new RandomPrioritize(); break;
                         case "max": prioritize = new MaxInputPrioritize(); break;

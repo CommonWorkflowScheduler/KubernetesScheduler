@@ -20,7 +20,7 @@ class GetSamplesTest {
         Task e = new TestTask( 4, 0 );
 
         final List<Task> tasks = new ArrayList<>(List.of( a, b, c, d, e ));
-        new GetSamplesPrioritize().sortTasks( tasks );
+        new GetSamplesMinPrioritize().sortTasks( tasks );
         assertEquals( List.of( a, d, c, e, b ), tasks);
 
     }
@@ -35,7 +35,7 @@ class GetSamplesTest {
         Task e = new TestTask( 4, 1 );
 
         final List<Task> tasks = new ArrayList<>(List.of( a, b, c, d, e ));
-        new GetSamplesPrioritize().sortTasks( tasks );
+        new GetSamplesMinPrioritize().sortTasks( tasks );
         assertEquals( List.of( a, c, e, d, b ), tasks);
 
     }
@@ -50,7 +50,7 @@ class GetSamplesTest {
         Task e = new TestTask( 4, 0 );
 
         final List<Task> tasks = new ArrayList<>(List.of( a, b, c, d, e ));
-        new GetSamplesPrioritize().sortTasks( tasks );
+        new GetSamplesMinPrioritize().sortTasks( tasks );
         assertEquals( List.of( a, c, d, e, b ), tasks);
 
     }
@@ -64,7 +64,7 @@ class GetSamplesTest {
         Task d = new TestTask( 4, 0, 4 );
 
         final List<Task> tasks = new ArrayList<>(List.of( a, b, c, d ));
-        new GetSamplesPrioritize().sortTasks( tasks );
+        new GetSamplesMinPrioritize().sortTasks( tasks );
         assertEquals( List.of( a, c, b, d ), tasks);
 
     }
@@ -78,7 +78,7 @@ class GetSamplesTest {
         Task d = new TestTask( 5, 0, 4 );
 
         final List<Task> tasks = new ArrayList<>(List.of( a, b, c, d ));
-        new GetSamplesPrioritize().sortTasks( tasks );
+        new GetSamplesMinPrioritize().sortTasks( tasks );
         assertEquals( List.of( a, c, d, b ), tasks);
 
     }
@@ -92,7 +92,7 @@ class GetSamplesTest {
         Task d = new TestTask( 7, 0, 4 );
 
         final List<Task> tasks = new ArrayList<>(List.of( a, b, c, d ));
-        new GetSamplesPrioritize().sortTasks( tasks );
+        new GetSamplesMinPrioritize().sortTasks( tasks );
         assertEquals( List.of( a, c, d, b ), tasks);
 
     }
