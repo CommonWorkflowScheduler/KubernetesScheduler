@@ -10,7 +10,7 @@ import java.util.List;
  * rank but smallest input size to generate samples faster.
  * If enough samples are available, it will prioritize tasks with the highest rank and largest input.
  */
-public class GetSamplesPrioritize implements Prioritize {
+public class GetSamplesMinPrioritize implements Prioritize {
 
     private static final int MAX_FINISHED = 5;
 
