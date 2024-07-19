@@ -2,7 +2,6 @@ package cws.k8s.scheduler.prediction.predictor;
 
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.prediction.Predictor;
-import cws.k8s.scheduler.prediction.offset.VarianceOffset;
 import cws.k8s.scheduler.prediction.offset.WeightedVarianceOffset;
 import cws.k8s.scheduler.util.Formater;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * If the data is linear, it uses a linear predictor, otherwise it uses the mean.
  */
 @Slf4j
-public class PonderingPredictorSpecialWeighted extends WeightedVarianceOffset implements Predictor {
+public class PonderPredictor extends WeightedVarianceOffset implements Predictor {
 
     private final AtomicLong version = new AtomicLong( 0 );
     private final LinearPredictor linearPredictor;
@@ -34,11 +33,11 @@ public class PonderingPredictorSpecialWeighted extends WeightedVarianceOffset im
 
     private final List<Task> observedTasks = new LinkedList<>();
 
-    public PonderingPredictorSpecialWeighted( LinearPredictor predictor ) {
+    public PonderPredictor( LinearPredictor predictor ) {
         this( predictor, 5 );
     }
 
-    public PonderingPredictorSpecialWeighted( LinearPredictor predictor, int firstTasksSize ) {
+    public PonderPredictor( LinearPredictor predictor, int firstTasksSize ) {
         super( predictor);
         linearPredictor = predictor;
         firstTasks = new Task[firstTasksSize];

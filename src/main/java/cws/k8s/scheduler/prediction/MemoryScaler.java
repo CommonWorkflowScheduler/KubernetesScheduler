@@ -102,26 +102,14 @@ public class MemoryScaler extends TaskScaler {
         } else if ( predictorString.equalsIgnoreCase( "mean" )) {
             log.debug( "using MeanPredictor" );
             return () -> new MeanPredictor( outputExtractor );
-        } else if ( predictorString.equalsIgnoreCase( "ponder2special" )) {
-            log.debug( "using PonderingPredictor" );
-            return () -> new PonderingPredictorSpecial( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ) );
-        } else if ( predictorString.toLowerCase().startsWith( "ponder2specialweighted" )) {
-            if( predictorString.charAt( predictorString.length() - 1 ) == ')' && predictorString.charAt( 22 ) == '(' ) {
-                final String substring = predictorString.substring( 23, predictorString.length() - 1 );
-                return () -> new PonderingPredictorSpecialWeighted( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ), Integer.parseInt( substring ));
+        } else if ( predictorString.toLowerCase().startsWith( "ponder" )) {
+            log.debug( "using Ponder" );
+            if( predictorString.charAt( predictorString.length() - 1 ) == ')' && predictorString.charAt( 6 ) == '(' ) {
+                final String substring = predictorString.substring( 7, predictorString.length() - 1 );
+                return () -> new PonderPredictor( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ), Integer.parseInt( substring ));
             } else {
-                log.debug( "using PonderingPredictorWeighted" );
-                return () -> new PonderingPredictorSpecialWeighted( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ) );
+                return () -> new PonderPredictor( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ) );
             }
-        } else if ( predictorString.equalsIgnoreCase( "ponderSpecial" )) {
-            log.debug( "using PonderingPredictor" );
-            return () -> new PonderingPredictorSpecial( new LinearPredictorSquaredLoss( inputExtractor, outputExtractor ) );
-        } else if ( predictorString.equalsIgnoreCase( "ponder2" )) {
-            log.debug( "using PonderingPredictor" );
-            return () -> new PonderingPredictor( new LinearPredictorCustomLoss( inputExtractor, outputExtractor ) );
-        } else if ( predictorString.equalsIgnoreCase( "ponder" )) {
-            log.debug( "using PonderingPredictor" );
-            return () -> new PonderingPredictor( new LinearPredictorSquaredLoss( inputExtractor, outputExtractor ) );
         } else if ( predictorString.toLowerCase().startsWith( "const" ) ) {
             final String substring = predictorString.substring( "const".length() );
             final long value = substring.length() == 0 ? 0 : Long.parseLong( substring );
@@ -129,7 +117,7 @@ public class MemoryScaler extends TaskScaler {
             return () -> new ConstantNumberPredictor( outputExtractor, value );
         } else if ( predictorString.toLowerCase().startsWith( "poly" ) ) {
             final String substring = predictorString.substring( "poly".length() );
-            final int value = substring.length() == 0 ? 0 : Integer.parseInt( substring );
+            final int value = substring.isEmpty() ? 2 : Integer.parseInt( substring );
             log.debug( "using PolyPredictor with value: {}", value );
             return () -> new PolynomialPredictor( inputExtractor, outputExtractor, value );
         } else {
