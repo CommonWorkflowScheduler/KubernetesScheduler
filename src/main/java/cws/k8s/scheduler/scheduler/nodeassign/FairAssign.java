@@ -1,7 +1,6 @@
 package cws.k8s.scheduler.scheduler.nodeassign;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
-import cws.k8s.scheduler.model.PodWithAge;
 import cws.k8s.scheduler.model.Requirements;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
@@ -21,15 +20,14 @@ public class FairAssign extends NodeAssign {
 
         LinkedList<NodeTaskAlignment> alignment = new LinkedList<>();
         for ( final Task task : unscheduledTasks ) {
-            final PodWithAge pod = task.getPod();
-            log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
+            log.debug("Pod: " + task.getPod().getName() + " Requested Resources: " + task.getPlanedRequirements() );
             NodeWithAlloc bestNode = null;
             Double bestScore = null;
             final List<Double> costs = new LinkedList<>();
-            final BigDecimal podRequest = pod.getRequest().getCpu();
+            final BigDecimal podRequest = task.getPlanedRequirements().getCpu();
             int triedOnNodes = 0;
             for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
-                if ( scheduler.canSchedulePodOnNode( e.getValue(), pod, e.getKey() ) ) {
+                if ( scheduler.canScheduleTaskOnNode( e.getValue(), task, e.getKey() ) ) {
                     triedOnNodes++;
                     final BigDecimal maxValue = e.getKey().getMaxResources().getCpu();
                     //how much is available if we assign this pod
@@ -50,8 +48,8 @@ public class FairAssign extends NodeAssign {
                 traceRecord.setSchedulerBestCost( bestScore );
                 traceRecord.setSchedulerNodesCost( costs );
                 alignment.add( new NodeTaskAlignment( bestNode, task ) );
-                availableByNode.get( bestNode ).subFromThis( pod.getRequest() );
-                log.info( "--> " + bestNode.getName() );
+                availableByNode.get( bestNode ).subFromThis( task.getPlanedRequirements() );
+                log.debug( "--> " + bestNode.getName() );
             }
         }
         return alignment;

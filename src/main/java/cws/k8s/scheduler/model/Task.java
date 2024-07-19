@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -44,20 +45,43 @@ public class Task {
     private long timeAddedToQueue;
 
     @Getter
-    @Setter
-    private boolean copiesDataToNode = false;
+    private TaskMetrics taskMetrics = null;
+
+    private final Requirements oldRequirements;
+
+    @Getter
+    private Requirements planedRequirements;
+
+    @Getter
+    private long memoryPredictionVersion = -1;
+
+    @Getter
+    private long cpuPredictionVersion = -1;
 
     public Task( TaskConfig config, DAG dag ) {
         this.config = config;
+        oldRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
+        planedRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
         this.process = dag.getByProcess( config.getTask() );
+    }
+
+    public synchronized void setTaskMetrics( TaskMetrics taskMetrics ){
+        if ( this.taskMetrics != null ){
+            throw new IllegalArgumentException( "TaskMetrics already set for task: " + this.getConfig().getName() );
+        }
+        this.taskMetrics = taskMetrics;
     }
 
     public String getWorkingDir(){
         return config.getWorkDir();
     }
 
+    public Integer getExitCode(){
+        return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode();
+    }
+
     public boolean wasSuccessfullyExecuted(){
-        return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode() == 0;
+        return getExitCode() == 0;
     }
 
     public void writeTrace(){
@@ -83,6 +107,9 @@ public class Task {
     private long inputSize = -1;
 
     public long getInputSize(){
+        if ( config.getInputSize() != null ) {
+            return config.getInputSize();
+        }
         synchronized ( this ) {
             if ( inputSize == -1 ) {
                 //calculate
@@ -106,4 +133,27 @@ public class Task {
                 ", workDir='" + getWorkingDir() + '\'' +
                 '}';
     }
+
+    public long getNewMemoryRequest(){
+        return getPlanedRequirements().getRam().longValue();
+    }
+
+    public BigDecimal getOriginalMemoryRequest(){
+        return oldRequirements.getRam();
+    }
+
+    public void setPlannedMemoryInBytes( long memory, long version ){
+        planedRequirements = new Requirements( planedRequirements.getCpu(), BigDecimal.valueOf(memory) );
+        memoryPredictionVersion = version;
+    }
+
+    public void setPlanedCpuInCores( double cpu, long version ){
+        planedRequirements = new Requirements( BigDecimal.valueOf(cpu), planedRequirements.getRam() );
+        cpuPredictionVersion = version;
+    }
+
+    public boolean requirementsChanged(){
+        return !oldRequirements.equals( planedRequirements );
+    }
+
 }

@@ -1,12 +1,12 @@
 package cws.k8s.scheduler.model;
 
 import lombok.Getter;
-import lombok.ToString;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-@ToString
+import static cws.k8s.scheduler.util.Formater.formatBytes;
+
 public class Requirements implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -61,4 +61,27 @@ public class Requirements implements Serializable {
                 && this.ram.compareTo( requirements.ram ) >= 0;
     }
 
+    @Override
+    public String toString() {
+        return "Requirements{" +
+                "cpu=" + cpu +
+                ", ram=" + formatBytes( ram.longValue() )  +
+                '}';
+    }
+
+    @Override
+    public boolean equals( Object o ) {
+        if ( this == o ) return true;
+        if ( !(o instanceof Requirements that) ) return false;
+
+        if ( getCpu() != null ? !getCpu().equals( that.getCpu() ) : that.getCpu() != null ) return false;
+        return getRam() != null ? getRam().equals( that.getRam() ) : that.getRam() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getCpu() != null ? getCpu().hashCode() : 0;
+        result = 31 * result + (getRam() != null ? getRam().hashCode() : 0);
+        return result;
+    }
 }

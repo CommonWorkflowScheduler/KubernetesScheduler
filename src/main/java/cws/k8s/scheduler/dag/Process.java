@@ -4,12 +4,32 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Process extends Vertex {
 
 
     private final Set<Process> descendants;
     private final Set<Process> ancestors;
+
+    private AtomicInteger successfullyFinished = new AtomicInteger(0);
+    private AtomicInteger failed = new AtomicInteger(0);
+
+    public int getSuccessfullyFinished() {
+        return successfullyFinished.get();
+    }
+
+    public int getFailed() {
+        return failed.get();
+    }
+
+    public void incrementSuccessfullyFinished() {
+        successfullyFinished.incrementAndGet();
+    }
+
+    public void incrementFailed() {
+        failed.incrementAndGet();
+    }
 
     void addDescendant( Process p ) {
         synchronized (descendants) {

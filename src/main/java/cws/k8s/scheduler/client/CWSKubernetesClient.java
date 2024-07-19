@@ -2,7 +2,11 @@ package cws.k8s.scheduler.client;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
+import cws.k8s.scheduler.model.Task;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -12,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 @Slf4j
@@ -21,7 +26,6 @@ public class CWSKubernetesClient {
 
     private final Map<String, NodeWithAlloc> nodeHolder = new HashMap<>();
     private final List<Informable> informables = new LinkedList<>();
-
 
     public CWSKubernetesClient() {
         KubernetesClientBuilder builder = new KubernetesClientBuilder();
@@ -146,6 +150,13 @@ public class CWSKubernetesClient {
             boolean change = false;
             NodeWithAlloc processedNode = null;
             switch (action) {
+                case MODIFIED:
+                    final NodeWithAlloc nodeWithAlloc = kubernetesClient.nodeHolder.get( node.getMetadata().getName() );
+                    if ( nodeWithAlloc != null ){
+                        nodeWithAlloc.update( node );
+                        break;
+                    }
+                    // If the node is not in the nodeHolder, it is a new node
                 case ADDED:
                     log.info("New Node {} was added", node.getMetadata().getName());
                     synchronized ( kubernetesClient.nodeHolder ){
@@ -175,10 +186,6 @@ public class CWSKubernetesClient {
                     log.info("Node {} has an error", node.getMetadata().getName());
                     //todo deal with error
                     break;
-                case MODIFIED:
-                    log.info("Node {} was modified", node.getMetadata().getName());
-                    //todo deal with changed state
-                    break;
                 default: log.warn("No implementation for {}", action);
             }
         }
@@ -205,7 +212,7 @@ public class CWSKubernetesClient {
                 switch ( action ){
                     case ADDED:
                         if ( !PodWithAge.hasFinishedOrFailed( pod ) ) {
-                            node.addPod(new PodWithAge(pod), false);
+                            node.addPod(new PodWithAge(pod));
                         }
                         break;
                     case MODIFIED:
@@ -234,6 +241,83 @@ public class CWSKubernetesClient {
             log.info( "Watcher was closed" );
         }
 
+    }
+
+    public boolean inPlacePodVerticalScalingActive() {
+        return featureGateActive("InPlacePodVerticalScaling");
+    }
+
+    public boolean featureGateActive( String featureGate ){
+        return pods()
+                .inNamespace( "kube-system" )
+                .list()
+                .getItems()
+                .stream()
+                .filter( p -> p.getMetadata().getName().startsWith( "kube-apiserver" ) )
+                .anyMatch( p -> p
+                        .getSpec()
+                        .getContainers()
+                        .stream()
+                        .anyMatch( c -> c
+                                .getCommand()
+                                .contains( "--feature-gates=" + featureGate + "=true" )
+                        )
+                );
+    }
+
+    /**
+     * It will create a patch for the memory limits and request values and submit it
+     * to the cluster.
+     * Moreover, it updates the task with the new pod.
+     * 
+     * @param t          the task to be patched
+     * @return false if patching failed because of InPlacePodVerticalScaling
+     */
+    public boolean patchTaskMemory( Task t ) {
+        try {
+            final String valueAsString = t.getPlanedRequirements().getRam()
+                    .divide( BigDecimal.valueOf( 1024L * 1024L ) )
+                    .setScale( 0, RoundingMode.CEILING ).toPlainString() + "Mi";
+            final PodWithAge pod = t.getPod();
+            String namespace = pod.getMetadata().getNamespace();
+            String podname = pod.getName();
+            Resource<Pod> podResource = pods()
+                    .inNamespace( namespace )
+                    .withName( podname );
+            Container container = podResource.get().getSpec().getContainers().get(0); // Assuming only one container
+            Container modifiedContainer = new ContainerBuilder(container)
+                    .editOrNewResources()
+                    .removeFromLimits( "memory" )
+                    .removeFromRequests( "memory" )
+                    .addToLimits("memory", new Quantity(valueAsString))
+                    .addToRequests("memory", new Quantity(valueAsString))
+                    .endResources()
+                    .build();
+
+            Pod modifiedPod = new PodBuilder( podResource.get() )
+                    .editOrNewSpec()
+                    .removeFromContainers( container )
+                    .addToContainers(modifiedContainer)
+                    .endSpec()
+                    .editOrNewMetadata()
+                    .addToLabels( "commonworkflowscheduler/memoryscaled", "true" )
+                    .endMetadata()
+                    .build();
+
+            t.setPod( new PodWithAge( modifiedPod ) );
+
+            podResource.patch(modifiedPod);
+
+        } catch ( KubernetesClientException e ) {
+            // this typically happens when the feature gate InPlacePodVerticalScaling was not enabled
+            if (e.toString().contains("Forbidden: pod updates may not change fields other than")) {
+                log.error("Could not patch task. Please make sure that the feature gate 'InPlacePodVerticalScaling' is enabled in Kubernetes. See https://github.com/kubernetes/enhancements/issues/1287 for details. Task scaling will now be disabled for the rest of this workflow execution.");
+            } else {
+                log.error("Could not patch task: {}", t.getConfig().getName(), e);
+            }
+            throw new CannotPatchException( e.getMessage() );
+        }
+        return true;
     }
 
 }

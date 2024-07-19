@@ -1,14 +1,15 @@
 package cws.k8s.scheduler.scheduler;
 
-import cws.k8s.scheduler.model.*;
-import cws.k8s.scheduler.scheduler.prioritize.Prioritize;
 import cws.k8s.scheduler.client.Informable;
+import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
+import cws.k8s.scheduler.scheduler.prioritize.Prioritize;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class PrioritizeAssignScheduler extends Scheduler {

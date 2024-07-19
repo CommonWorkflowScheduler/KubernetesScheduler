@@ -1,9 +1,12 @@
 package cws.k8s.scheduler.scheduler;
 
+import cws.k8s.scheduler.client.CannotPatchException;
+import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.model.*;
+import cws.k8s.scheduler.prediction.MemoryScaler;
+import cws.k8s.scheduler.prediction.TaskScaler;
 import cws.k8s.scheduler.util.Batch;
-import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -12,6 +15,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -52,6 +56,9 @@ public abstract class Scheduler implements Informable {
 
     final boolean traceEnabled;
 
+    // TaskScaler will observe tasks and modify their memory assignments
+    final List<TaskScaler> taskScaler = new LinkedList<>();
+    
     Scheduler(String execution, CWSKubernetesClient client, String namespace, SchedulerConfig config){
         this.execution = execution;
         this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + execution;
@@ -73,6 +80,15 @@ public abstract class Scheduler implements Informable {
         log.info("Start watching");
         watcher = client.pods().inNamespace( this.namespace ).watch(podWatcher);
         log.info("Watching");
+        
+        if ( StringUtils.hasText(config.memoryPredictor) ) {
+            if ( client.inPlacePodVerticalScalingActive() ) {
+                // create a new TaskScaler for each Scheduler instance
+                taskScaler.add( new MemoryScaler( config ) );
+            } else {
+                log.warn( "InPlacePodVerticalScaling is not active. MemoryScaler will not be used." );
+            }
+        }
     }
 
     /* Abstract methods */
@@ -85,6 +101,12 @@ public abstract class Scheduler implements Informable {
         if( traceEnabled ) {
             unscheduledTasks.forEach( x -> x.getTraceRecord().tryToSchedule( startSchedule ) );
         }
+        
+        if ( !taskScaler.isEmpty() ) {
+            // change resource requests and limits here
+            taskScaler.parallelStream().forEach( x -> x.beforeTasksScheduled( unscheduledTasks ) );
+        }
+        
         final ScheduleObject scheduleObject = getTaskNodeAlignment(unscheduledTasks, getAvailableByNode());
         final List<NodeTaskAlignment> taskNodeAlignment = scheduleObject.getTaskAlignments();
 
@@ -115,7 +137,8 @@ public abstract class Scheduler implements Informable {
                 log.info( "Could not schedule task: {} undo all", nodeTaskAlignment.task.getConfig().getRunName() );
                 e.printStackTrace();
                 undoTaskScheduling( nodeTaskAlignment.task );
-                if ( scheduleObject.isStopSubmitIfOneFails() ) {
+                //If the task failed because scaling is impossible, the schedule plan is not valid anymore
+                if ( scheduleObject.isStopSubmitIfOneFails() || e instanceof CannotPatchException ) {
                     return taskNodeAlignment.size() - scheduled;
                 }
                 continue;
@@ -139,7 +162,7 @@ public abstract class Scheduler implements Informable {
             if ( requirements == null ) {
                 return false;
             }
-            requirements.subFromThis(nodeTaskAlignment.task.getPod().getRequest());
+            requirements.subFromThis(nodeTaskAlignment.task.getPlanedRequirements());
         }
         for ( Map.Entry<NodeWithAlloc, Requirements> e : availableByNode.entrySet() ) {
             if ( ! e.getValue().higherOrEquals( Requirements.ZERO ) ) {
@@ -180,11 +203,32 @@ public abstract class Scheduler implements Informable {
         }
     }
 
+    public boolean addTaskMetrics( int id, TaskMetrics metrics ) {
+
+        Task task = tasksById.get( id );
+        if ( task == null ) {
+            return false;
+        }
+        task.setTaskMetrics( metrics );
+        if (!taskScaler.isEmpty()) {
+            // this will collect the result of the task execution for future scaling
+            taskScaler.parallelStream().forEach(x -> x.afterTaskFinished(task));
+        }
+        return true;
+
+    }
+
     void taskWasFinished( Task task ){
         synchronized (unfinishedTasks){
             unfinishedTasks.remove( task );
         }
-        task.getState().setState(task.wasSuccessfullyExecuted() ? State.FINISHED : State.FINISHED_WITH_ERROR);
+        if ( task.wasSuccessfullyExecuted() ){
+            task.getState().setState( State.FINISHED );
+            task.getProcess().incrementSuccessfullyFinished();
+        } else {
+            task.getState().setState( State.FINISHED_WITH_ERROR );
+            task.getProcess().incrementFailed();
+        }
     }
 
     public void schedulePod(PodWithAge pod ) {
@@ -269,7 +313,7 @@ public abstract class Scheduler implements Informable {
         final Task task;
         synchronized ( tasksById ) {
             task = tasksById.get( id );
-            }
+        }
         if ( task == null ) {
             return false;
         }
@@ -305,13 +349,13 @@ public abstract class Scheduler implements Informable {
      * - enough resources available <br>
      * - Affinities match
      */
-    public boolean canSchedulePodOnNode(Requirements availableByNode, PodWithAge pod, NodeWithAlloc node ) {
+    public boolean canScheduleTaskOnNode( Requirements availableByNode, Task task, NodeWithAlloc node ) {
         if ( availableByNode == null ) {
             return false;
         }
         return node.canScheduleNewPod()
-                && availableByNode.higherOrEquals( pod.getRequest() )
-                && affinitiesMatch( pod, node );
+                && availableByNode.higherOrEquals( task.getPlanedRequirements() )
+                && affinitiesMatch( task.getPod(), node );
     }
 
     boolean affinitiesMatch( PodWithAge pod, NodeWithAlloc node ){
@@ -341,8 +385,8 @@ public abstract class Scheduler implements Informable {
     /**
      * You may extend this method
      */
-    boolean canPodBeScheduled( PodWithAge pod, NodeWithAlloc node ){
-        return node.canSchedule( pod );
+    boolean canPodBeScheduled( Requirements requests, NodeWithAlloc node ){
+        return node.canSchedule( requests );
     }
 
     boolean assignTaskToNode( NodeTaskAlignment alignment ){
@@ -356,11 +400,15 @@ public abstract class Scheduler implements Informable {
             log.error( "Cannot read " + nodeFile, e);
         }
 
+        if ( alignment.task.requirementsChanged() ){
+            client.patchTaskMemory( alignment.task );
+        }
+
         alignment.task.setNode( alignment.node );
 
         final PodWithAge pod = alignment.task.getPod();
 
-        alignment.node.addPod( pod, alignment.task.isCopiesDataToNode() );
+        alignment.node.addPod( pod );
 
         log.info ( "Assign pod: " + pod.getMetadata().getName() + " to node: " + alignment.node.getMetadata().getName() );
 
@@ -462,7 +510,7 @@ public abstract class Scheduler implements Informable {
     public Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
         Set<NodeWithAlloc> result = new HashSet<>();
         for (Map.Entry<NodeWithAlloc, Requirements> entry : availableByNode.entrySet()) {
-            if ( this.canSchedulePodOnNode( entry.getValue(), task.getPod(), entry.getKey() ) ){
+            if ( this.canScheduleTaskOnNode( entry.getValue(), task, entry.getKey() ) ){
                 result.add( entry.getKey() );
             }
         }

@@ -2,13 +2,15 @@ package cws.k8s.scheduler.scheduler.nodeassign;
 
 import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.model.NodeWithAlloc;
-import cws.k8s.scheduler.model.PodWithAge;
 import cws.k8s.scheduler.model.Requirements;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class RoundRobinAssign extends NodeAssign implements Informable {
@@ -26,20 +28,19 @@ public class RoundRobinAssign extends NodeAssign implements Informable {
 
         LinkedList<NodeTaskAlignment> alignment = new LinkedList<>();
         for ( final Task task : unscheduledTasks ) {
-            final PodWithAge pod = task.getPod();
-            log.info("Pod: " + pod.getName() + " Requested Resources: " + pod.getRequest() );
+            log.debug("Pod: " + task.getPod().getName() + " Requested Resources: " + task.getPlanedRequirements() );
             int nodesTried = 0;
             synchronized ( this ) {
                 int firstTrial = nextNode;
                 nodesTried++;
                 do {
                     final NodeWithAlloc node = nodes.get( nextNode );
-                    log.info( "Next node: " + node.getName() + "--( " + nextNode + " )" );
+                    log.debug( "Next node: " + node.getName() + "--( " + nextNode + " )" );
                     nextNode = ( nextNode + 1 ) % nodes.size();
-                    if ( scheduler.canSchedulePodOnNode( availableByNode.get( node ), pod, node ) ) {
+                    if ( scheduler.canScheduleTaskOnNode( availableByNode.get( node ), task, node ) ) {
                         alignment.add( new NodeTaskAlignment( node, task ) );
-                        availableByNode.get( node ).subFromThis( pod.getRequest() );
-                        log.info( "--> " + node.getName() );
+                        availableByNode.get( node ).subFromThis( task.getPlanedRequirements() );
+                        log.debug( "--> " + node.getName() );
                         task.getTraceRecord().foundAlignment();
                         break;
                     }

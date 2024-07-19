@@ -6,13 +6,14 @@ import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
+import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
 import cws.k8s.scheduler.scheduler.Scheduler;
-import cws.k8s.scheduler.scheduler.prioritize.*;
 import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RoundRobinAssign;
+import cws.k8s.scheduler.scheduler.prioritize.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -115,7 +116,11 @@ public class SchedulerRestController {
                         case "rank": prioritize = new RankPrioritize(); break;
                         case "rank_min": prioritize = new RankMinPrioritize(); break;
                         case "rank_max": prioritize = new RankMaxPrioritize(); break;
-                        case "random": case "r": prioritize = new RandomPrioritize(); break;
+                        case "leastfinishedfirst", "lff", "leastfinishedfirstmin", "lff_min": prioritize = new LeastFinishedFirstPrioritize(); break;
+                        case "leastfinishedfirstmax", "lff_max": prioritize = new LeastFinishedFirstMaxPrioritize(); break;
+                        case "getsamples", "gs": prioritize = new GetSamplesMinPrioritize(); break;
+                        case "getsamplesmax", "gsm": prioritize = new GetSamplesMaxPrioritize(); break;
+                        case "random", "r": prioritize = new RandomPrioritize(); break;
                         case "max": prioritize = new MaxInputPrioritize(); break;
                         case "min": prioritize = new MinInputPrioritize(); break;
                         default:
@@ -173,6 +178,28 @@ public class SchedulerRestController {
         Map<String, Object> schedulerParams = scheduler.getSchedulerParams( config.getTask(), config.getName() );
 
         return new ResponseEntity<>( schedulerParams, HttpStatus.OK );
+
+    }
+
+    @Operation(summary = "Submit task metrics after execution")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Metric successfully added",
+                    content = @Content)})
+    /**
+     * Submit task metrics after execution
+     * @param execution unique name of the execution
+     * @param id        unique id of task
+     * @param metrics   metrics of the task
+     */
+    @PostMapping("/v1/scheduler/{execution}/metrics/task/{id}")
+    ResponseEntity<String> taskMetrics( @PathVariable String execution, @PathVariable int id, @RequestBody TaskMetrics metrics ) {
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+
+        return new ResponseEntity<>( scheduler.addTaskMetrics( id, metrics ) ? HttpStatus.OK : HttpStatus.NOT_FOUND );
 
     }
 
