@@ -112,7 +112,7 @@ public class MemoryScaler extends TaskScaler {
             }
         } else if ( predictorString.toLowerCase().startsWith( "const" ) ) {
             final String substring = predictorString.substring( "const".length() );
-            final long value = substring.length() == 0 ? 0 : Long.parseLong( substring );
+            final long value = substring.isEmpty() ? 0 : Long.parseLong( substring );
             log.debug( "using ConstantPredictor with value: {}", value );
             return () -> new ConstantNumberPredictor( outputExtractor, value );
         } else if ( predictorString.toLowerCase().startsWith( "poly" ) ) {
