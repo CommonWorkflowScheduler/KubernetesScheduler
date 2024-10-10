@@ -152,7 +152,7 @@ The following strategies are available:
 | linear/lr        | The Linear predictor, will try to predict a memory usage that is linear to the task input size.                                                                                         |
 | linear2/lr2      | The Linear predictor with an unequal loss function. The loss penalizes underprediction more than overprediction.                                                                        |
 | mean             | The Mean predictor predicts the mean memory seen so far. Prediction is independent of the input size.                                                                                   |
-| ponder           | The Ponder predictor is an advanced memory prediction strategy that ponders between linear regression with unequal loss and historic values. Details are provided in our paper [tbd](). |
+| ponder           | The Ponder predictor is an advanced memory prediction strategy that ponders between linear regression with unequal loss and historic values. Details are provided in our paper [https://arxiv.org/pdf/2408.00047.pdf](https://arxiv.org/pdf/2408.00047.pdf). |
 | constX           | Predicts a constant value (X), if no X is given, it predicts 0.                                                                                                                         |
 | polyX            | Prediction will be based on the Xth polynomial function based on a task's input size. If no X is provided, it uses X=2.                                                                 |
 
