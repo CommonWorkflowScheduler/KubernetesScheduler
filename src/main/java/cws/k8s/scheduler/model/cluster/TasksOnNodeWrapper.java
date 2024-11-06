@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class is used to keep track of the number of tasks with a specific label on a node.
+ */
 @Getter
 @EqualsAndHashCode
 @RequiredArgsConstructor
