@@ -78,7 +78,7 @@ public class SimpleGroupCluster extends GroupCluster {
 
         final List<TasksOnNodeWrapper> runningOrfinishedOnNodes = new ArrayList<>(labelCount.getRunningOrfinishedOnNodes());
         if ( runningOrfinishedOnNodes.isEmpty() ) {
-            // if tass with this label have not been executed
+            // if tasks with this label have not been executed
             return findBestFittingNode( bestFittingNodes, tasksOnNode );
         }
 

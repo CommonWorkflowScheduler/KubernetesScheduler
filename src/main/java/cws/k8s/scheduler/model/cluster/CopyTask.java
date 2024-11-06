@@ -8,6 +8,8 @@ import cws.k8s.scheduler.model.TaskConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class CopyTask extends Task {
@@ -15,14 +17,15 @@ public class CopyTask extends Task {
     private final static Process COPY_PROCESS = new Process( "Copy", Integer.MAX_VALUE );
     private final Task task;
     private final NodeWithAlloc node;
-    private final LabelCount labelCount;
+    private final List<LabelCount> labelCounts;
 
-    protected CopyTask( Task task, NodeWithAlloc node, LabelCount labelCount ) {
+    protected CopyTask( Task task, NodeWithAlloc node, List<LabelCount> labelCounts ) {
         super( new TaskConfig("Copy","Copy-" + task.getConfig().getName() + " -> " + node.getNodeLocation()
-                + " (" + labelCount.getLabel() + ")" , buildCopyTaskFolder(task), task.getConfig().getRunName() ), COPY_PROCESS );
+                + " (" + labelCounts.stream().map( LabelCount::getLabel ).collect( Collectors.joining(",")) + ")" ,
+                buildCopyTaskFolder(task), task.getConfig().getRunName() ), COPY_PROCESS );
         this.task = task;
         this.node = node;
-        this.labelCount = labelCount;
+        this.labelCounts = labelCounts;
     }
 
     private static String buildCopyTaskFolder( Task task ) {
@@ -55,6 +58,6 @@ public class CopyTask extends Task {
     }
 
     public void finished(){
-        labelCount.taskIsNowOnNode( task, node );
+        labelCounts.forEach( x -> x.taskIsNowOnNode( task, node ));
     }
 }
