@@ -7,6 +7,10 @@ import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Fake task inputs are used to create {@link CopyTask}s that are not real tasks but are used to copy data between nodes.
+ * This task can only be run on the node that is included in the constructor.
+ */
 public class FakeTaskInputs extends TaskInputs {
 
     private final Location includedNode;
