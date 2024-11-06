@@ -5,7 +5,6 @@ import cws.k8s.scheduler.dag.Process;
 import cws.k8s.scheduler.model.cluster.OutputFiles;
 import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
-import cws.k8s.scheduler.model.outfiles.PathLocationWrapperPair;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;

@@ -5,7 +5,9 @@ import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.cluster.*;
 import cws.k8s.scheduler.scheduler.filealignment.InputAlignment;
-import cws.k8s.scheduler.scheduler.la2.*;
+import cws.k8s.scheduler.scheduler.la2.MinCopyingComparator;
+import cws.k8s.scheduler.scheduler.la2.MinSizeComparator;
+import cws.k8s.scheduler.scheduler.la2.TaskStat;
 import cws.k8s.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
 import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
 
@@ -45,7 +47,7 @@ public class LocationAwareSchedulerGroups extends LocationAwareSchedulerV2 {
 
     @Override
     List<TaskStat> getAdditionalTaskStatPhaseThree(){
-        return groupCluster.getTaskStatToCopy();
+        return groupCluster.getTaskStatToCopy(1);
     }
 
     void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {

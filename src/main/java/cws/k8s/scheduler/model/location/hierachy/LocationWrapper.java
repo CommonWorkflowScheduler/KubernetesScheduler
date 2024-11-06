@@ -1,7 +1,7 @@
 package cws.k8s.scheduler.model.location.hierachy;
 
-import cws.k8s.scheduler.model.location.Location;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.model.location.Location;
 import lombok.Getter;
 
 import java.util.Objects;

@@ -1,9 +1,9 @@
 package cws.k8s.scheduler.scheduler;
 
-import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.dag.DAG;
+import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Pod;

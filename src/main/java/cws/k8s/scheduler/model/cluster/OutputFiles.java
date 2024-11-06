@@ -14,7 +14,7 @@ public class OutputFiles {
 
 
     private final Set<PathLocationWrapperPair> files;
-    
+
     /**
      * this is used to check if the output data was requested for a real task
      * As soon as one file is requested for a real task, the output data is considered as requested for a real task

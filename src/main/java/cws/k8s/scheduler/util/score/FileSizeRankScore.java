@@ -2,7 +2,6 @@ package cws.k8s.scheduler.util.score;
 
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.Task;
-import cws.k8s.scheduler.model.location.NodeLocation;
 
 public class FileSizeRankScore extends FileSizeScore {
 

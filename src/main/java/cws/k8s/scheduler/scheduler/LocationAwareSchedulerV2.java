@@ -1,13 +1,7 @@
 package cws.k8s.scheduler.scheduler;
 
-import cws.k8s.scheduler.model.*;
-import cws.k8s.scheduler.scheduler.la2.*;
-import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvance;
-import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostData;
-import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
-import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
 import cws.k8s.scheduler.client.KubernetesClient;
-import cws.k8s.scheduler.util.*;
+import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.model.location.Location;
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
@@ -16,18 +10,29 @@ import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import cws.k8s.scheduler.scheduler.data.TaskInputsNodes;
 import cws.k8s.scheduler.scheduler.filealignment.InputAlignment;
+import cws.k8s.scheduler.scheduler.la2.*;
 import cws.k8s.scheduler.scheduler.la2.capacityavailable.CapacityAvailableToNode;
 import cws.k8s.scheduler.scheduler.la2.capacityavailable.SimpleCapacityAvailableToNode;
+import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvance;
+import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostData;
 import cws.k8s.scheduler.scheduler.la2.copystrategy.CopyRunner;
 import cws.k8s.scheduler.scheduler.la2.copystrategy.ShellCopy;
 import cws.k8s.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
+import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
+import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
+import cws.k8s.scheduler.util.*;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
 import cws.k8s.scheduler.util.score.FileSizeRankScore;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -138,7 +143,6 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                             .stream()
                             .filter( node -> {
                                 final CurrentlyCopyingOnNode copyingFilesToNode = getCurrentlyCopying().get( node.getNodeLocation() );
-                                //File version does not match and is in use
                                 return inputsOfTask.canRunOnLoc( node.getNodeLocation() )
                                         //Affinities are correct and the node can run new pods
                                         && canSchedulePodOnNode( task.getPod(), node )

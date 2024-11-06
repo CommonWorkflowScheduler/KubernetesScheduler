@@ -1,11 +1,11 @@
 package cws.k8s.scheduler.model.taskinputs;
 
+import cws.k8s.scheduler.model.location.Location;
+import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import cws.k8s.scheduler.util.TaskNodeStats;
 import cws.k8s.scheduler.util.Tuple;
 import cws.k8s.scheduler.util.copying.CopySource;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
-import cws.k8s.scheduler.model.location.Location;
-import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;

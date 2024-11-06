@@ -8,7 +8,10 @@ import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class RoundRobinAssign extends NodeAssign implements Informable {

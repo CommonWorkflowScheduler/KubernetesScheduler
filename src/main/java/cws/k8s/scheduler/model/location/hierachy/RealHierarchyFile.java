@@ -1,9 +1,9 @@
 package cws.k8s.scheduler.model.location.hierachy;
 
 import cws.k8s.scheduler.dag.Process;
+import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.location.Location;
 import cws.k8s.scheduler.model.location.LocationType;
-import cws.k8s.scheduler.model.Task;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
