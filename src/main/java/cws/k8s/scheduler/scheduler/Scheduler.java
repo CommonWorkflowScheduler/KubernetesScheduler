@@ -168,6 +168,11 @@ public abstract class Scheduler implements Informable {
             final Map<NodeWithAlloc, Requirements> availableByNode
     );
 
+    /**
+     * This method is called when tasks are finished
+     * @param finishedTasks the tasks that are finished
+     * @return the number of tasks that were not marked as finished successfully
+     */
     int terminateTasks( final List<Task> finishedTasks ) {
         for (Task finishedTask : finishedTasks) {
             taskWasFinished( finishedTask );
@@ -176,7 +181,6 @@ public abstract class Scheduler implements Informable {
     }
 
     /* Pod Event */
-
     void podEventReceived(Watcher.Action action, Pod pod){}
 
     void onPodTermination( PodWithAge pod ){
