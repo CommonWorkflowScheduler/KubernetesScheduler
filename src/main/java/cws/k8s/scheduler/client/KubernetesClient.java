@@ -34,12 +34,15 @@ public class KubernetesClient extends DefaultKubernetesClient  {
     }
 
     public Pod getPodByIp( String ip ) {
+        if ( ip == null ) {
+            throw new IllegalArgumentException("IP cannot be null");
+        }
         return this.pods()
                 .inAnyNamespace()
                 .list()
                 .getItems()
                 .parallelStream()
-                .filter( pod -> pod.getStatus().getPodIP().equals( ip ) )
+                .filter( pod -> ip.equals( pod.getStatus().getPodIP() ) )
                 .findFirst()
                 .orElseGet( () -> {
                     log.warn("No Pod found for IP: {}", ip);
