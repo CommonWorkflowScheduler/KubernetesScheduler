@@ -434,12 +434,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         task.getState().setState( State.SCHEDULED );
     }
 
+    public void setWorkflowEngineNode( String ip ){
+        this.workflowEngineNode = client.getPodByIp( ip ).getSpec().getNodeName();
+        log.info( "WorkflowEngineNode was set to {}", workflowEngineNode );
+    }
+
     @Override
     void podEventReceived(Watcher.Action action, Pod pod){
-        if ( pod.getMetadata().getName().equals( this.getExecution().replace('_', '-') ) ){
-            this.workflowEngineNode = pod.getSpec().getNodeName();
-            log.info( "WorkflowEngineNode was set to {}", workflowEngineNode );
-        }
         //noinspection LoopConditionNotUpdatedInsideLoop
         while ( daemonHolder == null ){
             //The Watcher can be started before the class is initialized

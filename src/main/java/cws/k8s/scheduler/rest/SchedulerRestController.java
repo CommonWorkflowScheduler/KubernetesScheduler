@@ -33,6 +33,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -96,7 +97,8 @@ public class SchedulerRestController {
     @PostMapping("/v1/scheduler/{execution}")
     ResponseEntity<String> registerScheduler(
             @PathVariable String execution,
-            @RequestBody(required = false) SchedulerConfig config
+            @RequestBody(required = false) SchedulerConfig config,
+            HttpServletRequest request
     ) {
 
         final String namespace = config.namespace;
@@ -169,6 +171,9 @@ public class SchedulerRestController {
                     return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
                 }
             }
+        }
+        if ( scheduler instanceof SchedulerWithDaemonSet ) {
+            ((SchedulerWithDaemonSet) scheduler).setWorkflowEngineNode( request.getRemoteAddr() );
         }
 
         schedulerHolder.put( execution, scheduler );

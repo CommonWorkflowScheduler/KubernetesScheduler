@@ -33,6 +33,20 @@ public class KubernetesClient extends DefaultKubernetesClient  {
         nodeSharedIndexInformer.start();
     }
 
+    public Pod getPodByIp( String ip ) {
+        return this.pods()
+                .inAnyNamespace()
+                .list()
+                .getItems()
+                .parallelStream()
+                .filter( pod -> pod.getStatus().getPodIP().equals( ip ) )
+                .findFirst()
+                .orElseGet( () -> {
+                    log.warn("No Pod found for IP: {}", ip);
+                    return null;
+                });
+    }
+
     public void addInformable( Informable informable ){
         synchronized ( informables ){
             informables.add( informable );
