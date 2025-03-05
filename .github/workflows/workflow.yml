@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java_version: [ 21, 23 ]
+        java_version: [ 21 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
