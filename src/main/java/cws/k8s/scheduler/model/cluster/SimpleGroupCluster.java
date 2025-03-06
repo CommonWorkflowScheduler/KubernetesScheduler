@@ -28,7 +28,7 @@ public class SimpleGroupCluster extends GroupCluster {
                 .sorted( Comparator.comparingInt( kv -> - kv.getValue().getCount() ) )
                 .collect( Collectors.toList() );
 
-        // store how many tasks would have been executed on every with the current alignment
+        // store how many tasks would have been executed on every node with the current alignment
         // this is an approximation since tasks can have multiple labels and would appear multiple times
         Map<NodeWithAlloc,Integer> tasksOnNode = new HashMap<>();
 
