@@ -116,13 +116,16 @@ public class SchedulerRestController {
         if ( config.costFunction != null ) {
             switch (config.costFunction.toLowerCase()) {
                 case "minsize": costFunction = new MinSizeCost(0); break;
-                default: return new ResponseEntity<>( "No cost function: " + config.costFunction, HttpStatus.NOT_FOUND );
+                default:
+                    log.warn( "Register execution: {} - No cost function for: {}", execution, config.costFunction );
+                    return new ResponseEntity<>( "No cost function: " + config.costFunction, HttpStatus.NOT_FOUND );
             }
         }
 
         switch ( strategy.toLowerCase() ){
             case "lav2" :
                 if ( !config.locationAware ) {
+                    log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
                     return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
                 }
                 if ( costFunction == null ) {
@@ -132,6 +135,7 @@ public class SchedulerRestController {
                 break;
             case "lagroup" :
                 if ( !config.locationAware ) {
+                    log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
                     return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
                 }
                 if ( costFunction == null ) {
@@ -153,6 +157,7 @@ public class SchedulerRestController {
                         case "max": prioritize = new MaxInputPrioritize(); break;
                         case "min": prioritize = new MinInputPrioritize(); break;
                         default:
+                            log.warn( "Register execution: {} - No Prioritize for: {}", execution, split[0] );
                             return new ResponseEntity<>( "No Prioritize for: " + split[0], HttpStatus.NOT_FOUND );
                     }
                     if ( split.length == 2 ) {
@@ -161,6 +166,7 @@ public class SchedulerRestController {
                             case "roundrobin": case "rr": assign = new RoundRobinAssign(); break;
                             case "fair": case "f": assign = new FairAssign(); break;
                             default:
+                                log.warn( "Register execution: {} - No Assign for: {}", execution, split[1] );
                                 return new ResponseEntity<>( "No Assign for: " + split[1], HttpStatus.NOT_FOUND );
                         }
                     } else {
@@ -168,6 +174,7 @@ public class SchedulerRestController {
                     }
                     scheduler = new PrioritizeAssignScheduler( execution, client, namespace, config, prioritize, assign );
                 } else {
+                    log.warn( "Register execution: {} - No scheduler for strategy: {}", execution, strategy );
                     return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
                 }
             }
@@ -199,7 +206,7 @@ public class SchedulerRestController {
     @PostMapping("/v1/scheduler/{execution}/task/{id}")
     ResponseEntity<? extends Object> registerTask( @PathVariable String execution, @PathVariable int id, @RequestBody TaskConfig config ) {
 
-        log.trace( execution + " " + config.getTask() + " got: " + config );
+        log.info( execution + " " + config.getTask() + " got: " + config );
 
         final Scheduler scheduler = schedulerHolder.get( execution );
         if ( scheduler == null ) {
