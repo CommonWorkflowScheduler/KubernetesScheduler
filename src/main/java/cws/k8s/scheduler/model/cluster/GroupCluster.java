@@ -24,17 +24,29 @@ import java.util.stream.Collectors;
 public abstract class GroupCluster {
 
     private final double minScoreToCopy = 0.5;
-    // Group all tasks by label and deliver statistics
+    /**
+    * Group all tasks by label and deliver statistics
+    */
     protected final Map<String,LabelCount> countPerLabel = new HashMap<>();
-    // tasks that are not yet scheduled
+    /**
+     * tasks that are not yet scheduled
+     */
     protected final LinkedList<Task> unscheduledTasks = new LinkedList<>();
-    // tasks that are assigned to a task and running
+    /**
+     * tasks that are assigned to a task and running
+     */
     protected final LinkedList<Task> scheduledTasks = new LinkedList<>();
-    // tasks that have finished
+    /**
+     * tasks that have finished
+     */
     protected final LinkedList<Task> finishedTasks = new LinkedList<>();
-    // Map from label to node, which node is responsible for the label
+    /**
+     * Map from label to node, which node is responsible for the label
+     */
     protected final Map<String, NodeWithAlloc> labelToNode = new HashMap<>();
-    // Map from node to label, which labels are assigned to the node
+    /**
+     * Map from node to label, which labels are assigned to the node
+     */
     protected final Map<NodeWithAlloc,Set<String>> nodeToLabel = new HashMap<>();
     @Getter
     private final HierarchyWrapper hierarchyWrapper;
