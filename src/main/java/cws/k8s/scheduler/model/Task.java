@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,8 +63,17 @@ public class Task {
     private long timeAddedToQueue;
 
     @Getter
-    @Setter
-    private boolean copiesDataToNode = false;
+    private TaskMetrics taskMetrics = null;
+
+    private final Requirements oldRequirements;
+
+    private Requirements planedRequirements;
+
+    @Getter
+    private long memoryPredictionVersion = -1;
+
+    @Getter
+    private long cpuPredictionVersion = -1;
 
     private final AtomicInteger copyTaskId = new AtomicInteger(0);
 
@@ -75,6 +85,8 @@ public class Task {
 
     public Task( TaskConfig config, DAG dag, HierarchyWrapper hierarchyWrapper ) {
         this.config = config;
+        oldRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
+        planedRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
         this.process = dag.getByProcess( config.getTask() );
         this.hierarchyWrapper = hierarchyWrapper;
     }
@@ -83,12 +95,23 @@ public class Task {
         return copyTaskId.getAndIncrement();
     }
 
+    public synchronized void setTaskMetrics( TaskMetrics taskMetrics ){
+        if ( this.taskMetrics != null ){
+            throw new IllegalArgumentException( "TaskMetrics already set for task: " + this.getConfig().getName() );
+        }
+        this.taskMetrics = taskMetrics;
+    }
+
     public String getWorkingDir(){
         return config.getWorkDir();
     }
 
+    public Integer getExitCode(){
+        return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode();
+    }
+
     public boolean wasSuccessfullyExecuted(){
-        return pod.getStatus().getContainerStatuses().get( 0 ).getState().getTerminated().getExitCode() == 0;
+        return getExitCode() == 0;
     }
 
     public void writeTrace(){
@@ -111,11 +134,6 @@ public class Task {
         traceRecord.setSchedulerTimeInQueue( System.currentTimeMillis() - timeAddedToQueue );
     }
 
-    public String getOutLabel(){
-        final OutLabel outLabel = config.getOutLabel();
-        return outLabel == null ? null : outLabel.getLabel();
-    }
-
     private long inputSize = -1;
 
     /**
@@ -123,6 +141,9 @@ public class Task {
      * @return The sum of all input files in bytes.
      */
     public long getInputSize(){
+        if ( config.getInputSize() != null ) {
+            return config.getInputSize();
+        }
         synchronized ( this ) {
             if ( inputSize == -1 ) {
                 //calculate
@@ -146,10 +167,6 @@ public class Task {
         return inputSize;
     }
 
-    public Requirements getRequest() {
-        return pod.getRequest();
-    }
-
     @Override
     public String toString() {
         return "Task{" +
@@ -159,4 +176,31 @@ public class Task {
                 ", workDir='" + getWorkingDir() + '\'' +
                 '}';
     }
+
+    public Requirements getPlanedRequirements() {
+        return planedRequirements.clone();
+    }
+
+    public long getNewMemoryRequest(){
+        return getPlanedRequirements().getRam().longValue();
+    }
+
+    public BigDecimal getOriginalMemoryRequest(){
+        return oldRequirements.getRam();
+    }
+
+    public void setPlannedMemoryInBytes( long memory, long version ){
+        planedRequirements = new Requirements( planedRequirements.getCpu(), BigDecimal.valueOf(memory) );
+        memoryPredictionVersion = version;
+    }
+
+    public void setPlanedCpuInCores( double cpu, long version ){
+        planedRequirements = new Requirements( BigDecimal.valueOf(cpu), planedRequirements.getRam() );
+        cpuPredictionVersion = version;
+    }
+
+    public boolean requirementsChanged(){
+        return !oldRequirements.equals( planedRequirements );
+    }
+
 }

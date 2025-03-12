@@ -40,9 +40,6 @@ public class TaskData implements Comparable<TaskData> {
     private boolean weightWasSet;
 
     @Setter
-    private NodeLocation outLabelNode = null;
-
-    @Setter
     private double weight = 1.0;
 
     public TaskData(
@@ -61,39 +58,6 @@ public class TaskData implements Comparable<TaskData> {
         calc();
     }
 
-
-    /**
-     * After a location for a label was found, adjust the nodes.
-     * @param nodeForLabel
-     * @param weight
-     */
-    public void setNodeAndWeight(NodeLocation nodeForLabel, double weight ) {
-        this.outLabelNode = nodeForLabel;
-        this.weight = weight;
-        final Iterator<NodeDataTuple> iterator = nodeDataTuples.iterator();
-        NodeDataTuple onOutLabelNode = null;
-        while ( iterator.hasNext() ) {
-            final NodeDataTuple next = iterator.next();
-            if  (next.getNode().getNodeLocation() != nodeForLabel ) {
-                next.setWeight( weight );
-            } else {
-                onOutLabelNode = next;
-                iterator.remove();
-            }
-        }
-        //Insert the one element manuel. Sorting would be too expensive.
-        if ( onOutLabelNode != null ) {
-            final ListIterator<NodeDataTuple> listIterator = nodeDataTuples.listIterator();
-            while ( listIterator.hasNext() ) {
-                if ( listIterator.next().getWorth() <= onOutLabelNode.getWorth() ) {
-                    listIterator.previous();
-                    listIterator.add( onOutLabelNode );
-                    break;
-                }
-            }
-        }
-        weightWasSet = true;
-    }
 
     /**
      * Recalculate the value. New value is smaller or equal old value

@@ -13,14 +13,6 @@ public class PodWithAge extends Pod {
     @Setter
     private BigDecimal age;
 
-    public PodWithAge(ObjectMeta metadata, PodSpec spec, PodStatus status) {
-        super("v1", "Pod",  metadata, spec, status);
-        this.age = BigDecimal.ZERO;
-    }
-    public PodWithAge() {
-        super("v1", "Pod",  null, null, null);
-        this.age = BigDecimal.ZERO;
-    }
     public PodWithAge(Pod pod) {
         super(pod.getApiVersion(), pod.getKind(), pod.getMetadata(), pod.getSpec(), pod.getStatus());
         this.age = BigDecimal.ZERO;

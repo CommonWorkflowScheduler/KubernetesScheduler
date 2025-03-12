@@ -65,7 +65,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
         for ( TaskInputsNodes taskInputsNodes : taskWithAllData ) {
             List<Literal> onlyOnOneNode = new ArrayList<>();
             final long score = calculateScore.getScore( taskInputsNodes.getTask(), taskInputsNodes.getTaskSize() );
-            final Requirements request = taskInputsNodes.getTask().getRequest();
+            final Requirements request = taskInputsNodes.getTask().getPlanedRequirements();
             final long ram = request.getRam().longValue();
             final long cpu = request.getCpu().multiply( MILLION ).longValue();
             for ( NodeWithAlloc node : taskInputsNodes.getNodesWithAllData() ) {

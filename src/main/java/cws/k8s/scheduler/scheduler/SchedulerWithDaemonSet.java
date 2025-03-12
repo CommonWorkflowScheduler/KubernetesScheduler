@@ -1,11 +1,11 @@
 package cws.k8s.scheduler.scheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.model.location.hierachy.*;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
-import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.util.*;
 import cws.k8s.scheduler.model.location.Location;
 import cws.k8s.scheduler.model.location.LocationType;
@@ -19,8 +19,6 @@ import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.scheduler.copystrategy.CopyStrategy;
 import cws.k8s.scheduler.scheduler.copystrategy.FTPstrategy;
-import cws.k8s.scheduler.scheduler.outlabel.OutLabelHolder;
-import cws.k8s.scheduler.scheduler.outlabel.HolderMaxTasks;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
 import io.fabric8.kubernetes.api.model.*;
@@ -50,7 +48,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long, LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     final String localWorkDir;
-    protected final OutLabelHolder outLabelHolder = new HolderMaxTasks() ;
 
     /**
      * Which node is currently copying files from which node
@@ -58,7 +55,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     @Getter(AccessLevel.PACKAGE)
     private final CurrentlyCopying currentlyCopying = new CurrentlyCopying();
 
-    SchedulerWithDaemonSet(String execution, KubernetesClient client, String namespace, SchedulerConfig config) {
+    SchedulerWithDaemonSet( String execution, CWSKubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
         this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
         this.inputFileCollector = new InputFileCollector( hierarchyWrapper );
@@ -187,75 +184,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             throw new IllegalArgumentException("NodeLocation cannot be null");
         }
         currentlyCopying.remove( task, nodeLocation, toRemove );
-    }
-
-    /**
-     *
-     * @return null if the task cannot be scheduled
-     */
-    WriteConfigResult writeInitConfig( NodeTaskFilesAlignment alignment ) {
-
-        final File config = new File(alignment.task.getWorkingDir() + '/' + ".command.inputs.json");
-        LinkedList<TaskInputFileLocationWrapper> inputFiles = new LinkedList<>();
-        Map<String, Task> waitForTask = new HashMap<>();
-        final CurrentlyCopyingOnNode filesForCurrentNode = new CurrentlyCopyingOnNode();
-        final NodeLocation currentNode = alignment.node.getNodeLocation();
-
-        try {
-            final Inputs inputs = new Inputs(
-                    this.getDns(),
-                    getExecution(),
-                    this.localWorkDir + "/sync/",
-                    alignment.task.getConfig().getRunName(),
-                    100
-            );
-
-            for (Map.Entry<Location, AlignmentWrapper> entry : alignment.fileAlignment.getNodeFileAlignment().entrySet()) {
-                if( entry.getKey() == currentNode ) {
-                    continue;
-                }
-
-                final NodeLocation location = (NodeLocation) entry.getKey();
-                final AlignmentWrapper alignmentWrapper = entry.getValue();
-                for ( FilePathWithTask filePath : alignmentWrapper.getWaitFor()) {
-                    //Node copies currently from somewhere else!
-                    //May be problematic if the task depending on fails/is stopped before all files are downloaded
-                    waitForTask.put( filePath.getPath(), filePath.getTask() );
-                }
-
-                final List<String> collect = new LinkedList<>();
-                for (FilePath filePath : alignmentWrapper.getFilesToCopy()) {
-                    final LocationWrapper locationWrapper = filePath.getFile().getLocationWrapper(location);
-                    inputFiles.add(
-                            new TaskInputFileLocationWrapper(
-                                    filePath.getPath(),
-                                    filePath.getFile(),
-                                    locationWrapper.getCopyOf( currentNode )
-                            )
-                    );
-                    collect.add(filePath.getPath());
-                    filesForCurrentNode.add( filePath.getPath(), alignment.task, location );
-                }
-                if( !collect.isEmpty() ) {
-                    inputs.data.add(new InputEntry( getDaemonIpOnNode(entry.getKey().getIdentifier()), entry.getKey().getIdentifier(), collect, alignmentWrapper.getToCopySize()));
-                }
-            }
-
-            boolean copyDataToNode = !inputs.data.isEmpty();
-            inputs.waitForTask( waitForTask );
-            inputs.symlinks.addAll(alignment.fileAlignment.getSymlinks());
-            inputs.sortData();
-            final boolean allEmpty = !copyDataToNode && inputs.symlinks.isEmpty() && inputs.waitForFilesOfTask.isEmpty();
-            if ( !allEmpty ) {
-                new ObjectMapper().writeValue( config, inputs );
-            }
-            return new WriteConfigResult( inputFiles, waitForTask, filesForCurrentNode, !allEmpty, copyDataToNode);
-
-        } catch (IOException e) {
-            log.error( "Cannot write " + config, e);
-        }
-        
-        return null;
     }
 
     TaskInputs getInputsOfTask(Task task ) throws NoAlignmentFoundException {

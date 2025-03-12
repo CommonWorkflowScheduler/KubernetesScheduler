@@ -6,10 +6,13 @@ import cws.k8s.scheduler.scheduler.*;
 import cws.k8s.scheduler.scheduler.filealignment.GreedyAlignment;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
-import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.InputEdge;
 import cws.k8s.scheduler.dag.Vertex;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
+import cws.k8s.scheduler.model.TaskMetrics;
+import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
+import cws.k8s.scheduler.scheduler.Scheduler;
 import cws.k8s.scheduler.scheduler.prioritize.*;
 import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
@@ -43,7 +46,7 @@ import java.util.Map;
 @EnableScheduling
 public class SchedulerRestController {
 
-    private final KubernetesClient client;
+    private final CWSKubernetesClient client;
     private final boolean autoClose;
     private final ApplicationContext appContext;
     private long closedLastScheduler = -1;
@@ -56,7 +59,7 @@ public class SchedulerRestController {
     private static final Map<String, Scheduler> schedulerHolder = new HashMap<>();
 
     public SchedulerRestController(
-            @Autowired KubernetesClient client,
+            @Autowired CWSKubernetesClient client,
             @Value("#{environment.AUTOCLOSE}") String autoClose,
             @Autowired ApplicationContext appContext ){
         this.client = client;
@@ -119,15 +122,6 @@ public class SchedulerRestController {
         }
 
         switch ( strategy.toLowerCase() ){
-            case "lav1" :
-                if ( !config.locationAware ) {
-                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
-                }
-                if ( costFunction == null ) {
-                    costFunction = new MinSizeCost( 0 );
-                }
-                scheduler = new LASchedulerV1( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ) );
-                break;
             case "lav2" :
                 if ( !config.locationAware ) {
                     return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
@@ -147,7 +141,11 @@ public class SchedulerRestController {
                         case "rank": prioritize = new RankPrioritize(); break;
                         case "rank_min": prioritize = new RankMinPrioritize(); break;
                         case "rank_max": prioritize = new RankMaxPrioritize(); break;
-                        case "random": case "r": prioritize = new RandomPrioritize(); break;
+                        case "leastfinishedfirst", "lff", "leastfinishedfirstmin", "lff_min": prioritize = new LeastFinishedFirstPrioritize(); break;
+                        case "leastfinishedfirstmax", "lff_max": prioritize = new LeastFinishedFirstMaxPrioritize(); break;
+                        case "getsamples", "gs": prioritize = new GetSamplesMinPrioritize(); break;
+                        case "getsamplesmax", "gsm": prioritize = new GetSamplesMaxPrioritize(); break;
+                        case "random", "r": prioritize = new RandomPrioritize(); break;
                         case "max": prioritize = new MaxInputPrioritize(); break;
                         case "min": prioritize = new MinInputPrioritize(); break;
                         default:
@@ -205,6 +203,28 @@ public class SchedulerRestController {
         Map<String, Object> schedulerParams = scheduler.getSchedulerParams( config.getTask(), config.getName() );
 
         return new ResponseEntity<>( schedulerParams, HttpStatus.OK );
+
+    }
+
+    @Operation(summary = "Submit task metrics after execution")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Metric successfully added",
+                    content = @Content)})
+    /**
+     * Submit task metrics after execution
+     * @param execution unique name of the execution
+     * @param id        unique id of task
+     * @param metrics   metrics of the task
+     */
+    @PostMapping("/v1/scheduler/{execution}/metrics/task/{id}")
+    ResponseEntity<String> taskMetrics( @PathVariable String execution, @PathVariable int id, @RequestBody TaskMetrics metrics ) {
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+
+        return new ResponseEntity<>( scheduler.addTaskMetrics( id, metrics ) ? HttpStatus.OK : HttpStatus.NOT_FOUND );
 
     }
 

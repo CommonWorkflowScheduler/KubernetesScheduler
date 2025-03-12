@@ -1,12 +1,12 @@
 package cws.k8s.scheduler.scheduler;
 
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.scheduler.la2.*;
 import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvance;
 import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostData;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
 import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
-import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.util.*;
 import cws.k8s.scheduler.model.location.Location;
 import cws.k8s.scheduler.model.location.NodeLocation;
@@ -75,7 +75,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     public LocationAwareSchedulerV2(
             String name,
-            KubernetesClient client,
+            CWSKubernetesClient client,
             String namespace,
             SchedulerConfig config,
             InputAlignment inputAlignment,
@@ -117,7 +117,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                 //File version does not match and is in use
                                 return !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() )
                                         //Affinities are correct and the node can run new pods
-                                        && canSchedulePodOnNode( task.getPod(), node )
+                                        && canSchedulePodOnNode( task, node )
                                         //All files are on the node and no copy task is overwriting them
                                         && inputsOfTask.allFilesAreOnLocationAndNotOverwritten( node.getNodeLocation(), copyingFilesToNode.getAllFilesCurrentlyCopying() );
                             } )

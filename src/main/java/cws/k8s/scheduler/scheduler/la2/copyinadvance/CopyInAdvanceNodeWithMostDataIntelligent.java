@@ -126,7 +126,7 @@ public class CopyInAdvanceNodeWithMostDataIntelligent extends CopyInAdvance {
         final ShouldCopyChecker shouldCopyChecker = new ShouldCopyChecker(
                 cache.getTaskWithScore( task, "Problem in reasonableToCopyData" ).score,
                 cache.waiting,
-                task.getRequest()
+                task.getPlanedRequirements()
         );
         return cache.running
                 .parallelStream()

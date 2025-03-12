@@ -30,6 +30,9 @@ public class SchedulerConfig {
     public final Integer prioPhaseThree;
 
     public final Map<String, JsonNode> additional;
+    public final String memoryPredictor;
+    public final Long maxMemory;
+    public final Long minMemory;
 
     @ToString
     public static class LocalClaim {

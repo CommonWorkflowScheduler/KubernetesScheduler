@@ -1,7 +1,7 @@
 package cws.k8s.scheduler.model;
 
-import cws.k8s.scheduler.client.KubernetesClient;
 import cws.k8s.scheduler.model.location.NodeLocation;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -17,11 +17,11 @@ import java.util.*;
 @Slf4j
 public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
-    private final transient KubernetesClient kubernetesClient;
+    private final transient CWSKubernetesClient kubernetesClient;
 
     private static final long serialVersionUID = 1L;
 
-    private final Requirements maxResources;
+    private Requirements maxResources;
 
     private final Map<String, Requirements> assignedPods;
 
@@ -39,46 +39,72 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         this.getMetadata().setName( name );
     }
 
-    public NodeWithAlloc( Node node, KubernetesClient kubernetesClient ) {
+    public NodeWithAlloc( Node node, CWSKubernetesClient kubernetesClient ) {
 
         this.kubernetesClient = kubernetesClient;
 
-        this.setApiVersion( node.getApiVersion() );
-        this.setKind( node.getKind() );
-        this.setMetadata( node.getMetadata() );
-        this.setSpec( node.getSpec() );
-        this.setStatus( node.getStatus() );
-        for (Map.Entry<String, Object> e : node.getAdditionalProperties().entrySet()) {
-            this.setAdditionalProperty( e.getKey(), e.getValue() );
-        }
-
-        BigDecimal maxCpu = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("cpu"));
-        BigDecimal maxRam = Quantity.getAmountInBytes(this.getStatus().getAllocatable().get("memory"));
-
-        maxResources = new ImmutableRequirements( maxCpu, maxRam);
+        setNodeData( node, true );
 
         assignedPods = new HashMap<>();
 
         this.nodeLocation = NodeLocation.getLocation( node );
 
-        log.info("Node {} has RAM: {} and CPU: {}", node.getMetadata().getName(), maxRam, maxCpu);
     }
 
-    public void addPod( PodWithAge pod, boolean withStartingTasks ) {
-        Requirements request = pod.getRequest();
-        if ( withStartingTasks ) {
-            synchronized ( startingTaskCopyingData ) {
-                final Iterator<PodWithAge> iterator = startingTaskCopyingData.iterator();
-                while ( iterator.hasNext() ) {
-                    final PodWithAge copyPod = iterator.next();
-                    if ( getPodInternalId( pod ).equals( getPodInternalId( copyPod ) )) {
-                        iterator.remove();
-                        break;
-                    }
-                }
-                startingTaskCopyingData.add( pod );
-            }
+
+    public void update( Node node ) {
+        setNodeData( node, false );
+    }
+
+    /**
+     * Update the node with the new data
+     * @param node the new node data
+     * @param isCreate if the node is an update, false if it is a new node
+     */
+    private void setNodeData( Node node, boolean isCreate ) {
+        if ( node == null ) {
+            return;
         }
+        if ( isCreate || !node.getApiVersion().equals( this.getApiVersion() ) ) {
+            if ( !isCreate) log.info( "Updating apiVersion for node {} from {} to {}", this.getName(), this.getApiVersion(), node.getApiVersion());
+            this.setApiVersion( node.getApiVersion() );
+        }
+        if ( isCreate || !node.getKind().equals( this.getKind() ) ) {
+            if ( !isCreate) log.info( "Updating kind for node {} from {} to {}", this.getName(), this.getKind(), node.getKind());
+            this.setKind( node.getKind() );
+        }
+        if ( isCreate || !node.getMetadata().equals( this.getMetadata() ) ) {
+            if ( !isCreate) log.debug( "Updating metadata for node {} from {} to {}", this.getName(), this.getMetadata(), node.getMetadata());
+            this.setMetadata( node.getMetadata() );
+        }
+        if ( isCreate || !node.getSpec().equals( this.getSpec() ) ) {
+            if ( !isCreate) log.info( "Updating spec for node {} from {} to {}", this.getName(), this.getSpec(), node.getSpec());
+            this.setSpec( node.getSpec() );
+        }
+        if ( isCreate || !node.getStatus().equals( this.getStatus() ) ) {
+            if ( !isCreate) log.debug( "Updating status for node {} from {} to {}", this.getName(), this.getStatus(), node.getStatus());
+            this.setStatus( node.getStatus() );
+        }
+        for (Map.Entry<String, Object> e : node.getAdditionalProperties().entrySet()) {
+            if ( this.getAdditionalProperties().containsKey( e.getKey() )) {
+                continue;
+            }
+            if ( !isCreate) log.info( "Updating additional property {} for node {} from {} to {}", e.getKey(), this.getName(), this.getAdditionalProperties().get( e.getKey() ), e.getValue());
+            this.setAdditionalProperty( e.getKey(), e.getValue() );
+        }
+
+        if ( isCreate
+                || !Quantity.getAmountInBytes(node.getStatus().getAllocatable().get("cpu")).equals(  maxResources.getCpu() )
+                || !Quantity.getAmountInBytes(node.getStatus().getAllocatable().get("memory")).equals(  maxResources.getRam() ) ) {
+            if ( !isCreate) log.info( "Updating max resources for node {} from {} to {}", this.getName(), maxResources, node.getStatus().getAllocatable());
+            BigDecimal maxCpu = Quantity.getAmountInBytes( this.getStatus().getAllocatable().get( "cpu" ) );
+            BigDecimal maxRam = Quantity.getAmountInBytes( this.getStatus().getAllocatable().get( "memory" ) );
+            maxResources = new Requirements( maxCpu, maxRam );
+        }
+    }
+
+    public void addPod( PodWithAge pod ) {
+        Requirements request = pod.getRequest();
         synchronized (assignedPods) {
             assignedPods.put( getPodInternalId( pod ) , request );
         }
@@ -102,12 +128,10 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     }
 
     public boolean removePod( Pod pod ){
-        removeStartingTaskCopyingDataByUid( pod.getMetadata().getUid() );
         synchronized (assignedPods) {
             return assignedPods.remove( getPodInternalId( pod ) ) != null;
         }
     }
-
 
     public void startingTaskCopyingDataFinished( Task task ) {
         final String uid = task.getPod().getMetadata().getUid();
@@ -138,8 +162,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         return maxResources.sub(getRequestedResources());
     }
 
-    public boolean canSchedule( PodWithAge pod ){
-        final Requirements request = pod.getRequest();
+    public boolean canSchedule( final Requirements request ){
         Requirements availableResources = getAvailableResources();
         return request.getCpu().compareTo(availableResources.getCpu()) <= 0
                 && request.getRam().compareTo(availableResources.getRam()) <= 0;
@@ -175,7 +198,10 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     @Override
     public int hashCode() {
-        return this.getName().hashCode();
+        int result = super.hashCode();
+        result = 31 * result + (getMaxResources() != null ? getMaxResources().hashCode() : 0);
+        result = 31 * result + (getAssignedPods() != null ? getAssignedPods().hashCode() : 0);
+        return result;
     }
 
     public boolean isReady(){

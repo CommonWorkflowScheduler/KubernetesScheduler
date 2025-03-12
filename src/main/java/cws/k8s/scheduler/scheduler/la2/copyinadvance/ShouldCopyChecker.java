@@ -19,11 +19,10 @@ public class ShouldCopyChecker {
         Result results = new Result( true, taskScore );
         final Optional<Result> reduce = waiting.parallelStream().map( waitingTask -> {
             final Result result = new Result( true, taskScore );
-            final Requirements waitingRequest = waitingTask.task.getRequest();
+            final Requirements waitingRequest = waitingTask.task.getPlanedRequirements();
             //In all cases waitingRequest is used and accordingly the request must always be smaller than the available resources
             if ( waitingRequest.smallerEquals( becomesAvailable ) ) {
                 checkSingle( becomesAvailable, result, waitingRequest.add( taskRequest ), waitingTask.score );
-//                checkPair( becomesAvailable, result, waitingTask );
             }
             return result;
         } ).reduce( ( a, b ) -> a.bestScore > b.bestScore ? a : b );
@@ -45,24 +44,6 @@ public class ShouldCopyChecker {
         if ( results.bestScore < score + taskScore && requestAndTaskRequest.smallerEquals( becomesAvailable ) ) {
             results.bestScore = score + taskScore;
             results.couldBeStarted = true;
-        }
-    }
-
-    private void checkPair(
-            Requirements becomesAvailable,
-            Result results,
-            CopyInAdvanceNodeWithMostDataIntelligent.TaskWithScore waitingTask
-    ) {
-        for ( CopyInAdvanceNodeWithMostDataIntelligent.TaskWithScore taskWithScore2 : waiting ) {
-            if ( waitingTask == taskWithScore2 ) {
-                continue;
-            }
-            final Requirements cRequest2 = taskWithScore2.task.getRequest();
-            final Requirements waitingAndTask2Request = waitingTask.task.getRequest().add( cRequest2 );
-            if ( waitingAndTask2Request.smallerEquals( becomesAvailable ) ) {
-                final long waitingScoreAndScore2 = waitingTask.score + taskWithScore2.score;
-                checkSingle( becomesAvailable, results, waitingAndTask2Request.add( taskRequest ), waitingScoreAndScore2 );
-            }
         }
     }
 

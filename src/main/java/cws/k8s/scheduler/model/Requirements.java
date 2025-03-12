@@ -7,11 +7,15 @@ import lombok.ToString;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import static cws.k8s.scheduler.util.Formater.formatBytes;
+
 @ToString
 @EqualsAndHashCode
 public class Requirements implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
+
+    public static final Requirements ZERO = new Requirements();
 
     @Getter
     private BigDecimal cpu;
@@ -89,6 +93,30 @@ public class Requirements implements Serializable, Cloneable {
     public boolean higherOrEquals( Requirements requirements ){
         return this.cpu.compareTo( requirements.cpu ) >= 0
                 && this.ram.compareTo( requirements.ram ) >= 0;
+    }
+
+    @Override
+    public String toString() {
+        return "Requirements{" +
+                "cpu=" + cpu +
+                ", ram=" + formatBytes( ram.longValue() )  +
+                '}';
+    }
+
+    @Override
+    public boolean equals( Object o ) {
+        if ( this == o ) return true;
+        if ( !(o instanceof Requirements that) ) return false;
+
+        if ( getCpu() != null ? !getCpu().equals( that.getCpu() ) : that.getCpu() != null ) return false;
+        return getRam() != null ? getRam().equals( that.getRam() ) : that.getRam() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getCpu() != null ? getCpu().hashCode() : 0;
+        result = 31 * result + (getRam() != null ? getRam().hashCode() : 0);
+        return result;
     }
 
     /**

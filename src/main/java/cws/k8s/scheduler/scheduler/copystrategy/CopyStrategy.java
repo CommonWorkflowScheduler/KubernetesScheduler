@@ -13,18 +13,6 @@ import java.util.Set;
 @Slf4j
 public abstract class CopyStrategy {
 
-    public void generateCopyScript( Task task, boolean wroteConfig ){
-
-        File file = new File(task.getWorkingDir() + '/' + ".command.init.run");
-
-        try (BufferedWriter pw = new BufferedWriter( new FileWriter( file) ) ) {
-            write( pw, file, wroteConfig ? getResource() : "copystrategies/nothing.sh" );
-        } catch (IOException e) {
-            log.error( "Cannot write " + file, e);
-        }
-
-    }
-
     private void write( BufferedWriter pw, File file, String resource ) {
         ClassLoader classLoader = getClass().getClassLoader();
         try (InputStream inputStream = classLoader.getResourceAsStream( resource )) {

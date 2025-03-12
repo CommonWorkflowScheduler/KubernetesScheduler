@@ -1,6 +1,6 @@
 package cws.k8s.scheduler.config;
 
-import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -10,12 +10,12 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor( access = AccessLevel.PACKAGE )
 public class Beans {
 
-    private static KubernetesClient kubernetesClient;
+    private static CWSKubernetesClient kubernetesClient;
 
     @Bean
-    KubernetesClient getClient(){
+    CWSKubernetesClient getClient(){
         if(kubernetesClient == null) {
-            kubernetesClient = new KubernetesClient();
+            kubernetesClient = new CWSKubernetesClient();
             kubernetesClient.getConfiguration().setNamespace(null);
         }
         return kubernetesClient;

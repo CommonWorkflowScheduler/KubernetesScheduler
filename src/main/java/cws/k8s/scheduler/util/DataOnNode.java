@@ -19,27 +19,12 @@ public class DataOnNode {
     @Getter
     private final Task task;
     @Getter
-    private int nodesWithAllData;
-    @Getter
     private final TaskInputs inputsOfTask;
 
     public DataOnNode( Task task, TaskInputs inputsOfTask ) {
         this.task = task;
         this.inputsOfTask = inputsOfTask;
         this.overAllData = inputsOfTask.calculateAvgSize();
-    }
-
-    public void allData( NodeWithAlloc node ){
-        nodesWithAllData++;
-        addData( node, 1 );
-    }
-
-    public void addData( NodeWithAlloc node, double part ){
-        dataOnNode.put( node, part );
-    }
-
-    public double getPart( NodeWithAlloc node ){
-        return dataOnNode.get( node );
     }
 
     public Set<NodeWithAlloc> getNodes() {

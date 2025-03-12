@@ -27,10 +27,6 @@ public class FileAlignment {
     @Setter
     private double weight = 1.0;
 
-    public double getWorth() {
-        return cost / weight;
-    }
-
     /**
      * Check if data is copied from at least one node
      * @param node this node is not checked

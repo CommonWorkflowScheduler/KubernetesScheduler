@@ -2,7 +2,7 @@ package cws.k8s.scheduler.scheduler.la2.copystrategy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cws.k8s.scheduler.client.KubernetesClient;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.scheduler.LocationAwareSchedulerV2;
 import cws.k8s.scheduler.util.CopyTask;
 import cws.k8s.scheduler.util.LogCopyTask;
@@ -17,7 +17,7 @@ import java.nio.file.Path;
 @RequiredArgsConstructor
 public class ShellCopy implements CopyRunner {
 
-    private final KubernetesClient client;
+    private final CWSKubernetesClient client;
     private final LocationAwareSchedulerV2 scheduler;
     private final LogCopyTask logCopyTask;
 

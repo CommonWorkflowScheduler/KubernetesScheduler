@@ -20,8 +20,9 @@ public class TaskConfig {
     private final String runName;
     private final float cpus;
     private final long memoryInBytes;
-    private final OutLabel outLabel;
     private final String workDir;
+    private final int repetition;
+    private final Long inputSize;
 
     private TaskConfig() {
         this( null );
@@ -39,7 +40,8 @@ public class TaskConfig {
         this.cpus = 0;
         this.memoryInBytes = 0;
         this.workDir = null;
-        this.outLabel = null;
+        this.repetition = 0;
+        this.inputSize = null;
     }
 
     @Getter

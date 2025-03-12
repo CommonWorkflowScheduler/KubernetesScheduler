@@ -57,10 +57,10 @@ public class SimpleCapacityAvailableToNode extends CapacityAvailableToNode {
             //Check if the node has still enough resources to run the task
             if ( currentlyCopyingTasksOnNode.getOrDefault( node.getNodeLocation(), 0 ) < maxCopyingTaskPerNode
                     &&
-                    availableByNodes.get( node ).higherOrEquals( task.getRequest() ) ) {
+                    availableByNodes.get( node ).higherOrEquals( task.getPlanedRequirements() ) ) {
                 if ( createFileAlignment( planedToCopy, nodeTaskAlignments, currentlyCopyingTasksOnNode, poll, task, node, prio ) ) {
                     cannotAdd = false;
-                    availableByNodes.get( node ).subFromThis( task.getRequest() );
+                    availableByNodes.get( node ).subFromThis( task.getPlanedRequirements() );
                 } else {
                     cannotAdd = true;
                 }
@@ -83,7 +83,7 @@ public class SimpleCapacityAvailableToNode extends CapacityAvailableToNode {
             final Requirements availableOnNode = availableByNodes.get( node );
             final Requirements clone = availableOnNode.clone();
             for ( Task task : currentlyCopying.getTasksOnNode( node.getNodeLocation() ) ) {
-                final Requirements request = task.getRequest();
+                final Requirements request = task.getPlanedRequirements();
                 if ( clone.higherOrEquals( request ) ) {
                     if ( availableOnNode.higherOrEquals( request ) ) {
                         //Here we remove the first tasks in the list. However, the ordering of copy tasks finished might be different.

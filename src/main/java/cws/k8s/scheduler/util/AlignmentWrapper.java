@@ -22,11 +22,6 @@ public class AlignmentWrapper {
         this.cost = cost;
     }
 
-    public void addAlignmentToWaitFor( FilePathWithTask filePath, double cost, long size ) {
-        addAlignmentToWaitFor( filePath, size );
-        this.cost = cost;
-    }
-
     public void addAlignmentToWaitFor( FilePathWithTask filePath, long size ) {
         toWaitSize += size;
         waitFor.add( filePath );
