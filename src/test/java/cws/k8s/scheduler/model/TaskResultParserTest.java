@@ -9,8 +9,9 @@ import cws.k8s.scheduler.model.outfiles.OutputFile;
 import cws.k8s.scheduler.model.outfiles.PathLocationWrapperPair;
 import cws.k8s.scheduler.model.outfiles.SymlinkOutput;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -19,10 +20,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-
 @Slf4j
-public class TaskResultParserTest {
+class TaskResultParserTest {
 
     private final String NL = "\n";
 
@@ -52,7 +51,7 @@ public class TaskResultParserTest {
 
     private DAG dag;
 
-    @Before
+    @BeforeEach
     public void before(){
         dag = new DAG();
         List<Vertex> vertexList = new LinkedList<>();
@@ -63,7 +62,7 @@ public class TaskResultParserTest {
 
 
     @Test
-    public void test1(){
+    void test1(){
 
         String[] infiles = {
                 "1636549091222254911",
@@ -93,12 +92,12 @@ public class TaskResultParserTest {
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file.txt", "/pvcdata/testfile.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/1e/249602b469f33100bb4a65203cb650/file1.txt", "/pvcdata/testfile.txt") );
 
-        assertEquals( expected, newAndUpdatedFiles );
+        Assertions.assertEquals( expected, newAndUpdatedFiles );
 
     }
 
     @Test
-    public void test2(){
+    void test2(){
 
         String[] infiles = {
                 "1636720962171455407",
@@ -132,12 +131,12 @@ public class TaskResultParserTest {
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/c.txt"), new LocationWrapper(node1, 1636720962223L, 2, task )) );
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/ac/fbbbb38f79bf684ddd54a3e190e8fa/t/a.txt"), new LocationWrapper(node1, 1636720962223L, 2, task )) );
 
-        assertEquals( expected, newAndUpdatedFiles );
+        Assertions.assertEquals( expected, newAndUpdatedFiles );
 
     }
 
     @Test
-    public void test3(){
+    void test3(){
 
         final TaskResultParser taskResultParser = new TaskResultParser();
 
@@ -177,12 +176,12 @@ public class TaskResultParserTest {
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/a.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/a.txt") );
         expected.add( new SymlinkOutput( "/localdata/localwork/a2/f105825376b35dd6918824136adbf6/t/filenew.txt", "/localdata/localwork/3c/b1c1be1266dfd66b81a9942383e266/t/filenew.txt") );
 
-        assertEquals( expected, newAndUpdatedFiles );
+        Assertions.assertEquals( expected, newAndUpdatedFiles );
 
     }
 
     @Test
-    public void test4(){
+    void test4(){
 
         String[] infiles = {
                 "---",
@@ -199,7 +198,7 @@ public class TaskResultParserTest {
     }
 
     @Test
-    public void test5(){
+    void test5(){
 
         final TaskResultParser taskResultParser = new TaskResultParser();
 
@@ -235,12 +234,12 @@ public class TaskResultParserTest {
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/9c/33932e89127a7f1bb09bc2ca0453c5/a/file.txt"), new LocationWrapper( node1, 1656925625023L, 0, task )) );
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/9c/33932e89127a7f1bb09bc2ca0453c5/a/b/file.txt"), new LocationWrapper( node1, 1656925625023L, 0, task )) );
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/9c/33932e89127a7f1bb09bc2ca0453c5/a/b/c/file.txt"), new LocationWrapper( node1, 1656925625023L, 0, task )) );
-        assertEquals( expected, newAndUpdatedFiles );
+        Assertions.assertEquals( expected, newAndUpdatedFiles );
 
     }
 
     @Test
-    public void test6(){
+    void test6(){
 
         final TaskResultParser taskResultParser = new TaskResultParser();
 
@@ -277,12 +276,12 @@ public class TaskResultParserTest {
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/30/adb97e8cffa8a086608565fb4c4ea9/a"), new LocationWrapper( node1, 1658328569683L, 249228, task )) );
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/30/adb97e8cffa8a086608565fb4c4ea9/b"), new LocationWrapper( node1, 1658328569659L, 260036, task )) );
         expected.add( new PathLocationWrapperPair(Path.of("/localdata/localwork/30/adb97e8cffa8a086608565fb4c4ea9/c"), new LocationWrapper( node1, 1658328569707L, 265581, task )) );
-        assertEquals( expected, newAndUpdatedFiles );
+        Assertions.assertEquals( expected, newAndUpdatedFiles );
 
     }
 
     @Test
-    public void test7(){
+    void test7(){
         long a = System.currentTimeMillis();
         long b = (long) (1658328570467617203l / 1.0E6);
         log.info("{} {}", a - b, b);
@@ -290,7 +289,7 @@ public class TaskResultParserTest {
 
 
     @Test
-    public void fileWalker() throws IOException {
+    void fileWalker() throws IOException {
         FileVisitor<? super Path> visitor = new FileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {

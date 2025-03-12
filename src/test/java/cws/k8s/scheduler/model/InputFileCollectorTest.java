@@ -10,8 +10,9 @@ import cws.k8s.scheduler.model.taskinputs.PathFileLocationTriple;
 import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,10 +21,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
-
 @Slf4j
-public class InputFileCollectorTest {
+class InputFileCollectorTest {
 
     private LocationWrapper location11;
     private LocationWrapper location12;
@@ -34,7 +33,7 @@ public class InputFileCollectorTest {
     private LocationWrapper location44;
     private LocationWrapper location45;
 
-    @Before
+    @BeforeEach
     public void init(){
         location11 = new LocationWrapper( NodeLocation.getLocation("Node1"), 1, 100);
         location12 = new LocationWrapper(NodeLocation.getLocation("Node2"), 1, 101);
@@ -47,7 +46,7 @@ public class InputFileCollectorTest {
     }
 
     @Test
-    public void getInputsOfTaskTest() throws NoAlignmentFoundException {
+    void getInputsOfTaskTest() throws NoAlignmentFoundException {
 
         final String root = "/workdir/00/db62d739d658b839f07a1a77d877df/";
         final String root2 = "/workdir/01/db62d739d658b839f07a1a77d877d1/";
@@ -56,27 +55,27 @@ public class InputFileCollectorTest {
         final HierarchyWrapper hierarchyWrapper = new HierarchyWrapper("/workdir/");
 
         final Path path1 = Paths.get(root + "a.txt");
-        assertNotNull( hierarchyWrapper.addFile(path1, location11) );
-        assertNotNull( hierarchyWrapper.addFile(path1, location12) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location11) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location12) );
         final PathFileLocationTriple file1 = new PathFileLocationTriple(path1, (RealHierarchyFile) hierarchyWrapper.getFile(path1), List.of(location11, location12));
 
         final Path path2 = Paths.get(root + "a/b.txt");
-        assertNotNull( hierarchyWrapper.addFile(path2, location21) );
-        assertNotNull( hierarchyWrapper.addFile(path2, location23) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path2, location21) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path2, location23) );
         final PathFileLocationTriple file2 = new PathFileLocationTriple(path2, (RealHierarchyFile) hierarchyWrapper.getFile(path2), List.of(location21, location23));
 
         final Path path3 = Paths.get(root2 + "a/b.txt");
-        assertNotNull( hierarchyWrapper.addFile(path3, location34) );
-        assertNotNull( hierarchyWrapper.addFile(path3, location35) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path3, location34) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path3, location35) );
         final PathFileLocationTriple file3 = new PathFileLocationTriple(path3, (RealHierarchyFile) hierarchyWrapper.getFile(path3), List.of(location34, location35));
 
         final Path path4 = Paths.get(root3 + "b/c.txt");
-        assertNotNull( hierarchyWrapper.addFile(path4, location44) );
-        assertNotNull( hierarchyWrapper.addFile(path4, location45) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path4, location44) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path4, location45) );
         final PathFileLocationTriple file4 = new PathFileLocationTriple(path4, (RealHierarchyFile) hierarchyWrapper.getFile(path4), List.of(location44, location45));
 
         final Path path5 = Paths.get(root2 + "b/c.txt");
-        assertTrue(hierarchyWrapper.addSymlink( path5, path4 ) );
+        Assertions.assertTrue( hierarchyWrapper.addSymlink( path5, path4 ) );
         final SymlinkInput symlink = new SymlinkInput( path5, path4 );
 
 
@@ -99,10 +98,10 @@ public class InputFileCollectorTest {
 
         TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(task, Integer.MAX_VALUE);
         List<PathFileLocationTriple> inputsOfTaskFiles = inputsOfTask.getFiles();
-        assertEquals( 3, inputsOfTaskFiles.size() );
-        assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
-        assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertFalse( inputsOfTask.hasExcludedNodes() );
+        Assertions.assertEquals( 3, inputsOfTaskFiles.size() );
+        Assertions.assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
+        Assertions.assertTrue( inputsOfTask.getSymlinks().isEmpty() );
+        Assertions.assertFalse( inputsOfTask.hasExcludedNodes() );
 
         //Not existing file
         final InputParam<FileHolder> c = new InputParam<>("c", new FileHolder(null, root2 + "a.txt", null));
@@ -110,10 +109,10 @@ public class InputFileCollectorTest {
 
         inputsOfTask = inputFileCollector.getInputsOfTask(task, Integer.MAX_VALUE);
         inputsOfTaskFiles = inputsOfTask.getFiles();
-        assertEquals( 3, inputsOfTaskFiles.size() );
-        assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
-        assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertFalse( inputsOfTask.hasExcludedNodes() );
+        Assertions.assertEquals( 3, inputsOfTaskFiles.size() );
+        Assertions.assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
+        Assertions.assertTrue( inputsOfTask.getSymlinks().isEmpty() );
+        Assertions.assertFalse( inputsOfTask.hasExcludedNodes() );
 
         //Symlink
         final InputParam<FileHolder> d = new InputParam<>("d", new FileHolder(null, root2 + "b/c.txt", null));
@@ -122,16 +121,16 @@ public class InputFileCollectorTest {
 
         inputsOfTask = inputFileCollector.getInputsOfTask(task, Integer.MAX_VALUE);
         inputsOfTaskFiles = inputsOfTask.getFiles();
-        assertEquals( 4, inputsOfTaskFiles.size() );
-        assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
-        assertEquals( Set.of( symlink ), new HashSet<>(inputsOfTask.getSymlinks()) );
-        assertFalse( inputsOfTask.hasExcludedNodes() );
+        Assertions.assertEquals( 4, inputsOfTaskFiles.size() );
+        Assertions.assertEquals( expected, new HashSet<>(inputsOfTaskFiles) );
+        Assertions.assertEquals( Set.of( symlink ), new HashSet<>(inputsOfTask.getSymlinks()) );
+        Assertions.assertFalse( inputsOfTask.hasExcludedNodes() );
 
 
     }
 
     @Test
-    public void getInputsOfTaskTestExcludeNodes() throws NoAlignmentFoundException {
+    void getInputsOfTaskTestExcludeNodes() throws NoAlignmentFoundException {
 
         final String root = "/workdir/00/db62d739d658b839f07a1a77d877df/";
 
@@ -164,24 +163,24 @@ public class InputFileCollectorTest {
         location11.use();
 
         final Path path1 = Paths.get(root + "a.txt");
-        assertNotNull( hierarchyWrapper.addFile(path1, location11) );
-        assertNotNull( hierarchyWrapper.addFile(path1, location12) );
-        assertNotNull( hierarchyWrapper.addFile(path1, location13) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location11) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location12) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location13) );
         final HierarchyFile file = hierarchyWrapper.getFile(path1);
-        assertNotNull( file );
+        Assertions.assertNotNull( file );
         final PathFileLocationTriple file1 = new PathFileLocationTriple(path1, (RealHierarchyFile) file, List.of(location12, location13));
 
         TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(taskC, Integer.MAX_VALUE);
         List<PathFileLocationTriple> inputsOfTaskFiles = inputsOfTask.getFiles();
-        assertEquals( 1, inputsOfTaskFiles.size() );
-        assertEquals( file1, inputsOfTaskFiles.get(0) );
-        assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertTrue( inputsOfTask.hasExcludedNodes() );
-        assertFalse( inputsOfTask.canRunOnLoc( NodeLocation.getLocation( "Node1" ) ) );
+        Assertions.assertEquals( 1, inputsOfTaskFiles.size() );
+        Assertions.assertEquals( file1, inputsOfTaskFiles.get(0) );
+        Assertions.assertTrue( inputsOfTask.getSymlinks().isEmpty() );
+        Assertions.assertTrue( inputsOfTask.hasExcludedNodes() );
+        Assertions.assertFalse( inputsOfTask.canRunOnLoc( NodeLocation.getLocation( "Node1" ) ) );
     }
 
     @Test
-    public void getInputsOfTaskTestNotExcludeNodes() throws NoAlignmentFoundException {
+    void getInputsOfTaskTestNotExcludeNodes() throws NoAlignmentFoundException {
 
         final String root = "/workdir/00/db62d739d658b839f07a1a77d877df/";
 
@@ -214,20 +213,20 @@ public class InputFileCollectorTest {
         location13.use();
 
         final Path path1 = Paths.get(root + "a.txt");
-        assertNotNull( hierarchyWrapper.addFile(path1, location11) );
-        assertNotNull( hierarchyWrapper.addFile(path1, location12) );
-        assertNotNull( hierarchyWrapper.addFile(path1, location13) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location11) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location12) );
+        Assertions.assertNotNull( hierarchyWrapper.addFile(path1, location13) );
         final HierarchyFile file = hierarchyWrapper.getFile(path1);
-        assertNotNull( file );
+        Assertions.assertNotNull( file );
         final PathFileLocationTriple file1 = new PathFileLocationTriple(path1, (RealHierarchyFile) file, List.of(location12, location13));
         log.info(file1.toString());
 
         TaskInputs inputsOfTask = inputFileCollector.getInputsOfTask(taskC, Integer.MAX_VALUE);
         List<PathFileLocationTriple> inputsOfTaskFiles = inputsOfTask.getFiles();
-        assertEquals( 1, inputsOfTaskFiles.size() );
-        assertEquals( file1, inputsOfTaskFiles.get(0) );
-        assertTrue( inputsOfTask.getSymlinks().isEmpty() );
-        assertFalse( inputsOfTask.hasExcludedNodes() );
+        Assertions.assertEquals( 1, inputsOfTaskFiles.size() );
+        Assertions.assertEquals( file1, inputsOfTaskFiles.get(0) );
+        Assertions.assertTrue( inputsOfTask.getSymlinks().isEmpty() );
+        Assertions.assertFalse( inputsOfTask.hasExcludedNodes() );
 
     }
 

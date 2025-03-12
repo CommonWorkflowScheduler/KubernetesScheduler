@@ -1,42 +1,40 @@
 package cws.k8s.scheduler.prediction.predictor;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-public class LinearPredictorSquaredLossTest {
+class LinearPredictorSquaredLossTest {
 
     @Test
-    public void testOneTask() {
+    void testOneTask() {
         LinearPredictorSquaredLoss lp = getLinearPredictor();
         lp.addTask( new TestTask( 1d, 1d ) );
-        assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
+        Assertions.assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
     }
 
     @Test
-    public void testTwoTasks() {
+    void testTwoTasks() {
         LinearPredictorSquaredLoss lp = getLinearPredictor();
         lp.addTask( new TestTask( 1d, 1d ) );
         lp.addTask( new TestTask( 2d, 2d ) );
-        assertEquals( (Double) 4d, lp.queryPrediction( new TestTask( 4d, 4d ) ) );
+        Assertions.assertEquals( (Double) 4d, lp.queryPrediction( new TestTask( 4d, 4d ) ) );
     }
 
     @Test
-    public void testPredict() {
+    void testPredict() {
         LinearPredictorSquaredLoss lp = getLinearPredictor();
         lp.addTask( new TestTask( 1d, 1d ) );
         lp.addTask( new TestTask( 2d, 2d ) );
         lp.addTask( new TestTask( 3d, 3d ) );
-        assertEquals( (Double) 4d, lp.queryPrediction( new TestTask( 4d, 4d ) ) );
-        assertEquals(  (Double) 0d, lp.queryPrediction( new TestTask( 0d, 0d ) ) );
+        Assertions.assertEquals( (Double) 4d, lp.queryPrediction( new TestTask( 4d, 4d ) ) );
+        Assertions.assertEquals( (Double) 0d, lp.queryPrediction( new TestTask( 0d, 0d ) ) );
     }
 
     @Test
-    public void noData() {
+    void noData() {
         LinearPredictorSquaredLoss lp = getLinearPredictor();
-        assertNull(lp.queryPrediction( new TestTask( 4d, 4d ) ));
+        Assertions.assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
     }
 
     @NotNull
