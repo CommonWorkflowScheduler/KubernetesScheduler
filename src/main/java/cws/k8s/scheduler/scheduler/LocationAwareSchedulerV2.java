@@ -1,7 +1,7 @@
 package cws.k8s.scheduler.scheduler;
 
-import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.model.*;
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.scheduler.la2.*;
 import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvance;
 import cws.k8s.scheduler.scheduler.la2.copyinadvance.CopyInAdvanceNodeWithMostData;
@@ -24,10 +24,15 @@ import cws.k8s.scheduler.scheduler.la2.ready2run.ReadyToRunToNode;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
 import cws.k8s.scheduler.util.score.FileSizeRankScore;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -52,8 +57,10 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private final CopyInAdvance copyInAdvance;
 
-    private final TaskStatComparator phaseTwoComparator;
-    private final TaskStatComparator phaseThreeComparator;
+    @Setter(AccessLevel.PACKAGE)
+    private TaskStatComparator phaseTwoComparator;
+    @Setter(AccessLevel.PACKAGE)
+    private TaskStatComparator phaseThreeComparator;
 
     private final int copySameTaskInParallel;
     private final int maxHeldCopyTaskReady;
@@ -79,20 +86,42 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
             String namespace,
             SchedulerConfig config,
             InputAlignment inputAlignment,
-            ReadyToRunToNode readyToRunToNode ) {
+            ReadyToRunToNode readyToRunToNode
+    ) {
+        this(
+                name,
+                client,
+                namespace,
+                config,
+                inputAlignment,
+                readyToRunToNode,
+                new FileSizeRankScore()
+        );
+        setPhaseTwoComparator( new MinCopyingComparator( MinSizeComparator.INSTANCE ) );
+        setPhaseThreeComparator( new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE ) );
+    }
+
+    LocationAwareSchedulerV2(
+            String name,
+            CWSKubernetesClient client,
+            String namespace,
+            SchedulerConfig config,
+            InputAlignment inputAlignment,
+            ReadyToRunToNode readyToRunToNode,
+            FileSizeRankScore calculateScore
+    ) {
         super( name, client, namespace, config );
         this.inputAlignment = inputAlignment;
         this.maxCopyTasksPerNode = config.maxCopyTasksPerNode == null ? 1 : config.maxCopyTasksPerNode;
         this.maxWaitingCopyTasksPerNode = config.maxWaitingCopyTasksPerNode == null ? 1 : config.maxWaitingCopyTasksPerNode;
         this.readyToRunToNode = readyToRunToNode;
-        final FileSizeRankScore calculateScore = new FileSizeRankScore();
-        this.readyToRunToNode.init(  calculateScore );
+        if ( calculateScore != null ) {
+            this.readyToRunToNode.init( calculateScore );
+        }
         readyToRunToNode.setLogger( logCopyTask );
         this.copyRunner = new ShellCopy( client, this, logCopyTask );
         this.copySameTaskInParallel = 2;
         this.capacityAvailableToNode = new SimpleCapacityAvailableToNode( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
-        this.phaseTwoComparator = new MinCopyingComparator( MinSizeComparator.INSTANCE );
-        this.phaseThreeComparator = new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE );
         this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.maxHeldCopyTaskReady = config.maxHeldCopyTaskReady == null ? 3 : config.maxHeldCopyTaskReady;
         this.prioPhaseThree = config.prioPhaseThree == null ? 70 : config.prioPhaseThree;
@@ -114,8 +143,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                             .stream()
                             .filter( node -> {
                                 final CurrentlyCopyingOnNode copyingFilesToNode = getCurrentlyCopying().get( node.getNodeLocation() );
-                                //File version does not match and is in use
-                                return !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() )
+                                return inputsOfTask.canRunOnLoc( node.getNodeLocation() )
                                         //Affinities are correct and the node can run new pods
                                         && canSchedulePodOnNode( task, node )
                                         //All files are on the node and no copy task is overwriting them
@@ -176,6 +204,9 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                                     currentlyCopyingTasksOnNode,
                                                     100
                                                 );
+            for ( TaskStat taskStat : getAdditionalTaskStatPhaseThree() ) {
+                taskStats.add( taskStat );
+            }
             taskStats.setComparator( phaseThreeComparator );
             //Generate copy tasks for tasks that cannot yet run.
             copyInAdvance.createAlignmentForTasksWithEnoughCapacity(
@@ -194,7 +225,12 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         nodeTaskFilesAlignments.parallelStream().forEach( this::startCopyTask );
     }
 
-    private void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
+    List<TaskStat> getAdditionalTaskStatPhaseThree(){
+        return new LinkedList<>();
+    }
+
+
+    void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
         nodeTaskFilesAlignment.task.getTraceRecord().copyTask();
         final CopyTask copyTask = initializeCopyTask( nodeTaskFilesAlignment );
         //Files that will be copied
@@ -358,7 +394,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         TaskStat taskStats = new TaskStat( task, inputsOfTask );
         final CurrentlyCopying currentlyCopying = getCurrentlyCopying();
         for ( NodeWithAlloc node : allNodes ) {
-            if ( !inputsOfTask.getExcludedNodes().contains( node.getNodeLocation() ) && affinitiesMatch( task.getPod(), node ) ) {
+            if ( inputsOfTask.canRunOnLoc( node.getNodeLocation() ) && node.affinitiesMatch( task.getPod() ) ) {
                 final CurrentlyCopyingOnNode currentlyCopyingOnNode = currentlyCopying.get( node.getNodeLocation() );
                 final TaskNodeStats taskNodeStats = inputsOfTask.calculateMissingData( node.getNodeLocation(), currentlyCopyingOnNode );
                 if ( taskNodeStats != null ) {
@@ -413,6 +449,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         super.close();
     }
 
+    @Override
     Task createTask( TaskConfig conf ){
         return new Task( conf, getDag(), hierarchyWrapper );
     }

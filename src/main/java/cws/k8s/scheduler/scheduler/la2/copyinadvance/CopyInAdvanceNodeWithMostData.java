@@ -1,5 +1,7 @@
 package cws.k8s.scheduler.scheduler.la2.copyinadvance;
 
+import cws.k8s.scheduler.model.NodeWithAlloc;
+import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.scheduler.filealignment.InputAlignment;
 import cws.k8s.scheduler.scheduler.la2.TaskStat;
@@ -7,8 +9,6 @@ import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
 import cws.k8s.scheduler.util.SortedList;
 import cws.k8s.scheduler.util.TaskStats;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
-import cws.k8s.scheduler.model.NodeWithAlloc;
-import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;

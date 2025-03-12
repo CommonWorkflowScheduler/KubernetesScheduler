@@ -1,6 +1,5 @@
 package cws.k8s.scheduler.scheduler.filealignment;
 
-import cws.k8s.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.location.Location;
@@ -8,6 +7,7 @@ import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import cws.k8s.scheduler.model.taskinputs.PathFileLocationTriple;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
+import cws.k8s.scheduler.scheduler.filealignment.costfunctions.NoAligmentPossibleException;
 import cws.k8s.scheduler.util.AlignmentWrapper;
 import cws.k8s.scheduler.util.FileAlignment;
 import cws.k8s.scheduler.util.FilePathWithTask;

@@ -1,11 +1,11 @@
 package cws.k8s.scheduler.scheduler.prioritize;
 
-import cws.k8s.scheduler.model.TaskConfig;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.InputEdge;
 import cws.k8s.scheduler.dag.Process;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.model.TaskConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

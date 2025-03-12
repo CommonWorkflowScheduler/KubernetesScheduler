@@ -1,11 +1,11 @@
 package cws.k8s.scheduler.model.taskinputs;
 
+import cws.k8s.scheduler.model.location.Location;
+import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import cws.k8s.scheduler.util.TaskNodeStats;
 import cws.k8s.scheduler.util.Tuple;
 import cws.k8s.scheduler.util.copying.CopySource;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
-import cws.k8s.scheduler.model.location.Location;
-import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -16,16 +16,25 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @ToString
-@Getter
 @Slf4j
 @RequiredArgsConstructor
 public class TaskInputs {
 
+    @Getter
     private final List<SymlinkInput> symlinks;
+    @Getter
     private final List<PathFileLocationTriple> files;
     private final Set<Location> excludedNodes;
 
     private boolean sorted = false;
+
+    public boolean canRunOnLoc( Location loc ) {
+        return !excludedNodes.contains( loc );
+    }
+
+    public boolean hasExcludedNodes() {
+        return !excludedNodes.isEmpty();
+    }
 
     public boolean allFilesAreOnLocationAndNotOverwritten( Location loc, Set<String> pathCurrentlyCopying ){
         for (PathFileLocationTriple file : files) {

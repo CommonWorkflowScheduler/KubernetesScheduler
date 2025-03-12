@@ -1,7 +1,12 @@
 package cws.k8s.scheduler.rest;
 
+import cws.k8s.scheduler.dag.DAG;
+import cws.k8s.scheduler.dag.InputEdge;
+import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
+import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
+import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.scheduler.*;
 import cws.k8s.scheduler.scheduler.filealignment.GreedyAlignment;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.CostFunction;
@@ -21,10 +26,12 @@ import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RoundRobinAssign;
+import cws.k8s.scheduler.scheduler.prioritize.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -99,7 +106,8 @@ public class SchedulerRestController {
     @PostMapping("/v1/scheduler/{execution}")
     ResponseEntity<String> registerScheduler(
             @PathVariable String execution,
-            @RequestBody(required = false) SchedulerConfig config
+            @RequestBody(required = false) SchedulerConfig config,
+            HttpServletRequest request
     ) {
 
         final String namespace = config.namespace;
@@ -117,19 +125,32 @@ public class SchedulerRestController {
         if ( config.costFunction != null ) {
             switch (config.costFunction.toLowerCase()) {
                 case "minsize": costFunction = new MinSizeCost(0); break;
-                default: return new ResponseEntity<>( "No cost function: " + config.costFunction, HttpStatus.NOT_FOUND );
+                default:
+                    log.warn( "Register execution: {} - No cost function for: {}", execution, config.costFunction );
+                    return new ResponseEntity<>( "No cost function: " + config.costFunction, HttpStatus.NOT_FOUND );
             }
         }
 
         switch ( strategy.toLowerCase() ){
             case "lav2" :
                 if ( !config.locationAware ) {
+                    log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
                     return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
                 }
                 if ( costFunction == null ) {
                     costFunction = new MinSizeCost( 0 );
                 }
                 scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
+                break;
+            case "lagroup" :
+                if ( !config.locationAware ) {
+                    log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
+                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
+                }
+                if ( costFunction == null ) {
+                    costFunction = new MinSizeCost( 0 );
+                }
+                scheduler = new LocationAwareSchedulerGroups( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
                 break;
             default: {
                 final String[] split = strategy.split( "-" );
@@ -149,6 +170,7 @@ public class SchedulerRestController {
                         case "max": prioritize = new MaxInputPrioritize(); break;
                         case "min": prioritize = new MinInputPrioritize(); break;
                         default:
+                            log.warn( "Register execution: {} - No Prioritize for: {}", execution, split[0] );
                             return new ResponseEntity<>( "No Prioritize for: " + split[0], HttpStatus.NOT_FOUND );
                     }
                     if ( split.length == 2 ) {
@@ -157,6 +179,7 @@ public class SchedulerRestController {
                             case "roundrobin": case "rr": assign = new RoundRobinAssign(); break;
                             case "fair": case "f": assign = new FairAssign(); break;
                             default:
+                                log.warn( "Register execution: {} - No Assign for: {}", execution, split[1] );
                                 return new ResponseEntity<>( "No Assign for: " + split[1], HttpStatus.NOT_FOUND );
                         }
                     } else {
@@ -164,9 +187,13 @@ public class SchedulerRestController {
                     }
                     scheduler = new PrioritizeAssignScheduler( execution, client, namespace, config, prioritize, assign );
                 } else {
+                    log.warn( "Register execution: {} - No scheduler for strategy: {}", execution, strategy );
                     return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
                 }
             }
+        }
+        if ( scheduler instanceof SchedulerWithDaemonSet ) {
+            ((SchedulerWithDaemonSet) scheduler).setWorkflowEngineNode( request.getRemoteAddr() );
         }
 
         schedulerHolder.put( execution, scheduler );
@@ -192,7 +219,7 @@ public class SchedulerRestController {
     @PostMapping("/v1/scheduler/{execution}/task/{id}")
     ResponseEntity<? extends Object> registerTask( @PathVariable String execution, @PathVariable int id, @RequestBody TaskConfig config ) {
 
-        log.trace( execution + " " + config.getTask() + " got: " + config );
+        log.info( execution + " " + config.getTask() + " got: " + config );
 
         final Scheduler scheduler = schedulerHolder.get( execution );
         if ( scheduler == null ) {

@@ -42,6 +42,7 @@ public class InputFileCollector {
             }
         } else {
             final RealHierarchyFile realFile = (RealHierarchyFile) file;
+            realFile.requestedByTask();
             try {
                 final RealHierarchyFile.MatchingLocationsPair filesForTask = realFile.getFilesForTask(task);
                 if ( filesForTask.getExcludedNodes() != null ) {

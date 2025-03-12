@@ -40,6 +40,23 @@ public class CWSKubernetesClient {
         this.nodes().watch( new NodeWatcher( this ) );
     }
 
+    public Pod getPodByIp( String ip ) {
+        if ( ip == null ) {
+            throw new IllegalArgumentException("IP cannot be null");
+        }
+        return this.pods()
+                .inAnyNamespace()
+                .list()
+                .getItems()
+                .parallelStream()
+                .filter( pod -> ip.equals( pod.getStatus().getPodIP() ) )
+                .findFirst()
+                .orElseGet( () -> {
+                    log.warn("No Pod found for IP: {}", ip);
+                    return null;
+                });
+    }
+
     public NonNamespaceOperation<Node, NodeList, Resource<Node>> nodes() {
         return client.nodes();
     }

@@ -1,13 +1,10 @@
 package cws.k8s.scheduler.scheduler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.model.location.hierachy.*;
-import cws.k8s.scheduler.scheduler.schedulingstrategy.InputEntry;
-import cws.k8s.scheduler.scheduler.schedulingstrategy.Inputs;
 import cws.k8s.scheduler.util.*;
-import cws.k8s.scheduler.model.location.Location;
+import cws.k8s.scheduler.model.cluster.OutputFiles;
 import cws.k8s.scheduler.model.location.LocationType;
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.model.outfiles.OutputFile;
@@ -21,14 +18,17 @@ import cws.k8s.scheduler.scheduler.copystrategy.CopyStrategy;
 import cws.k8s.scheduler.scheduler.copystrategy.FTPstrategy;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ContainerStatus;
+import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.ftp.FTPClient;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -143,12 +143,14 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                 !finishedTask.wasSuccessfullyExecuted(),
                                 finishedTask
                         );
+                        final Set<PathLocationWrapperPair> outputFiles = new HashSet<>();
                         for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
                             if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
                                 hierarchyWrapper.addFile(
                                         newAndUpdatedFile.getPath(),
                                         ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
                                 );
+                                outputFiles.add( (PathLocationWrapperPair) newAndUpdatedFile );
                             } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
                                 hierarchyWrapper.addSymlink(
                                         newAndUpdatedFile.getPath(),
@@ -156,6 +158,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                 );
                             }
                         }
+                        finishedTask.setOutputFiles( new OutputFiles( outputFiles ) );
                     }
                 }
             } catch ( Exception e ){
@@ -339,14 +342,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
      * Remove all Nodes with a location contained in taskInputs.excludedNodes
      */
     void filterNotMatchingNodesForTask(Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
-        final Iterator<NodeWithAlloc> iterator = matchingNodes.iterator();
-        final Set<Location> excludedNodes = taskInputs.getExcludedNodes();
-        while ( iterator.hasNext() ){
-            final NodeWithAlloc next = iterator.next();
-            if( excludedNodes.contains( next.getNodeLocation() ) ){
-                iterator.remove();
-            }
-        }
+        matchingNodes.removeIf( next -> !taskInputs.canRunOnLoc( next.getNodeLocation() ) );
     }
 
     public void taskHasFinishedCopyTask( String name ){
@@ -364,12 +360,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         task.getState().setState( State.SCHEDULED );
     }
 
+    public void setWorkflowEngineNode( String ip ){
+        this.workflowEngineNode = client.getPodByIp( ip ).getSpec().getNodeName();
+        log.info( "WorkflowEngineNode was set to {}", workflowEngineNode );
+    }
+
     @Override
     void podEventReceived(Watcher.Action action, Pod pod){
-        if ( pod.getMetadata().getName().equals( this.getExecution().replace('_', '-') ) ){
-            this.workflowEngineNode = pod.getSpec().getNodeName();
-            log.info( "WorkflowEngineNode was set to {}", workflowEngineNode );
-        }
         //noinspection LoopConditionNotUpdatedInsideLoop
         while ( daemonHolder == null ){
             //The Watcher can be started before the class is initialized

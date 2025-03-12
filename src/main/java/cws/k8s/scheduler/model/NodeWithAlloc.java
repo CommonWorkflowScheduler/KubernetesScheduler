@@ -207,4 +207,25 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     public boolean isReady(){
         return Readiness.isNodeReady(this);
     }
+
+    public boolean affinitiesMatch( PodWithAge pod ){
+
+        final boolean nodeCouldRunThisPod = this.getMaxResources().higherOrEquals( pod.getRequest() );
+        if ( !nodeCouldRunThisPod ){
+            return false;
+        }
+
+        final Map<String, String> podsNodeSelector = pod.getSpec().getNodeSelector();
+        final Map<String, String> nodesLabels = this.getMetadata().getLabels();
+        if ( podsNodeSelector == null || podsNodeSelector.isEmpty() ) {
+            return true;
+        }
+        //cannot be fulfilled if podsNodeSelector is not empty
+        if ( nodesLabels == null || nodesLabels.isEmpty() ) {
+            return false;
+        }
+
+        return nodesLabels.entrySet().containsAll( podsNodeSelector.entrySet() );
+    }
+
 }

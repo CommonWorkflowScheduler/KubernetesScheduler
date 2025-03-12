@@ -2,6 +2,7 @@ package cws.k8s.scheduler.model;
 
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.Process;
+import cws.k8s.scheduler.model.cluster.OutputFiles;
 import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -79,6 +81,10 @@ public class Task {
 
     private final HierarchyWrapper hierarchyWrapper;
 
+    @Getter
+    @Setter
+    private OutputFiles outputFiles;
+
     public Task( TaskConfig config, DAG dag ) {
         this( config, dag, null );
     }
@@ -89,6 +95,17 @@ public class Task {
         planedRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
         this.process = dag.getByProcess( config.getTask() );
         this.hierarchyWrapper = hierarchyWrapper;
+    }
+
+    /**
+     * Constructor for inheritance
+     */
+    protected Task( TaskConfig config, Process process ){
+        this.config = config;
+        oldRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
+        planedRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
+        this.process = process;
+        this.hierarchyWrapper = null;
     }
 
     public int getCurrentCopyTaskId() {
@@ -132,6 +149,10 @@ public class Task {
 
     public void submitted(){
         traceRecord.setSchedulerTimeInQueue( System.currentTimeMillis() - timeAddedToQueue );
+    }
+
+    public Set<String> getOutLabel(){
+        return config.getOutLabel();
     }
 
     private long inputSize = -1;

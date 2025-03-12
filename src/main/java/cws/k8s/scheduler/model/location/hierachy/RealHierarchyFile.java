@@ -1,9 +1,9 @@
 package cws.k8s.scheduler.model.location.hierachy;
 
 import cws.k8s.scheduler.dag.Process;
+import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.model.location.Location;
 import cws.k8s.scheduler.model.location.LocationType;
-import cws.k8s.scheduler.model.Task;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,8 +18,9 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     @Getter
     private LocationWrapper[] locations;
     static final String LOCATION_IS_NULL = "location is null";
+    private boolean wasRequestedByTask = false;
 
-    public RealHierarchyFile(LocationWrapper location ) {
+    public RealHierarchyFile( LocationWrapper location ) {
         if ( location == null ) {
             throw new IllegalArgumentException( LOCATION_IS_NULL );
         }
@@ -303,6 +304,14 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
             }
         }
         throw new RuntimeException( "Not found: " + location.getIdentifier() );
+    }
+
+    public void requestedByTask(){
+        wasRequestedByTask = true;
+    }
+
+    public boolean wasRequestedByTask(){
+        return wasRequestedByTask;
     }
 
 }

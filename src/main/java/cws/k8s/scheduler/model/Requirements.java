@@ -1,16 +1,12 @@
 package cws.k8s.scheduler.model;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 
 import static cws.k8s.scheduler.util.Formater.formatBytes;
 
-@ToString
-@EqualsAndHashCode
 public class Requirements implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;

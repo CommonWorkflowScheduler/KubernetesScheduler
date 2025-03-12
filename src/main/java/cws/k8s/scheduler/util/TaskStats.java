@@ -1,10 +1,12 @@
 package cws.k8s.scheduler.util;
 
+import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.scheduler.la2.TaskStat;
 import cws.k8s.scheduler.scheduler.la2.TaskStatComparator;
-import cws.k8s.scheduler.model.Task;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TaskStats {
 
