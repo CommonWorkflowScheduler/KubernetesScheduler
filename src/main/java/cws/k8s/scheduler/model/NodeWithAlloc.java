@@ -198,10 +198,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (getMaxResources() != null ? getMaxResources().hashCode() : 0);
-        result = 31 * result + (getAssignedPods() != null ? getAssignedPods().hashCode() : 0);
-        return result;
+        return this.getName().hashCode();
     }
 
     public boolean isReady(){
