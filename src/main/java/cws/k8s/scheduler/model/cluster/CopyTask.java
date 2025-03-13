@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CopyTask extends Task {
 
-    private final static Process COPY_PROCESS = new Process( "Copy", Integer.MAX_VALUE );
+    private static final Process COPY_PROCESS = new Process( "Copy", Integer.MAX_VALUE );
     private final Task task;
     private final NodeWithAlloc node;
     private final List<LabelCount> labelCounts;
