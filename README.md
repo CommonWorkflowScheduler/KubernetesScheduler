@@ -97,7 +97,7 @@ spec:
       value: workflow-scheduler
     - name: AUTOCLOSE
       value: "false"
-    image: commonworkflowscheduler/kubernetesscheduler:v1.0
+    image: commonworkflowscheduler/kubernetesscheduler:v2.0
     imagePullPolicy: Always
     name: workflow-scheduler
     resources:
@@ -135,7 +135,7 @@ or via the corresponding setting in your development environment or within the p
 
 Example:
 
-        $ SCHEDULER_NAME=workflow-scheduler java -Dspring.profiles.active=dev -jar cws-k8s-scheduler-1.2.jar
+        $ SCHEDULER_NAME=workflow-scheduler java -Dspring.profiles.active=dev -jar cws-k8s-scheduler-2.0.jar
 
 The "dev" profile is useful for debugging and reporting problems because it increases the log-level.
 
