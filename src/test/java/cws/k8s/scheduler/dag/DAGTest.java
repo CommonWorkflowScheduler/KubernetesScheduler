@@ -1,31 +1,32 @@
 package cws.k8s.scheduler.dag;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
-public class DAGTest {
+class DAGTest {
 
     private void compare(int uid, List<Vertex> vertices, int[] ancestorIds, int[] descendantsIds ){
         //noinspection OptionalGetWithoutIsPresent
         final Vertex vertex = vertices.stream().filter(v -> v.getUid() == uid).findFirst().get();
 
         if( vertex.getAncestors() == null ){
-            assertNull( ancestorIds );
+            Assertions.assertNull( ancestorIds );
         } else {
             final int[] a = vertex.getAncestors().stream().mapToInt( Vertex::getUid ).sorted().toArray();
-            assertArrayEquals("Compare Ancestors for uid: " + uid, ancestorIds, a);
+            Assertions.assertArrayEquals( ancestorIds, a, "Compare Ancestors for uid: " + uid );
         }
         if( vertex.getDescendants() == null ){
-            assertNull( descendantsIds );
+            Assertions.assertNull( descendantsIds );
         } else {
             final int[] d = vertex.getDescendants().stream().mapToInt(Vertex::getUid).sorted().toArray();
-            assertArrayEquals("Compare Descendants for uid: " + uid, descendantsIds, d);
+            Assertions.assertArrayEquals( descendantsIds, d, "Compare Descendants for uid: " + uid );
         }
     }
 
@@ -53,16 +54,16 @@ public class DAGTest {
     private void isSameEdge( HashSet<Edge> expectedIn, HashSet<Edge> expectedOut, Vertex vertex ){
         final String[] in = setToArrayEdges(expectedIn);
         final String[] out = setToArrayEdges(expectedOut);
-        assertArrayEquals( "In of " + vertex.getLabel(), in, setToArrayEdges(vertex.getIn()) );
-        assertArrayEquals( "Out of " + vertex.getLabel(), out, setToArrayEdges(vertex.getOut()) );
+        Assertions.assertArrayEquals( in, setToArrayEdges(vertex.getIn()), "In of " + vertex.getLabel() );
+        Assertions.assertArrayEquals( out, setToArrayEdges(vertex.getOut()), "Out of " + vertex.getLabel() );
     }
 
     private void isSameProc( HashSet<Process> expectedAncestors, HashSet<Process> expectedDescendants, Vertex vertex, int rank ){
         final String[] descendants = setToArrayProcesses(expectedDescendants);
         final String[] ancestors = setToArrayProcesses(expectedAncestors);
-        assertArrayEquals( "Descendants of " + vertex.getLabel(), descendants, setToArrayProcesses(vertex.getDescendants()) );
-        assertArrayEquals( "Ancestors of " + vertex.getLabel(), ancestors, setToArrayProcesses(vertex.getAncestors()) );
-        assertEquals( rank, vertex.getRank() );
+        Assertions.assertArrayEquals( descendants, setToArrayProcesses(vertex.getDescendants()), "Descendants of " + vertex.getLabel() );
+        Assertions.assertArrayEquals( ancestors, setToArrayProcesses(vertex.getAncestors()), "Ancestors of " + vertex.getLabel() );
+        Assertions.assertEquals( rank, vertex.getRank() );
     }
 
     private String[] setToArrayProcesses(Set<Process> set) {
@@ -132,7 +133,7 @@ public class DAGTest {
     }
 
     @Test
-    public void testRelations() {
+    void testRelations() {
         for (int q = 0; q < 500 ; q++) {
             final DAG dag = new DAG();
             List<Vertex> vertexList = genVertexList();
@@ -144,7 +145,7 @@ public class DAGTest {
     }
 
     @Test
-    public void testRelations2() {
+    void testRelations2() {
         for (int q = 0; q < 500 ; q++) {
             final DAG dag = new DAG();
             List<Vertex> vertexList = genVertexList();
@@ -164,7 +165,7 @@ public class DAGTest {
     }
 
     @Test
-    public void smallTest(){
+    void smallTest(){
 
         final DAG dag = new DAG();
 
@@ -188,26 +189,26 @@ public class DAGTest {
         dag.registerVertices( vertexList );
         dag.registerEdges( inputEdges );
 
-        assertEquals( new HashSet<>(), a.getAncestors() );
+        Assertions.assertEquals( new HashSet<>(), a.getAncestors() );
         final HashSet<Process> descA = new HashSet<>();
         descA.add( b );
-        assertEquals( descA, a.getDescendants() );
+        Assertions.assertEquals( descA, a.getDescendants() );
 
 
         final HashSet<Process> ancB = new HashSet<>();
         ancB.add( a );
-        assertEquals( new HashSet<>(), b.getDescendants() );
-        assertEquals( ancB, b.getAncestors() );
+        Assertions.assertEquals( new HashSet<>(), b.getDescendants() );
+        Assertions.assertEquals( ancB, b.getAncestors() );
 
-        assertEquals( ancB, filter.getAncestors() );
-        assertEquals( descA, filter.getDescendants() );
+        Assertions.assertEquals( ancB, filter.getAncestors() );
+        Assertions.assertEquals( descA, filter.getDescendants() );
 
-        assertEquals( new HashSet<>(),o.getAncestors() );
+        Assertions.assertEquals( new HashSet<>(), o.getAncestors() );
         final HashSet<Process> descO = new HashSet<>();
 
         descO.add( a );
         descO.add( b );
-        assertEquals( descO, o.getDescendants() );
+        Assertions.assertEquals( descO, o.getDescendants() );
 
     }
 
@@ -223,7 +224,7 @@ public class DAGTest {
      *
      */
     @Test
-    public void deleteTest(){
+    void deleteTest(){
 
         final DAG dag = new DAG();
 
@@ -258,37 +259,37 @@ public class DAGTest {
                 dag.removeVertices( filter2.getUid() );
             }
 
-            assertEquals( new HashSet<>(), a.getAncestors() );
+            Assertions.assertEquals( new HashSet<>(), a.getAncestors() );
             if ( i == 0 ) {
-                assertEquals( new HashSet<>( Arrays.asList( new Edge(2,a,filter), new Edge(3,a,filter2) ) ), a.getOut() );
+                Assertions.assertEquals( new HashSet<>( Arrays.asList( new Edge(2,a,filter), new Edge(3,a,filter2) ) ), a.getOut() );
             } else {
-                assertEquals( new HashSet<>(List.of(new Edge(2, a, filter))), a.getOut() );
+                Assertions.assertEquals( new HashSet<>( List.of(new Edge(2, a, filter))), a.getOut() );
             }
             final HashSet<Process> descA = new HashSet<>();
             descA.add( b );
-            assertEquals( descA, a.getDescendants() );
+            Assertions.assertEquals( descA, a.getDescendants() );
 
 
             final HashSet<Process> ancB = new HashSet<>();
             ancB.add( a );
-            assertEquals( new HashSet<>(), b.getDescendants() );
-            assertEquals( ancB, b.getAncestors() );
+            Assertions.assertEquals( new HashSet<>(), b.getDescendants() );
+            Assertions.assertEquals( ancB, b.getAncestors() );
 
             if ( i == 0 ) {
-                assertEquals( new HashSet<>( Arrays.asList( new Edge(4,filter,b),  new Edge(5,filter2,b) ) ), b.getIn() );
+                Assertions.assertEquals( new HashSet<>( Arrays.asList( new Edge(4,filter,b),  new Edge(5,filter2,b) ) ), b.getIn() );
             } else {
-                assertEquals( new HashSet<>(List.of(new Edge(4, filter, b))), b.getIn() );
+                Assertions.assertEquals( new HashSet<>( List.of(new Edge(4, filter, b))), b.getIn() );
             }
 
-            assertEquals( ancB, filter.getAncestors() );
-            assertEquals( descA, filter.getDescendants() );
+            Assertions.assertEquals( ancB, filter.getAncestors() );
+            Assertions.assertEquals( descA, filter.getDescendants() );
 
-            assertEquals( new HashSet<>(),o.getAncestors() );
+            Assertions.assertEquals( new HashSet<>(), o.getAncestors() );
             final HashSet<Process> descO = new HashSet<>();
 
             descO.add( a );
             descO.add( b );
-            assertEquals( descO, o.getDescendants() );
+            Assertions.assertEquals( descO, o.getDescendants() );
         }
 
     }
@@ -297,7 +298,7 @@ public class DAGTest {
 
 
     @Test
-    public void deleteTest2() {
+    void deleteTest2() {
 
         final DAG dag = createDag();
         dag.removeEdges( 3 );
@@ -325,7 +326,7 @@ public class DAGTest {
     }
 
     @Test
-    public void deleteTest3() {
+    void deleteTest3() {
 
         final DAG dag = createDag();
         dag.removeVertices( dag.getByProcess("c").getUid(), dag.getByProcess("e").getUid() );
@@ -360,7 +361,7 @@ public class DAGTest {
      *     e
      */
     @Test
-    public void deleteTest4() {
+    void deleteTest4() {
 
         final DAG dag = createDag();
         final Process a = new Process("a", 1);
@@ -415,7 +416,7 @@ public class DAGTest {
      *     e
      */
     @Test
-    public void deleteTest5() {
+    void deleteTest5() {
 
         final DAG dag = new DAG();
         final Process a = new Process("a", 1);

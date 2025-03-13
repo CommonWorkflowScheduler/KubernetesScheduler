@@ -2,15 +2,23 @@ package cws.k8s.scheduler.model;
 
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.Process;
+import cws.k8s.scheduler.model.cluster.OutputFiles;
+import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
+import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
 import cws.k8s.scheduler.util.Batch;
+import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 @Slf4j
 public class Task {
@@ -29,6 +37,14 @@ public class Task {
     private final Process process;
 
     @Getter
+    @Setter
+    private List<LocationWrapper> inputFiles;
+
+    @Getter
+    @Setter
+    private List< TaskInputFileLocationWrapper > copiedFiles;
+
+    @Getter
     private PodWithAge pod = null;
 
     @Getter
@@ -40,6 +56,10 @@ public class Task {
     private Batch batch;
 
     @Getter
+    @Setter
+    private CurrentlyCopyingOnNode copyingToNode;
+
+    @Getter
     private final TraceRecord traceRecord = new TraceRecord();
 
     private long timeAddedToQueue;
@@ -49,7 +69,6 @@ public class Task {
 
     private final Requirements oldRequirements;
 
-    @Getter
     private Requirements planedRequirements;
 
     @Getter
@@ -58,11 +77,39 @@ public class Task {
     @Getter
     private long cpuPredictionVersion = -1;
 
+    private final AtomicInteger copyTaskId = new AtomicInteger(0);
+
+    private final HierarchyWrapper hierarchyWrapper;
+
+    @Getter
+    @Setter
+    private OutputFiles outputFiles;
+
     public Task( TaskConfig config, DAG dag ) {
+        this( config, dag, null );
+    }
+
+    public Task( TaskConfig config, DAG dag, HierarchyWrapper hierarchyWrapper ) {
         this.config = config;
         oldRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
         planedRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
         this.process = dag.getByProcess( config.getTask() );
+        this.hierarchyWrapper = hierarchyWrapper;
+    }
+
+    /**
+     * Constructor for inheritance
+     */
+    protected Task( TaskConfig config, Process process ){
+        this.config = config;
+        oldRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
+        planedRequirements = new Requirements( BigDecimal.valueOf(config.getCpus()), BigDecimal.valueOf(config.getMemoryInBytes()) );
+        this.process = process;
+        this.hierarchyWrapper = null;
+    }
+
+    public int getCurrentCopyTaskId() {
+        return copyTaskId.getAndIncrement();
     }
 
     public synchronized void setTaskMetrics( TaskMetrics taskMetrics ){
@@ -104,8 +151,16 @@ public class Task {
         traceRecord.setSchedulerTimeInQueue( System.currentTimeMillis() - timeAddedToQueue );
     }
 
+    public Set<String> getOutLabel(){
+        return config.getOutLabel();
+    }
+
     private long inputSize = -1;
 
+    /**
+     * Calculates the size of all input files in bytes in the shared filesystem.
+     * @return The sum of all input files in bytes.
+     */
     public long getInputSize(){
         if ( config.getInputSize() != null ) {
             return config.getInputSize();
@@ -113,10 +168,18 @@ public class Task {
         synchronized ( this ) {
             if ( inputSize == -1 ) {
                 //calculate
-                inputSize = getConfig()
+                Stream<InputParam<FileHolder>> inputParamStream = getConfig()
                         .getInputs()
                         .fileInputs
-                        .parallelStream()
+                        .parallelStream();
+                //If LA Scheduling, filter out files that are not in sharedFS
+                if ( hierarchyWrapper != null ) {
+                    inputParamStream = inputParamStream.filter( x -> {
+                        final Path path = Path.of( x.value.sourceObj );
+                        return !hierarchyWrapper.isInScope( path );
+                    } );
+                }
+                inputSize = inputParamStream
                         .mapToLong( input -> new File(input.value.sourceObj).length() )
                         .sum();
             }
@@ -130,8 +193,13 @@ public class Task {
         return "Task{" +
                 "state=" + state +
                 ", pod=" + (pod == null ? "--" : pod.getMetadata().getName()) +
+                ", node='" + (node != null ? node.getNodeLocation().getIdentifier() : "--") + '\'' +
                 ", workDir='" + getWorkingDir() + '\'' +
                 '}';
+    }
+
+    public Requirements getPlanedRequirements() {
+        return planedRequirements.clone();
     }
 
     public long getNewMemoryRequest(){

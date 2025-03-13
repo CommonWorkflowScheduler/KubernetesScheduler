@@ -19,10 +19,6 @@ public class Process extends Vertex {
         return successfullyFinished.get();
     }
 
-    public int getFailed() {
-        return failed.get();
-    }
-
     public void incrementSuccessfullyFinished() {
         successfullyFinished.incrementAndGet();
     }

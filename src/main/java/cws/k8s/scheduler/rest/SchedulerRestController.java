@@ -1,14 +1,19 @@
 package cws.k8s.scheduler.rest;
 
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.InputEdge;
-import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
 import cws.k8s.scheduler.model.TaskMetrics;
-import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
-import cws.k8s.scheduler.scheduler.Scheduler;
+import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
+import cws.k8s.scheduler.rest.response.getfile.FileResponse;
+import cws.k8s.scheduler.scheduler.*;
+import cws.k8s.scheduler.scheduler.filealignment.GreedyAlignment;
+import cws.k8s.scheduler.scheduler.filealignment.costfunctions.CostFunction;
+import cws.k8s.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
+import cws.k8s.scheduler.scheduler.la2.ready2run.OptimalReadyToRunToNode;
 import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
@@ -18,6 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +35,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +98,8 @@ public class SchedulerRestController {
     @PostMapping("/v1/scheduler/{execution}")
     ResponseEntity<String> registerScheduler(
             @PathVariable String execution,
-            @RequestBody(required = false) SchedulerConfig config
+            @RequestBody(required = false) SchedulerConfig config,
+            HttpServletRequest request
     ) {
 
         final String namespace = config.namespace;
@@ -105,7 +113,37 @@ public class SchedulerRestController {
             return noSchedulerFor( execution );
         }
 
+        CostFunction costFunction = null;
+        if ( config.costFunction != null ) {
+            switch (config.costFunction.toLowerCase()) {
+                case "minsize": costFunction = new MinSizeCost(0); break;
+                default:
+                    log.warn( "Register execution: {} - No cost function for: {}", execution, config.costFunction );
+                    return new ResponseEntity<>( "No cost function: " + config.costFunction, HttpStatus.NOT_FOUND );
+            }
+        }
+
         switch ( strategy.toLowerCase() ){
+            case "wow" :
+                if ( !config.locationAware ) {
+                    log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
+                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
+                }
+                if ( costFunction == null ) {
+                    costFunction = new MinSizeCost( 0 );
+                }
+                scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
+                break;
+            case "wowgroup" :
+                if ( !config.locationAware ) {
+                    log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
+                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
+                }
+                if ( costFunction == null ) {
+                    costFunction = new MinSizeCost( 0 );
+                }
+                scheduler = new LocationAwareSchedulerGroups( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
+                break;
             default: {
                 final String[] split = strategy.split( "-" );
                 Prioritize prioritize;
@@ -124,6 +162,7 @@ public class SchedulerRestController {
                         case "max": prioritize = new MaxInputPrioritize(); break;
                         case "min": prioritize = new MinInputPrioritize(); break;
                         default:
+                            log.warn( "Register execution: {} - No Prioritize for: {}", execution, split[0] );
                             return new ResponseEntity<>( "No Prioritize for: " + split[0], HttpStatus.NOT_FOUND );
                     }
                     if ( split.length == 2 ) {
@@ -132,6 +171,7 @@ public class SchedulerRestController {
                             case "roundrobin": case "rr": assign = new RoundRobinAssign(); break;
                             case "fair": case "f": assign = new FairAssign(); break;
                             default:
+                                log.warn( "Register execution: {} - No Assign for: {}", execution, split[1] );
                                 return new ResponseEntity<>( "No Assign for: " + split[1], HttpStatus.NOT_FOUND );
                         }
                     } else {
@@ -139,9 +179,13 @@ public class SchedulerRestController {
                     }
                     scheduler = new PrioritizeAssignScheduler( execution, client, namespace, config, prioritize, assign );
                 } else {
+                    log.warn( "Register execution: {} - No scheduler for strategy: {}", execution, strategy );
                     return new ResponseEntity<>( "No scheduler for strategy: " + strategy, HttpStatus.NOT_FOUND );
                 }
             }
+        }
+        if ( scheduler instanceof SchedulerWithDaemonSet ) {
+            ((SchedulerWithDaemonSet) scheduler).setWorkflowEngineNode( request.getRemoteAddr() );
         }
 
         schedulerHolder.put( execution, scheduler );
@@ -167,7 +211,7 @@ public class SchedulerRestController {
     @PostMapping("/v1/scheduler/{execution}/task/{id}")
     ResponseEntity<? extends Object> registerTask( @PathVariable String execution, @PathVariable int id, @RequestBody TaskConfig config ) {
 
-        log.trace( execution + " " + config.getTask() + " got: " + config );
+        log.info( execution + " " + config.getTask() + " got: " + config );
 
         final Scheduler scheduler = schedulerHolder.get( execution );
         if ( scheduler == null ) {
@@ -320,6 +364,98 @@ public class SchedulerRestController {
         scheduler.close();
         closedLastScheduler = System.currentTimeMillis();
         return new ResponseEntity<>( HttpStatus.OK );
+    }
+
+    @GetMapping("/v1/daemon/{execution}/{node}")
+    ResponseEntity<String> getDaemonName( @PathVariable String execution, @PathVariable String node ) {
+
+        log.info( "Asking for Daemon exec: {} node: {}", execution, node );
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
+            return noSchedulerFor( execution );
+        }
+
+        String daemon = ((SchedulerWithDaemonSet) scheduler).getDaemonIpOnNode( node );
+
+        if ( daemon == null ){
+            return new ResponseEntity<>( "No daemon for node found: " + node , HttpStatus.NOT_FOUND );
+        }
+
+        return new ResponseEntity<>( daemon, HttpStatus.OK );
+
+    }
+
+    @PostMapping("/v1/downloadtask/{execution}")
+    ResponseEntity<String> finishDownload( @PathVariable String execution, @RequestBody byte[] task ) {
+
+        String name = new String( task, StandardCharsets.UTF_8 );
+        if ( name.endsWith( "=" ) ) {
+            name = name.substring( 0, name.length() - 1 );
+        }
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
+            return noSchedulerFor( execution );
+        }
+        ((SchedulerWithDaemonSet) scheduler).taskHasFinishedCopyTask(  name );
+        return new ResponseEntity<>( HttpStatus.OK );
+
+    }
+
+    @GetMapping("/v1/file/{execution}")
+    ResponseEntity<? extends Object> getNodeForFile( @PathVariable String execution, @RequestParam String path ) {
+
+        log.info( "Get file location request: {} {}", execution, path );
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
+            return noSchedulerFor( execution );
+        }
+
+        FileResponse fileResponse;
+        try {
+            fileResponse = ((SchedulerWithDaemonSet) scheduler).nodeOfLastFileVersion( path );
+            log.info(fileResponse.toString());
+        } catch (NotARealFileException e) {
+            return new ResponseEntity<>( "Requested path is not a real file: " + path , HttpStatus.BAD_REQUEST );
+        }
+
+        if ( fileResponse == null ){
+            return new ResponseEntity<>( "No node for file found: " + path , HttpStatus.NOT_FOUND );
+        }
+
+        return new ResponseEntity<>( fileResponse, HttpStatus.OK );
+
+    }
+
+    @PostMapping("/v1/file/{execution}/location/{method}")
+    ResponseEntity<String> changeLocationForFile( @PathVariable String method, @PathVariable String execution, @RequestBody PathAttributes pa ) {
+        return changeLocationForFile( method, execution, null, pa );
+    }
+
+    @PostMapping("/v1/file/{execution}/location/{method}/{node}")
+    ResponseEntity<String> changeLocationForFile( @PathVariable String method, @PathVariable String execution, @PathVariable String node, @RequestBody PathAttributes pa ) {
+
+        log.info( "Change file location request: {} {} {}", method, execution, pa );
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( !(scheduler instanceof SchedulerWithDaemonSet) ) {
+            log.info( "No scheduler for: " + execution );
+            return noSchedulerFor( execution );
+        }
+
+        if ( !method.equals("add") && !method.equals("overwrite") ) {
+            log.info("Method not found: " + method);
+            return new ResponseEntity<>( "Method not found: " + method , HttpStatus.NOT_FOUND );
+        }
+
+        boolean overwrite = method.equals("overwrite");
+
+        ((SchedulerWithDaemonSet) scheduler).addFile( pa.getPath(), pa.getSize(), pa.getTimestamp(), pa.getLocationWrapperID(), overwrite, node );
+
+        return new ResponseEntity<>( HttpStatus.OK );
+
     }
 
     @GetMapping ("/health")

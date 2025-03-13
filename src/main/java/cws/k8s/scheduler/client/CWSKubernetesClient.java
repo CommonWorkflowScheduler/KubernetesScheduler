@@ -3,18 +3,14 @@ package cws.k8s.scheduler.client;
 import cws.k8s.scheduler.model.NodeWithAlloc;
 import cws.k8s.scheduler.model.PodWithAge;
 import cws.k8s.scheduler.model.Task;
+import cws.k8s.scheduler.util.MyExecListner;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
-import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.PodResource;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.dsl.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -24,7 +20,7 @@ public class CWSKubernetesClient {
 
     private final KubernetesClient client;
 
-    private final Map<String, NodeWithAlloc> nodeHolder = new HashMap<>();
+    private final Map<String, NodeWithAlloc> nodeHolder= new HashMap<>();
     private final List<Informable> informables = new LinkedList<>();
 
     public CWSKubernetesClient() {
@@ -35,6 +31,23 @@ public class CWSKubernetesClient {
         }
         this.pods().inAnyNamespace().watch( new PodWatcher( this ) );
         this.nodes().watch( new NodeWatcher( this ) );
+    }
+
+    public Pod getPodByIp( String ip ) {
+        if ( ip == null ) {
+            throw new IllegalArgumentException("IP cannot be null");
+        }
+        return this.pods()
+                .inAnyNamespace()
+                .list()
+                .getItems()
+                .parallelStream()
+                .filter( pod -> ip.equals( pod.getStatus().getPodIP() ) )
+                .findFirst()
+                .orElseGet( () -> {
+                    log.warn("No Pod found for IP: {}", ip);
+                    return null;
+                });
     }
 
     public NonNamespaceOperation<Node, NodeList, Resource<Node>> nodes() {
@@ -137,6 +150,49 @@ public class CWSKubernetesClient {
         return Quantity.getAmountInBytes(memory);
     }
 
+    private void forceDeletePod( Pod pod ) {
+        this.pods()
+                .inNamespace(pod.getMetadata().getNamespace())
+                .withName(pod.getMetadata().getName())
+                .withGracePeriod(0)
+                .withPropagationPolicy( DeletionPropagation.BACKGROUND )
+                .delete();
+    }
+
+    private void createPod( Pod pod ) {
+        this.pods()
+                .inNamespace(pod.getMetadata().getNamespace())
+                .resource( pod )
+                .create();
+    }
+
+    public void assignPodToNodeAndRemoveInit( PodWithAge pod, String node ) {
+        if ( pod.getSpec().getInitContainers().size() > 0 ) {
+            pod.getSpec().getInitContainers().remove( 0 );
+        }
+        pod.getMetadata().setResourceVersion( null );
+        pod.getMetadata().setManagedFields( null );
+        pod.getSpec().setNodeName( node );
+
+        forceDeletePod( pod );
+        createPod( pod );
+    }
+
+    public void execCommand( String podName, String namespace, String[] command, MyExecListner listener ){
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream error = new ByteArrayOutputStream();
+        final ExecWatch exec = this.pods()
+                .inNamespace( namespace )
+                .withName( podName )
+                .writingOutput( out )
+                .writingError( error )
+                .usingListener( listener )
+                .exec( command );
+        listener.setExec( exec );
+        listener.setError( error );
+        listener.setOut( out );
+    }
+
     static class NodeWatcher implements Watcher<Node>{
 
         private final CWSKubernetesClient kubernetesClient;
@@ -146,7 +202,7 @@ public class CWSKubernetesClient {
         }
 
         @Override
-        public void eventReceived(Action action, Node node) {
+        public void eventReceived( Watcher.Action action, Node node) {
             boolean change = false;
             NodeWithAlloc processedNode = null;
             switch (action) {
@@ -269,7 +325,7 @@ public class CWSKubernetesClient {
      * It will create a patch for the memory limits and request values and submit it
      * to the cluster.
      * Moreover, it updates the task with the new pod.
-     * 
+     *
      * @param t          the task to be patched
      * @return false if patching failed because of InPlacePodVerticalScaling
      */

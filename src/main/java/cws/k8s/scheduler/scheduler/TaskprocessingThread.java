@@ -15,6 +15,12 @@ public class TaskprocessingThread extends Thread {
     private final List<Task> unprocessedTasks;
     private final Function<List<Task>, Integer> function;
 
+    private boolean otherResourceChange = false;
+
+    public void otherResourceChange() {
+        otherResourceChange = true;
+    }
+
     @Override
     public void run() {
         int unscheduled = 0;
@@ -23,12 +29,13 @@ public class TaskprocessingThread extends Thread {
                 LinkedList<Task> tasks;
                 synchronized (unprocessedTasks) {
                     do {
-                        if (unscheduled == unprocessedTasks.size()) {
+                        if ( !otherResourceChange && unscheduled == unprocessedTasks.size()) {
                             unprocessedTasks.wait( 10000 );
                         }
                         if( Thread.interrupted() ) {
                             return;
                         }
+                        otherResourceChange = false;
                     } while ( unprocessedTasks.isEmpty() );
                     tasks = new LinkedList<>(unprocessedTasks);
                 }

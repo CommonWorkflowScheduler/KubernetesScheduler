@@ -16,5 +16,6 @@ public class TaskState {
         this.state = State.ERROR;
         this.error = error;
     }
+
 }
 

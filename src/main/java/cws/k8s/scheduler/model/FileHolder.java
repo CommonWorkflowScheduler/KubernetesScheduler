@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 @ToString( exclude = {"stageName", "storePath"})
-@NoArgsConstructor(access = AccessLevel.NONE)
+@NoArgsConstructor(access = AccessLevel.NONE, force = true)
 @RequiredArgsConstructor
 public class FileHolder {
 

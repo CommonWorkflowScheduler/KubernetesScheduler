@@ -3,58 +3,56 @@ package cws.k8s.scheduler.prediction.predictor;
 import cws.k8s.scheduler.prediction.Predictor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class PolynomialPredictorTest {
+class PolynomialPredictorTest {
 
     @Test
-    public void testOneTask() {
+    void testOneTask() {
         Predictor lp = getPolyPredictor(2);
         lp.addTask( new TestTask( 1d, 1d ) );
-        assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
+        Assertions.assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
     }
 
     @Test
-    public void testTwoTasks() {
+    void testTwoTasks() {
         Predictor lp = getPolyPredictor(2);
         lp.addTask( new TestTask( 1d, 1d ) );
         lp.addTask( new TestTask( 2d, 2d ) );
-        assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
+        Assertions.assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
     }
 
     @Test
-    public void testThreeTasksLinear() {
+    void testThreeTasksLinear() {
         Predictor lp = getPolyPredictor(2);
         lp.addTask( new TestTask( 1d, 1d ) );
         lp.addTask( new TestTask( 2d, 2d ) );
         lp.addTask( new TestTask( 3d, 3d ) );
-        assertEquals( 4d, lp.queryPrediction( new TestTask( 4d, 4d ) ), 0.0001 );
-        assertEquals( 0d, lp.queryPrediction( new TestTask( 0d, 0d ) ), 0.0001 );
+        Assertions.assertEquals( 4d, lp.queryPrediction( new TestTask( 4d, 4d ) ), 0.0001 );
+        Assertions.assertEquals( 0d, lp.queryPrediction( new TestTask( 0d, 0d ) ), 0.0001 );
     }
 
     @Test
-    public void testThreeTasksPoly() {
+    void testThreeTasksPoly() {
         Predictor lp = getPolyPredictor(2);
         lp.addTask( new TestTask( 1d, 1d ) );
         lp.addTask( new TestTask( 2d, 2d ) );
         lp.addTask( new TestTask( 3d, 9d ) );
-        assertEquals( 1d, lp.queryPrediction( new TestTask( 1d, 0d ) ), 0.0001 );
-        assertEquals( 2d, lp.queryPrediction( new TestTask( 2d, 0d ) ), 0.0001 );
-        assertEquals( 9d, lp.queryPrediction( new TestTask( 3d, 0d ) ), 0.0001 );
+        Assertions.assertEquals( 1d, lp.queryPrediction( new TestTask( 1d, 0d ) ), 0.0001 );
+        Assertions.assertEquals( 2d, lp.queryPrediction( new TestTask( 2d, 0d ) ), 0.0001 );
+        Assertions.assertEquals( 9d, lp.queryPrediction( new TestTask( 3d, 0d ) ), 0.0001 );
     }
 
     @Test
-    public void noData() {
+    void noData() {
         Predictor lp = getPolyPredictor(2);
-        assertNull(lp.queryPrediction( new TestTask( 4d, 4d ) ));
+        Assertions.assertNull( lp.queryPrediction( new TestTask( 4d, 4d ) ) );
     }
 
     @Test
-    public void measure(){
+    void measure(){
         int iterations = 1000;
         Predictor lp1 = getPolyPredictor(2);
         TestTask[] tasks = new TestTask[iterations];
@@ -69,7 +67,7 @@ public class PolynomialPredictorTest {
     }
 
     @Test
-    public void compareLinear(){
+    void compareLinear(){
         int iterations = 100;
         Predictor lp = getPolyPredictor(2);
         TestTask[] tasks = new TestTask[iterations];
@@ -83,12 +81,12 @@ public class PolynomialPredictorTest {
             if ( prediction1 == null ) {
                 continue;
             }
-            assertEquals( task.y, lp.queryPrediction( task ), 1 );
+            Assertions.assertEquals( task.y, lp.queryPrediction( task ), 1 );
         }
     }
 
     @Test
-    public void comparePoly(){
+    void comparePoly(){
         int iterations = 1000;
         Predictor lp = getPolyPredictor(2);
         TestTask[] tasks = new TestTask[iterations];
@@ -103,11 +101,11 @@ public class PolynomialPredictorTest {
             if ( prediction1 == null ) {
                 continue;
             }
-            assertEquals( task.y, lp.queryPrediction( task ), 1 );
+            Assertions.assertEquals( task.y, lp.queryPrediction( task ), 1 );
         }
         for ( int x = 0; x < 1000; x++ ) {
             final TestTask task = new TestTask( x, 0d );
-            assertEquals( getY( x ), lp.queryPrediction( task ), 1 );
+            Assertions.assertEquals( getY( x ), lp.queryPrediction( task ), 1 );
         }
     }
 

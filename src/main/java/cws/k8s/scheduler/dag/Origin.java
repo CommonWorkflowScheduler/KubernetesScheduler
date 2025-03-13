@@ -19,7 +19,7 @@ public class Origin extends NotProcess {
 
     @Override
     public void addInbound(Edge e) {
-        throw new IllegalStateException("Cannot add an inbound to an Origin");
+        throw new IllegalStateException("Cannot add an Edge(uid: " + e.getUid() + "; "  + e.getFrom().getUid() + " -> " + e.getTo().getUid() + ") inbound to an Origin (uid: " + getUid() + ")");
     }
 
     public Set<Process> getAncestors() {

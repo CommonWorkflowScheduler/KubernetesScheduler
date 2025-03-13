@@ -1,4 +1,4 @@
-FROM maven:3-openjdk-17-slim AS build
+FROM maven:3-openjdk-18-slim AS build
 WORKDIR /build
 COPY pom.xml pom.xml
 RUN mkdir data/ && mvn dependency:go-offline -B -Dmaven.repo.local=/mvn/.m2nrepo/repository

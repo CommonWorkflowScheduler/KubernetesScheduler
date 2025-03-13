@@ -27,4 +27,5 @@ public class TaskInput {
                 ", fileInputs=#" + (fileInputs != null ?  fileInputs.size() : 0) +
                 '}';
     }
+
 }

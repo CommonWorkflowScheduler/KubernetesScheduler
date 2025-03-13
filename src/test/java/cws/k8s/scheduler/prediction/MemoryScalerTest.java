@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.prediction.predictor.TestTask;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
