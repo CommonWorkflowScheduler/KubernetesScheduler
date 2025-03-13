@@ -162,6 +162,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <finalName>cws</finalName>
                             <minimizeJar>true</minimizeJar>
                             <transformers>
                                 <transformer

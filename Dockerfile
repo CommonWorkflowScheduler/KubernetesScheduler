@@ -17,6 +17,6 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/cws-k8s-scheduler-*-SNAPSHOT.jar app.jar
+COPY --from=builder /app/target/cws-k8s-scheduler-*.jar cws.jar
 
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "cws.jar"]
