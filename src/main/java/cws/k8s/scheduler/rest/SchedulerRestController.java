@@ -11,22 +11,16 @@ import cws.k8s.scheduler.scheduler.*;
 import cws.k8s.scheduler.scheduler.filealignment.GreedyAlignment;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
-import cws.k8s.scheduler.dag.DAG;
-import cws.k8s.scheduler.dag.InputEdge;
-import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.model.TaskMetrics;
 import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
 import cws.k8s.scheduler.scheduler.Scheduler;
 import cws.k8s.scheduler.scheduler.prioritize.*;
-import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
-import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.scheduler.la2.ready2run.OptimalReadyToRunToNode;
 import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RoundRobinAssign;
-import cws.k8s.scheduler.scheduler.prioritize.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -132,7 +126,7 @@ public class SchedulerRestController {
         }
 
         switch ( strategy.toLowerCase() ){
-            case "lav2" :
+            case "wow" :
                 if ( !config.locationAware ) {
                     log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
                     return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
@@ -142,7 +136,7 @@ public class SchedulerRestController {
                 }
                 scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
                 break;
-            case "lagroup" :
+            case "wowgroup" :
                 if ( !config.locationAware ) {
                     log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
                     return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
