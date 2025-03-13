@@ -189,6 +189,7 @@ The following strategies are available:
 | random              | Randomly prioritize tasks.                                                                                                                               |
 | max                 | Prioritize tasks with larger input size.                                                                                                                 |
 | min                 | Prioritize tasks with smaller input size.                                                                                                                |
+| wow                 | WOW scheduler for data location awareness. This is scheduling + node assignment. Details are provided in our paper [tbd](tbd).                           |
 
 | Node Assignment Strategy | Behaviour                                                                               |
 |--------------------------|-----------------------------------------------------------------------------------------|
