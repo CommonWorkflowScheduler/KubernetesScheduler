@@ -1,14 +1,13 @@
 package cws.k8s.scheduler.scheduler;
 
+import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.client.CannotPatchException;
 import cws.k8s.scheduler.client.Informable;
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.model.*;
-import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.prediction.MemoryScaler;
 import cws.k8s.scheduler.prediction.TaskScaler;
 import cws.k8s.scheduler.util.Batch;
-import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;

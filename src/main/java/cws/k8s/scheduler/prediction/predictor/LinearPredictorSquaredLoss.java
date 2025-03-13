@@ -1,7 +1,6 @@
 package cws.k8s.scheduler.prediction.predictor;
 
 import cws.k8s.scheduler.model.Task;
-import cws.k8s.scheduler.prediction.Predictor;
 import cws.k8s.scheduler.prediction.extractor.VariableExtractor;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.math3.stat.regression.SimpleRegression;

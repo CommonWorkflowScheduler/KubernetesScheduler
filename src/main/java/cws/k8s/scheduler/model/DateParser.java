@@ -3,7 +3,6 @@ package cws.k8s.scheduler.model;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

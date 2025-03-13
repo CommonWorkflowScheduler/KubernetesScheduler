@@ -1,6 +1,5 @@
 package cws.k8s.scheduler.scheduler.copystrategy;
 
-import cws.k8s.scheduler.model.Task;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;

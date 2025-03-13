@@ -1,10 +1,8 @@
 package cws.k8s.scheduler.prediction.predictor;
 
 import cws.k8s.scheduler.model.Task;
-import cws.k8s.scheduler.prediction.Predictor;
 import cws.k8s.scheduler.prediction.extractor.VariableExtractor;
 import cws.k8s.scheduler.prediction.predictor.loss.UnequalLossFunction;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.MaxEval;

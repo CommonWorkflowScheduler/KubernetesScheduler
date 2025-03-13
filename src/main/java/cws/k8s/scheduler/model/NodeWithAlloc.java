@@ -1,7 +1,7 @@
 package cws.k8s.scheduler.model;
 
-import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.client.CWSKubernetesClient;
+import cws.k8s.scheduler.model.location.NodeLocation;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;

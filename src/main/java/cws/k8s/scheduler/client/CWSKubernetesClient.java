@@ -5,16 +5,9 @@ import cws.k8s.scheduler.model.PodWithAge;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.util.MyExecListner;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.fabric8.kubernetes.client.WatcherException;
-import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.PodResource;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.dsl.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayOutputStream;

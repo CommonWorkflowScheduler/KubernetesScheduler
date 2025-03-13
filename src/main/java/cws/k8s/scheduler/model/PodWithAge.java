@@ -1,7 +1,8 @@
 package cws.k8s.scheduler.model;
 
 import cws.k8s.scheduler.util.PodPhase;
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
 import lombok.Getter;
 import lombok.Setter;
 
