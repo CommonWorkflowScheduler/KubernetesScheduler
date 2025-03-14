@@ -13,8 +13,6 @@ import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
-import cws.k8s.scheduler.scheduler.copystrategy.CopyStrategy;
-import cws.k8s.scheduler.scheduler.copystrategy.FTPstrategy;
 import cws.k8s.scheduler.util.DaemonHolder;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
@@ -44,8 +42,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     final DaemonHolder daemonHolder = new DaemonHolder();
     @Getter
     private String workflowEngineNode = null;
-    @Getter
-    private final CopyStrategy copyStrategy;
     final HierarchyWrapper hierarchyWrapper;
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long, LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
@@ -63,14 +59,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         this.inputFileCollector = new InputFileCollector( hierarchyWrapper );
         if ( config.copyStrategy == null ) {
             throw new IllegalArgumentException( "Copy strategy is null" );
-        }
-        switch ( config.copyStrategy ){
-            case "ftp":
-            case "copy":
-                copyStrategy = new FTPstrategy();
-                break;
-            default:
-                throw new IllegalArgumentException( "Copy strategy is unknown " + config.copyStrategy );
         }
         this.localWorkDir = config.workDir;
     }
