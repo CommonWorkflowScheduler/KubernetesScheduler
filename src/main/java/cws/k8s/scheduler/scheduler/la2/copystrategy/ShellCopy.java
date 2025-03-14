@@ -37,7 +37,7 @@ public class ShellCopy implements CopyRunner {
         } catch ( IOException e ) {
             throw new RuntimeException( e );
         }
-        command[2] += "/code/ftp.py false \"" + copyTaskIdentifier + "\" \"" + filename + "\"";
+        command[2] += "/app/ftp.py false \"" + copyTaskIdentifier + "\" \"" + filename + "\"";
         String name = nodeTaskFilesAlignment.task.getConfig().getName() + "-copy-" + nodeTaskFilesAlignment.node.getName();
         log.info( "Starting {} to node {}", nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName() );
         logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "start" );
