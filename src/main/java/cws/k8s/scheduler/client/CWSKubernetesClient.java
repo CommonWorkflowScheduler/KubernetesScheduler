@@ -362,7 +362,15 @@ public class CWSKubernetesClient {
 
             t.setPod( new PodWithAge( modifiedPod ) );
 
-            podResource.patch(modifiedPod);
+            podResource
+                    .subresource( "resize" )
+                    .patch(modifiedPod);
+
+            podResource.edit(p -> new PodBuilder(p)
+                    .editMetadata()
+                    .addToLabels("commonworkflowscheduler/memoryscaled", "true")
+                    .endMetadata()
+                    .build());
 
         } catch ( KubernetesClientException e ) {
             // this typically happens when the feature gate InPlacePodVerticalScaling was not enabled
