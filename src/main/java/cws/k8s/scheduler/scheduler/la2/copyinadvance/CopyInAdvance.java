@@ -15,7 +15,7 @@ import java.util.Map;
 public abstract class CopyInAdvance extends CreateCopyTasks {
 
     public CopyInAdvance( CurrentlyCopying currentlyCopying, InputAlignment inputAlignment, int copySameTaskInParallel ) {
-        super( currentlyCopying, inputAlignment, copySameTaskInParallel );
+        super( currentlyCopying, inputAlignment, copySameTaskInParallel, 3 );
     }
 
     public abstract void createAlignmentForTasksWithEnoughCapacity(

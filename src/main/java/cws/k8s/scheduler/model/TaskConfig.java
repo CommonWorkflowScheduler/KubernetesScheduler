@@ -5,10 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 @ToString
@@ -21,7 +18,6 @@ public class TaskConfig {
     private final String runName;
     private final float cpus;
     private final long memoryInBytes;
-    private final Set<String> outLabel;
     private final String workDir;
     private final int repetition;
     private final Long inputSize;
@@ -42,7 +38,6 @@ public class TaskConfig {
         this.cpus = 0;
         this.memoryInBytes = 0;
         this.workDir = null;
-        this.outLabel = null;
         this.repetition = 0;
         this.inputSize = null;
     }
@@ -56,7 +51,6 @@ public class TaskConfig {
         this.cpus = 0;
         this.memoryInBytes = 0;
         this.workDir = workDir;
-        this.outLabel = null;
         this.repetition = 0;
         this.inputSize = null;
     }

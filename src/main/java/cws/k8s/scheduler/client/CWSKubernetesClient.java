@@ -166,18 +166,6 @@ public class CWSKubernetesClient {
                 .create();
     }
 
-    public void assignPodToNodeAndRemoveInit( PodWithAge pod, String node ) {
-        if ( pod.getSpec().getInitContainers().size() > 0 ) {
-            pod.getSpec().getInitContainers().remove( 0 );
-        }
-        pod.getMetadata().setResourceVersion( null );
-        pod.getMetadata().setManagedFields( null );
-        pod.getSpec().setNodeName( node );
-
-        forceDeletePod( pod );
-        createPod( pod );
-    }
-
     public void execCommand( String podName, String namespace, String[] command, MyExecListner listener ){
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream error = new ByteArrayOutputStream();

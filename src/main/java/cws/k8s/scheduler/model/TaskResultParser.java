@@ -83,7 +83,7 @@ public class TaskResultParser {
             final boolean onlyUpdated,
             final Task finishedTask,
             final String outputRootDir,
-            final long initailDate
+            final long initialDate
             ){
         final Set<OutputFile> newOrUpdated = new HashSet<>();
         out.skip( 1 )
@@ -102,7 +102,7 @@ public class TaskResultParser {
                     long modificationDateNano = Long.parseLong( modificationDate );
                     if ( ( !inputdata.contains(lockupPath) && !onlyUpdated )
                             ||
-                            modificationDateNano > initailDate )
+                            modificationDateNano > initialDate )
                     {
                         final LocationWrapper locationWrapper = new LocationWrapper(
                                 location,

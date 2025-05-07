@@ -7,6 +7,7 @@ import cws.k8s.scheduler.scheduler.la2.TaskStatComparator;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 public class TaskStats {
 
@@ -22,6 +23,10 @@ public class TaskStats {
 
     public Collection<TaskStat> getTaskStats() {
         return this.taskStats.values();
+    }
+
+    public void filter( Predicate<TaskStat> filter ) {
+        taskStats.entrySet().removeIf( entry -> !filter.test( entry.getValue() ) );
     }
 
     public void setComparator( TaskStatComparator comparator ) {

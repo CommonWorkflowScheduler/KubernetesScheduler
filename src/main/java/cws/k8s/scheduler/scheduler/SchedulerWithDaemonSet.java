@@ -2,7 +2,6 @@ package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.model.*;
-import cws.k8s.scheduler.model.cluster.OutputFiles;
 import cws.k8s.scheduler.model.location.LocationType;
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.model.location.hierachy.*;
@@ -14,8 +13,6 @@ import cws.k8s.scheduler.model.taskinputs.TaskInputs;
 import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.util.DaemonHolder;
-import cws.k8s.scheduler.util.NodeTaskAlignment;
-import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
@@ -90,16 +87,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     }
 
     @Override
-    void assignPodToNode( PodWithAge pod, NodeTaskAlignment alignment ) {
-        if ( !pod.getSpec().getInitContainers().isEmpty() && ((NodeTaskFilesAlignment) alignment).isRemoveInit() ) {
-            log.info( "Removing init container from pod {}", pod.getMetadata().getName() );
-            client.assignPodToNodeAndRemoveInit( pod, alignment.node.getName() );
-        } else {
-            super.assignPodToNode( pod, alignment );
-        }
-    }
-
-    @Override
     void undoTaskScheduling( Task task ){
         if ( task.getInputFiles() != null ) {
             freeLocations( task.getInputFiles() );
@@ -133,22 +120,16 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                 !finishedTask.wasSuccessfullyExecuted(),
                                 finishedTask
                         );
-                        final Set<PathLocationWrapperPair> outputFiles = new HashSet<>();
                         for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
-                            if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
+                            if( newAndUpdatedFile instanceof PathLocationWrapperPair pathLocationWrapperPair ) {
                                 hierarchyWrapper.addFile(
                                         newAndUpdatedFile.getPath(),
-                                        ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
+                                        pathLocationWrapperPair.getLocationWrapper()
                                 );
-                                outputFiles.add( (PathLocationWrapperPair) newAndUpdatedFile );
-                            } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
-                                hierarchyWrapper.addSymlink(
-                                        newAndUpdatedFile.getPath(),
-                                        ((SymlinkOutput) newAndUpdatedFile).getDst()
-                                );
+                            } else if ( newAndUpdatedFile instanceof SymlinkOutput symlinkOutput ){
+                                hierarchyWrapper.addSymlink( newAndUpdatedFile.getPath(), symlinkOutput.getDst() );
                             }
                         }
-                        finishedTask.setOutputFiles( new OutputFiles( outputFiles ) );
                     }
                 }
             } catch ( Exception e ){
