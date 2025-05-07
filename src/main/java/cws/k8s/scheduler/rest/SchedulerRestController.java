@@ -7,6 +7,7 @@ import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
 import cws.k8s.scheduler.model.TaskMetrics;
+import cws.k8s.scheduler.publishDir.PublishItem;
 import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.scheduler.*;
@@ -445,6 +446,45 @@ public class SchedulerRestController {
         ((SchedulerWithDaemonSet) scheduler).addFile( pa.getPath(), pa.getSize(), pa.getTimestamp(), pa.getLocationWrapperID(), overwrite, node );
 
         return new ResponseEntity<>( HttpStatus.OK );
+
+    }
+
+    @Operation(summary = "Publish a file to a destination")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully assigned PublishItem",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
+    @PutMapping("/v1/file/{execution}/publish")
+    ResponseEntity<String> publishData( @PathVariable String execution, @RequestBody PublishItem publishItem ) {
+
+        log.info( "Publish item: {}", publishItem );
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+        scheduler.addPublishItem( publishItem );
+        return new ResponseEntity<>( HttpStatus.OK );
+
+    }
+
+    @Operation(summary = "Request open publish items")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Scheduler found",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content) })
+    @GetMapping("/v1/file/{execution}/publish")
+    ResponseEntity<?> getUnpublishedData( @PathVariable String execution ) {
+
+        log.info( "Request unpublished data" );
+
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+        return new ResponseEntity<>( scheduler.getUnpublishedItems(), HttpStatus.OK );
 
     }
 
