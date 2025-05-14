@@ -169,8 +169,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         LinkedList<SymlinkInput> symlinks = new LinkedList<>();
         Path currentPath = Paths.get(path);
         HierarchyFile currentFile = hierarchyWrapper.getFile( currentPath );
-        while ( currentFile instanceof LinkHierarchyFile){
-            final LinkHierarchyFile linkFile = (LinkHierarchyFile) currentFile;
+        while ( currentFile instanceof LinkHierarchyFile linkFile ){
             symlinks.add( new SymlinkInput( currentPath, linkFile.getDst() ) );
             currentPath = linkFile.getDst();
             currentFile = hierarchyWrapper.getFile( currentPath );
@@ -180,11 +179,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         if ( currentFile == null ) {
             return new FileResponse( currentPath.toString(), symlinks );
         }
-        if ( ! (currentFile instanceof RealHierarchyFile) ){
+        if ( ! (currentFile instanceof RealHierarchyFile file) ){
             log.info( "File was: {}", currentFile );
             throw new NotARealFileException();
         }
-        final RealHierarchyFile file = (RealHierarchyFile) currentFile;
         final LocationWrapper lastUpdate = file.getLastUpdate(LocationType.NODE);
         if( lastUpdate == null ) {
             return null;

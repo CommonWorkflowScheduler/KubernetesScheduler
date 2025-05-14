@@ -14,7 +14,7 @@ class RequirementsTest {
     @Test
     void ZERO() {
         final Requirements zero = ImmutableRequirements.ZERO;
-        assertEquals( zero, new Requirements( BigDecimal.ZERO, BigDecimal.ZERO ) );
+        assertEquals( new Requirements( BigDecimal.ZERO, BigDecimal.ZERO ), zero );
         assertEquals( BigDecimal.ZERO, zero.getCpu() );
         assertEquals( BigDecimal.ZERO, zero.getRam() );
     }
@@ -210,7 +210,7 @@ class RequirementsTest {
         assertEquals( a, a );
         assertEquals( b, b );
         assertNotEquals( null, a );
-        assertNotEquals( a, new Object() );
+        assertNotEquals( new Object(), a );
         assertNotEquals( a, new Requirements( BigDecimal.valueOf( 5 ), BigDecimal.valueOf( 7 ) ) );
         assertNotEquals( a, new Requirements( BigDecimal.valueOf( 6 ), BigDecimal.valueOf( 6 ) ) );
         assertNotSame( a, b );

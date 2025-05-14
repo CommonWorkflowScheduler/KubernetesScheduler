@@ -21,13 +21,12 @@ public class SymlinkOutput extends OutputFile {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof SymlinkOutput)) {
+        if (!(o instanceof SymlinkOutput that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-        SymlinkOutput that = (SymlinkOutput) o;
         return Objects.equals(dst, that.dst);
     }
 

@@ -71,7 +71,7 @@ public class TaskResultParser {
                     if ( data[ 3 ].equals("directory") ) {
                        return;
                     }
-                    String path = data[ REAL_PATH ].equals("") ? data[ VIRTUAL_PATH ]  : data[ REAL_PATH ];
+                    String path = data[ REAL_PATH ].isEmpty() ? data[ VIRTUAL_PATH ]  : data[ REAL_PATH ];
                     inputdata.add( path );
                 });
     }
@@ -92,7 +92,7 @@ public class TaskResultParser {
                     if( data[ FILE_EXISTS ].equals("0") && data.length != 8 ) {
                         return;
                     }
-                    boolean isSymlink = !data[ REAL_PATH ].equals("");
+                    boolean isSymlink = !data[ REAL_PATH ].isEmpty();
                     String path = isSymlink ? data[ REAL_PATH ] : data[ VIRTUAL_PATH ];
                     String modificationDate = data[ MODIFICATION_DATE ];
                     if ( "directory".equals( data[ FILE_TYPE ] ) ) {

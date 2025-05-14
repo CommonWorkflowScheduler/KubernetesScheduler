@@ -117,7 +117,7 @@ public class OptimalReadyToRunToNode implements ReadyToRunToNode {
 
     @Getter
     @RequiredArgsConstructor
-    private class TaskNodeBoolVar {
+    private static class TaskNodeBoolVar {
         private final TaskInputsNodes taskInputsNodes;
         private final NodeWithAlloc node;
         private final BoolVar boolVar;

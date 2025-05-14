@@ -17,10 +17,9 @@ public class OutputFile {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof OutputFile)) {
+        if (!(o instanceof OutputFile that)) {
             return false;
         }
-        OutputFile that = (OutputFile) o;
         return Objects.equals(getPath(), that.getPath());
     }
 

@@ -31,9 +31,9 @@ public class CopyInAdvanceNodeWithMostDataIntelligent extends CopyInAdvance {
      */
     private static final int TASKS_READY_FACTOR = 2;
 
-    CalculateScore calculateScore;
+    final CalculateScore calculateScore;
 
-    HierarchyWrapper hierarchyWrapper;
+    final HierarchyWrapper hierarchyWrapper;
 
     public CopyInAdvanceNodeWithMostDataIntelligent(
             CurrentlyCopying currentlyCopying,

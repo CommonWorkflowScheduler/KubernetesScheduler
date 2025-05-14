@@ -41,14 +41,12 @@ public class PodWithAge extends Pod {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PodWithAge)) {
+        if (!(o instanceof PodWithAge that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-
-        PodWithAge that = (PodWithAge) o;
 
         return getName() != null ? getName().equals(that.getName()) : that.getName() == null;
     }

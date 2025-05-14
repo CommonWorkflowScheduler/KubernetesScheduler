@@ -5,12 +5,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serial;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @RequiredArgsConstructor( access = AccessLevel.PRIVATE )
 public class NodeLocation extends Location {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final ConcurrentMap< String, NodeLocation > locationHolder = new ConcurrentHashMap<>();
@@ -49,14 +51,12 @@ public class NodeLocation extends Location {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof NodeLocation)) {
+        if (!(o instanceof NodeLocation that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-
-        NodeLocation that = (NodeLocation) o;
 
         return getIdentifier() != null ? getIdentifier().equals(that.getIdentifier()) : that.getIdentifier() == null;
     }

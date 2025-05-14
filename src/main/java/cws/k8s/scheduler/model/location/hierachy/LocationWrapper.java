@@ -93,11 +93,9 @@ public class LocationWrapper {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof LocationWrapper)) {
+        if (!(o instanceof LocationWrapper that)) {
             return false;
         }
-
-        LocationWrapper that = (LocationWrapper) o;
 
         synchronized ( this ) {
             if (getTimestamp() != that.getTimestamp()) {

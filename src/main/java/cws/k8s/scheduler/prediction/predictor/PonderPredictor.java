@@ -27,7 +27,7 @@ public class PonderPredictor extends WeightedVarianceOffset implements Predictor
     double maxX = 0;
     double minX = Double.MAX_VALUE;
     long n = 0;
-    private long fixedOffset = 1024L * 1024L * 128L;
+    private final long fixedOffset = 1024L * 1024L * 128L;
 
     private final Task[] firstTasks;
 

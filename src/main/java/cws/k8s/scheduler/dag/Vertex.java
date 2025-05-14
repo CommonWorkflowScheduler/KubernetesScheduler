@@ -109,9 +109,7 @@ public abstract class Vertex {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Vertex)) return false;
-
-        Vertex vertex = (Vertex) o;
+        if (!(o instanceof Vertex vertex)) return false;
 
         return getUid() == vertex.getUid();
     }

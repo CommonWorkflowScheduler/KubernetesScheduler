@@ -43,7 +43,7 @@ public class DaemonHolder {
     @Getter
     @ToString
     @AllArgsConstructor
-    private class DaemonData {
+    private static class DaemonData {
         private String name;
         private String ip;
     }
