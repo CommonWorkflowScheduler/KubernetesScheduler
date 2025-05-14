@@ -192,33 +192,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         return new FileResponse( currentPath.toString(), node, getDaemonIpOnNode(node), node.equals(workflowEngineNode), symlinks, lastUpdate.getId() );
     }
 
-    MatchingFilesAndNodes getMatchingFilesAndNodes( final Task task, final Map<NodeWithAlloc, Requirements> availableByNode ){
-        final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask(availableByNode, task);
-        if( matchingNodesForTask.isEmpty() ) {
-            log.trace( "No node with enough resources for {}", task.getConfig().getRunName() );
-            return null;
-        }
-
-        final TaskInputs inputsOfTask;
-        try {
-            inputsOfTask = getInputsOfTask(task);
-        } catch (NoAlignmentFoundException e) {
-            return null;
-        }
-        if( inputsOfTask == null ) {
-            log.info( "No node where the pod can start, pod: {}", task.getConfig().getRunName() );
-            return null;
-        }
-
-        filterNotMatchingNodesForTask( matchingNodesForTask, inputsOfTask );
-        if( matchingNodesForTask.isEmpty() ) {
-            log.info( "No node which fulfills all requirements {}", task.getConfig().getRunName() );
-            return null;
-        }
-
-        return new MatchingFilesAndNodes( matchingNodesForTask, inputsOfTask );
-    }
-
     /**
      * Register a new local file
      */
@@ -233,38 +206,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         }
 
         hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
-    }
-
-    private void handleProblematicInit( Task task ){
-        String file = this.localWorkDir + "/sync/" + task.getConfig().getRunName();
-        try {
-            Map<String,TaskInputFileLocationWrapper> wrapperByPath = new HashMap<>();
-            task.getCopiedFiles().forEach( x -> wrapperByPath.put( x.getPath(), x ));
-            log.info( "Get daemon on node {}; daemons: {}", task.getNode().getNodeLocation().getIdentifier(), daemonHolder );
-            final InputStream inputStream = getConnection( getDaemonIpOnNode(task.getNode().getNodeLocation().getIdentifier())).retrieveFileStream(file);
-            if (inputStream == null) {
-                //Init has not even started
-                return;
-            }
-            Scanner scanner = new Scanner(inputStream);
-            Set<String> openedFiles = new HashSet<>();
-            while( scanner.hasNext() ){
-                String line = scanner.nextLine();
-                if ( line.startsWith( "S-" ) ){
-                    openedFiles.add( line.substring( 2 ) );
-                } else if ( line.startsWith( "F-" ) ){
-                    openedFiles.remove( line.substring( 2 ) );
-                    wrapperByPath.get( line.substring( 2 ) ).success();
-                    log.info("task {}, file: {} success", task.getConfig().getName(), line);
-                }
-            }
-            for ( String openedFile : openedFiles ) {
-                wrapperByPath.get( openedFile ).failure();
-                log.info("task {}, file: {} deactivated on node {}", task.getConfig().getName(), openedFile, wrapperByPath.get( openedFile ).getWrapper().getLocation());
-            }
-        } catch ( Exception e ){
-            log.error( "Can't handle failed init from pod " + task.getPod().getName(), e);
-        }
     }
 
     FTPClient getConnection( String daemon ){
@@ -289,29 +230,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 }
             }
         }
-    }
-
-    private void podWasInitialized( Pod pod ){
-        final Integer exitCode = pod.getStatus().getInitContainerStatuses().get(0).getState().getTerminated().getExitCode();
-        final Task task = changeStateOfTask(pod, exitCode == 0 ? State.PREPARED : State.INIT_WITH_ERRORS);
-        task.setPod( new PodWithAge( pod ) );
-        log.info( "Pod {}, Init Code: {}", pod.getMetadata().getName(), exitCode);
-        removeFromCopyingToNode( task, task.getNode().getNodeLocation(), task.getCopyingToNode() );
-        if( exitCode == 0 ){
-            task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
-        } else {
-            handleProblematicInit( task );
-            task.setInputFiles( null );
-        }
-        task.setCopiedFiles( null );
-        task.setCopyingToNode( null );
-    }
-
-    /**
-     * Remove all Nodes with a location contained in taskInputs.excludedNodes
-     */
-    void filterNotMatchingNodesForTask(Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
-        matchingNodes.removeIf( next -> !taskInputs.canRunOnLoc( next.getNodeLocation() ) );
     }
 
     public void taskHasFinishedCopyTask( String name ){
@@ -365,14 +283,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                         }
                     }
                 }
-            }
-        } else if ( this.getName().equals(pod.getSpec().getSchedulerName())
-                && action == Watcher.Action.MODIFIED
-                && getTaskByPod( pod ).getState().getState() == State.SCHEDULED )
-        {
-            final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
-            if ( ! initContainerStatuses.isEmpty() && initContainerStatuses.get(0).getState().getTerminated() != null ) {
-                podWasInitialized( pod );
             }
         }
     }
