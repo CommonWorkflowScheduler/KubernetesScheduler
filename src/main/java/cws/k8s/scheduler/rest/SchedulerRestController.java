@@ -470,6 +470,27 @@ public class SchedulerRestController {
         return new ResponseEntity<>( "Scheduler does not support publish items", HttpStatus.FORBIDDEN );
     }
 
+    @Operation(summary = "Publish all remaining files")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully triggered",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Scheduler does not support publish items",
+                    content = @Content) })
+    @PostMapping("/v1/file/{execution}/publish")
+    ResponseEntity<String> publishData( @PathVariable String execution ) {
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+        if ( scheduler instanceof SchedulerWithDaemonSet schedulerWithDaemonSet ) {
+            schedulerWithDaemonSet.publishAllRemaining();
+            return new ResponseEntity<>( HttpStatus.OK );
+        }
+        return new ResponseEntity<>( "Scheduler does not support publish items", HttpStatus.FORBIDDEN );
+    }
+
     @Operation(summary = "Request open publish items")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Scheduler found",

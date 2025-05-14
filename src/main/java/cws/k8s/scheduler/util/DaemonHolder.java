@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 public class DaemonHolder {
@@ -30,6 +31,17 @@ public class DaemonHolder {
     public String getDaemonName(String node) {
         final DaemonData daemonData = daemonByNode.get( node );
         return daemonData == null ? null : daemonData.getName();
+    }
+
+    public String getRandomDaemonNode() {
+        if (daemonByNode.isEmpty()) {
+            return null;
+        }
+        return daemonByNode
+                .keySet()
+                .stream()
+                .skip( ThreadLocalRandom.current().nextInt( daemonByNode.size() ) )
+                .findFirst().orElse( null );
     }
 
     public String getDaemonIp( NodeLocation node) {

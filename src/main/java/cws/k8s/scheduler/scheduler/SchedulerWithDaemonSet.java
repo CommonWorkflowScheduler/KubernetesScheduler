@@ -43,7 +43,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long, LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     final String localWorkDir;
-    private final PublishManager publishManager;
+    protected final PublishManager publishManager;
 
     /**
      * Which node is currently copying files from which node
@@ -59,7 +59,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             throw new IllegalArgumentException( "Copy strategy is null" );
         }
         this.localWorkDir = config.localWorkDir;
-        publishManager = new PublishManager( hierarchyWrapper, Path.of( config.workDir ), Path.of(this.localWorkDir) );
+        publishManager = new PublishManager( hierarchyWrapper, client, this, Path.of( config.workDir ), Path.of(this.localWorkDir) );
     }
 
     public String getDaemonIpOnNode( String node ){
@@ -77,14 +77,14 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     /**
      * Mark all locationWrappers as used
      */
-    void useLocations( List<LocationWrapper> locationWrappers ){
+    public void useLocations( List<LocationWrapper> locationWrappers ){
         locationWrappers.parallelStream().forEach( LocationWrapper::use );
     }
 
     /**
      * Mark all locationWrappers as unused
      */
-    void freeLocations( List<LocationWrapper> locationWrappers ){
+    public void freeLocations( List<LocationWrapper> locationWrappers ){
         locationWrappers.parallelStream().forEach( LocationWrapper::free );
     }
 
@@ -216,6 +216,17 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     public int getUnpublishedItems() {
         return publishManager.getUnpublishedCount();
+    }
+
+    /**
+     * This method is supposed to be called when all tasks are finished
+     */
+    public void publishAllRemaining() {
+        publishManager.finalizePublish();
+    }
+
+    public String getRandomDaemonset() {
+        return daemonHolder.getRandomDaemonNode();
     }
 
     FTPClient getConnection( String daemon ){
