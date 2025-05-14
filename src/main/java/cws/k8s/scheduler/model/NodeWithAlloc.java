@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.readiness.Readiness;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -19,6 +20,7 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
 
     private final transient CWSKubernetesClient kubernetesClient;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Requirements maxResources;
@@ -186,13 +188,12 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof NodeWithAlloc)) {
+        if (!(o instanceof NodeWithAlloc that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-        NodeWithAlloc that = (NodeWithAlloc) o;
         return getMetadata().getName() != null ? getMetadata().getName().equals(that.getMetadata().getName()) : that.getMetadata().getName() == null;
     }
 

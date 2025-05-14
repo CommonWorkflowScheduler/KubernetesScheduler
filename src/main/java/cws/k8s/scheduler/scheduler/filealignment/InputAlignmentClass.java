@@ -113,7 +113,7 @@ abstract class InputAlignmentClass implements InputAlignment {
 
     @Getter
     @RequiredArgsConstructor
-    class Costs {
+    static class Costs {
 
         private final double maxCostForIndividualNode;
         private final double sumOfCosts;

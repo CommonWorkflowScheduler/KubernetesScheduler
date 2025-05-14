@@ -265,7 +265,7 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     }
 
     @Getter
-    public class MatchingLocationsPair {
+    public static class MatchingLocationsPair {
 
         private final List<LocationWrapper> matchingLocations;
         private final Set<Location> excludedNodes;

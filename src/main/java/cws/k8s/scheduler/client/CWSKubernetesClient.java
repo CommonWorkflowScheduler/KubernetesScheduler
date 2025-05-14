@@ -167,7 +167,7 @@ public class CWSKubernetesClient {
     }
 
     public void assignPodToNodeAndRemoveInit( PodWithAge pod, String node ) {
-        if ( pod.getSpec().getInitContainers().size() > 0 ) {
+        if ( !pod.getSpec().getInitContainers().isEmpty() ) {
             pod.getSpec().getInitContainers().remove( 0 );
         }
         pod.getMetadata().setResourceVersion( null );

@@ -16,7 +16,7 @@ import java.util.List;
 
 public class LocationAwareSchedulerGroups extends LocationAwareSchedulerV2 {
 
-    GroupCluster groupCluster;
+    final GroupCluster groupCluster;
 
     public LocationAwareSchedulerGroups( String name, CWSKubernetesClient client, String namespace, SchedulerConfig config, InputAlignment inputAlignment, ReadyToRunToNode readyToRunToNode ) {
         super( name, client, namespace, config, inputAlignment, readyToRunToNode, null );

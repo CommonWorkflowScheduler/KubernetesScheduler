@@ -14,10 +14,9 @@ public abstract class Location implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Location)) {
+        if (!(o instanceof Location that)) {
             return false;
         }
-        Location that = (Location) o;
         return ( getType() == that.getType() ) && ( getIdentifier().equals( that.getIdentifier() ));
     }
 

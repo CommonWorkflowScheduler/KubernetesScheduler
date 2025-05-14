@@ -29,13 +29,12 @@ public class PathLocationWrapperPair extends OutputFile {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PathLocationWrapperPair)) {
+        if (!(o instanceof PathLocationWrapperPair that)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-        PathLocationWrapperPair that = (PathLocationWrapperPair) o;
         return Objects.equals(getLocationWrapper(), that.getLocationWrapper());
     }
 

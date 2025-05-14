@@ -73,7 +73,7 @@ class SortedListTest {
 
     @Test
     void addToEmptyList() {
-        final SortedList<Integer> sortedList = new SortedList<>( new LinkedList< Integer >() );
+        final SortedList<Integer> sortedList = new SortedList<>( new LinkedList<>() );
         sortedList.add( 4 );
         log.info( sortedList.toString() );
         assertEquals( 4, sortedList.get( 0 ) );

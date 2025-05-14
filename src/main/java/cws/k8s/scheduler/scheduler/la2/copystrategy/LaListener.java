@@ -80,8 +80,7 @@ public class LaListener implements MyExecListner {
             log.debug( name + " Exec Output: {} ", out );
             log.debug( name + " Exec Error Output: {} ", error );
         }
-        if ( copyTask.getTask() instanceof cws.k8s.scheduler.model.cluster.CopyTask ) {
-            cws.k8s.scheduler.model.cluster.CopyTask task = (cws.k8s.scheduler.model.cluster.CopyTask) copyTask.getTask();
+        if ( copyTask.getTask() instanceof cws.k8s.scheduler.model.cluster.CopyTask task ) {
             task.finished();
         }
         scheduler.copyTaskFinished( copyTask, exitCode == 0 );
