@@ -18,7 +18,6 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
     @Getter
     private LocationWrapper[] locations;
     static final String LOCATION_IS_NULL = "location is null";
-    private boolean wasRequestedByTask = false;
 
     public RealHierarchyFile( LocationWrapper location ) {
         if ( location == null ) {
@@ -304,14 +303,6 @@ public class RealHierarchyFile extends AbstractHierarchyFile {
             }
         }
         throw new RuntimeException( "Not found: " + location.getIdentifier() );
-    }
-
-    public void requestedByTask(){
-        wasRequestedByTask = true;
-    }
-
-    public boolean wasRequestedByTask(){
-        return wasRequestedByTask;
     }
 
 }
