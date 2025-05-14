@@ -61,9 +61,9 @@ public class LaListener implements MyExecListner {
 
     @Override
     public void onFailure( Throwable t, Response failureResponse ) {
-        log.info( name + " failed, output: ", t );
-        log.info( name + " Exec Output: {} ", out );
-        log.info( name + " Exec Error Output: {} ", error );
+        log.info( "{} failed, output: ", name, t );
+        log.info( "{} Exec Output: {} ", name, out );
+        log.info( "{} Exec Error Output: {} ", name,  error );
         close();
         logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "failed" );
     }
@@ -72,13 +72,13 @@ public class LaListener implements MyExecListner {
     public void onExit( int exitCode, Status reason ) {
         finished = true;
         if ( exitCode != 0 ) {
-            log.info( name + " was finished exitCode = {}, reason = {}", exitCode, reason );
-            log.info( name + " Exec Output: {} ", out );
-            log.info( name + " Exec Error Output: {} ", error );
+            log.info( "{} was finished exitCode = {}, reason = {}", name, exitCode, reason );
+            log.info( "{} Exec Output: {} ", name,  out );
+            log.info( "{} Exec Error Output: {} ", name, error );
         } else {
-            log.info( name + " was finished successfully" );
-            log.debug( name + " Exec Output: {} ", out );
-            log.debug( name + " Exec Error Output: {} ", error );
+            log.info( "{} was finished successfully", name );
+            log.debug( "{} Exec Output: {} ", name, out );
+            log.debug( "{} Exec Error Output: {} ", name, error );
         }
         scheduler.copyTaskFinished( copyTask, exitCode == 0 );
         close();
