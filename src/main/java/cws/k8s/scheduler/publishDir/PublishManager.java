@@ -141,7 +141,7 @@ public class PublishManager {
         }
 
         String[] command = new String[items.size() * 2 + 2];
-        command[0] = "/input/publish.sh";
+        command[0] = "publish.sh";
         command[1] = "install -D";
 
         int i = 2;
@@ -181,7 +181,7 @@ public class PublishManager {
         }
 
         String[] command = new String[symlinks.size() * 2 + 2];
-        command[0] = "/input/publish.sh";
+        command[0] = "publish.sh";
         command[1] = "ln -s";
 
         int i = 2;
