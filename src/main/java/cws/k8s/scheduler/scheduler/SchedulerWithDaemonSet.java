@@ -114,7 +114,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     //Init failure
                     final Path workdir = Paths.get(finishedTask.getWorkingDir());
                     if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
-                        log.info( "Task " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and out files" );
+                        log.info( "Task {} ({}) had an init failure: won't parse the in- and out files", finishedTask.getConfig().getRunName(), finishedTask.getConfig().getName() );
                     } else {
                         final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                                 workdir,
@@ -135,7 +135,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     }
                 }
             } catch ( Exception e ){
-                log.info( "Problem while finishing task: " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ")", e );
+                log.info( "Problem while finishing task: {} ({})", finishedTask.getConfig().getRunName(), finishedTask.getConfig().getName(), e );
             }
             super.taskWasFinished( finishedTask );
         });
