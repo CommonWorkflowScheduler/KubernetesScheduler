@@ -571,19 +571,6 @@ public abstract class Scheduler implements Informable {
         return availableByNode;
     }
 
-    /**
-     * Filters all nodes, that have enough resources and fulfill the affinities
-     */
-    public Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
-        Set<NodeWithAlloc> result = new HashSet<>();
-        for (Map.Entry<NodeWithAlloc, Requirements> entry : availableByNode.entrySet()) {
-            if ( this.canScheduleTaskOnNode( entry.getValue(), task, entry.getKey() ) ){
-                result.add( entry.getKey() );
-            }
-        }
-        return result;
-    }
-
     LinkedList<Task> getUpcomingTasksCopy() {
         return new LinkedList<>( upcomingTasks );
     }
