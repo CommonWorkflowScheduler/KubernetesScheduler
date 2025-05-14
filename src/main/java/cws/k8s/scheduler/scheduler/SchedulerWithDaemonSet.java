@@ -52,11 +52,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     SchedulerWithDaemonSet( String execution, CWSKubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
-        this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
+        this.hierarchyWrapper = new HierarchyWrapper( config.localWorkDir );
         this.inputFileCollector = new InputFileCollector( hierarchyWrapper );
         if ( config.copyStrategy == null ) {
             throw new IllegalArgumentException( "Copy strategy is null" );
         }
+        this.localWorkDir = config.localWorkDir;
         this.localWorkDir = config.workDir;
     }
 
