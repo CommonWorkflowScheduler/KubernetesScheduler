@@ -30,6 +30,10 @@ public class Folder extends HierarchyFile {
         return children.get( name );
     }
 
+    public Map<String, HierarchyFile> getAllChildren(){
+        return new TreeMap<>( children );
+    }
+
     /**
      * Creates folder if not existing
      * @param name name of the folder to create

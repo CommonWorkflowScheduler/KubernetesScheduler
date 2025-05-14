@@ -10,12 +10,13 @@ import cws.k8s.scheduler.model.outfiles.PathLocationWrapperPair;
 import cws.k8s.scheduler.model.outfiles.SymlinkOutput;
 import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
+import cws.k8s.scheduler.publishDir.PublishItem;
+import cws.k8s.scheduler.publishDir.PublishManager;
 import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.util.DaemonHolder;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
-import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
@@ -25,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.ftp.FTPClient;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +43,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long, LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     final String localWorkDir;
+    private final PublishManager publishManager;
 
     /**
      * Which node is currently copying files from which node
@@ -58,7 +59,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
             throw new IllegalArgumentException( "Copy strategy is null" );
         }
         this.localWorkDir = config.localWorkDir;
-        this.localWorkDir = config.workDir;
+        publishManager = new PublishManager( hierarchyWrapper, Path.of( config.workDir ), Path.of(this.localWorkDir) );
     }
 
     public String getDaemonIpOnNode( String node ){
@@ -209,6 +210,14 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
     }
 
+    public void addPublishItem( PublishItem item ) {
+        publishManager.addPublishItem( item );
+    }
+
+    public int getUnpublishedItems() {
+        return publishManager.getUnpublishedCount();
+    }
+
     FTPClient getConnection( String daemon ){
         int trial = 0;
         while ( true ) {
@@ -288,4 +297,9 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         }
     }
 
+    @Override
+    public void close() {
+        log.info( "There are {} item(s) not copied!", publishManager.getUnpublishedCount() );
+        super.close();
+    }
 }

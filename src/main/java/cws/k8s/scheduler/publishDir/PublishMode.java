@@ -4,5 +4,6 @@ public enum PublishMode {
 
     COPY,
     MOVE,
+    SYMLINK
 
 }

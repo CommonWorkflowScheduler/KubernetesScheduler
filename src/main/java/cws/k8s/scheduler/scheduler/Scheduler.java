@@ -7,8 +7,6 @@ import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.model.*;
 import cws.k8s.scheduler.prediction.MemoryScaler;
 import cws.k8s.scheduler.prediction.TaskScaler;
-import cws.k8s.scheduler.publishDir.PublishItem;
-import cws.k8s.scheduler.publishDir.PublishManager;
 import cws.k8s.scheduler.util.Batch;
 import cws.k8s.scheduler.util.NodeTaskAlignment;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -53,7 +51,6 @@ public abstract class Scheduler implements Informable {
     private final SharedIndexInformer<Pod> podHandler;
     private final TaskprocessingThread schedulingThread;
     private final TaskprocessingThread finishThread;
-    private final PublishManager publishManager = new PublishManager();
 
     final boolean traceEnabled;
 
@@ -64,7 +61,7 @@ public abstract class Scheduler implements Informable {
         this.execution = execution;
         this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + execution;
         this.namespace = namespace;
-        log.trace( "Register scheduler for " + this.name );
+        log.trace( "Register scheduler for {}", this.name );
         this.client = client;
         this.dns = config.dns.endsWith( "/" ) ? config.dns : config.dns + "/";
         this.dag = new DAG();
@@ -575,14 +572,6 @@ public abstract class Scheduler implements Informable {
         return new LinkedList<>( upcomingTasks );
     }
 
-    public void addPublishItem( PublishItem item ) {
-        publishManager.addPublishItem( item );
-    }
-
-    public int getUnpublishedItems() {
-        return publishManager.getUnpublishedCount();
-    }
-
     /**
      * Close used resources
      */
@@ -590,7 +579,6 @@ public abstract class Scheduler implements Informable {
         podHandler.close();
         schedulingThread.interrupt();
         finishThread.interrupt();
-        log.info( "There are {} item(s) not copied!", publishManager.getUnpublishedCount() );
         this.close = true;
     }
 

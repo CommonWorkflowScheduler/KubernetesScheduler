@@ -454,19 +454,20 @@ public class SchedulerRestController {
             @ApiResponse(responseCode = "200", description = "Successfully assigned PublishItem",
                     content = @Content),
             @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Scheduler does not support publish items",
                     content = @Content) })
     @PutMapping("/v1/file/{execution}/publish")
     ResponseEntity<String> publishData( @PathVariable String execution, @RequestBody PublishItem publishItem ) {
-
-        log.info( "Publish item: {}", publishItem );
-
         final Scheduler scheduler = schedulerHolder.get( execution );
         if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
-        scheduler.addPublishItem( publishItem );
-        return new ResponseEntity<>( HttpStatus.OK );
-
+        if ( scheduler instanceof SchedulerWithDaemonSet schedulerWithDaemonSet ) {
+            schedulerWithDaemonSet.addPublishItem( publishItem );
+            return new ResponseEntity<>( HttpStatus.OK );
+        }
+        return new ResponseEntity<>( "Scheduler does not support publish items", HttpStatus.FORBIDDEN );
     }
 
     @Operation(summary = "Request open publish items")
@@ -474,18 +475,19 @@ public class SchedulerRestController {
             @ApiResponse(responseCode = "200", description = "Scheduler found",
                     content = @Content),
             @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Scheduler does not support publish items",
                     content = @Content) })
     @GetMapping("/v1/file/{execution}/publish")
     ResponseEntity<?> getUnpublishedData( @PathVariable String execution ) {
-
-        log.info( "Request unpublished data" );
-
         final Scheduler scheduler = schedulerHolder.get( execution );
         if ( scheduler == null ) {
             return noSchedulerFor( execution );
         }
-        return new ResponseEntity<>( scheduler.getUnpublishedItems(), HttpStatus.OK );
-
+        if ( scheduler instanceof SchedulerWithDaemonSet schedulerWithDaemonSet ) {
+            return new ResponseEntity<>( schedulerWithDaemonSet.getUnpublishedItems(), HttpStatus.OK );
+        }
+        return new ResponseEntity<>( "Scheduler does not support publish items", HttpStatus.FORBIDDEN );
     }
 
     @GetMapping ("/health")
