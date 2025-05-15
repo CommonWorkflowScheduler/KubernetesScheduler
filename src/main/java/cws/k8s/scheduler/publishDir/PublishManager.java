@@ -27,6 +27,15 @@ public class PublishManager {
     // This maps contains all published items, key is the source path, value are the destination paths
     // Used to check if symlink target is already published
     private final Map<Path, Set<Path>> publishMap = new HashMap<>();
+    private final PublishExecHolder execHolder = new PublishExecHolder();
+
+    /**
+     * Maximum number of arguments for the publish command.
+     * Attention: This is not really the maximum number of arguments.
+     * The number of arguments is 2 + 2 * MAX_ARGS as two additional arguments are needed for the command
+     * and two for each file.
+     */
+    private final static int MAX_ARGS = 200;
 
     /**
      * Add a publish item to the list of items to be published.
@@ -98,7 +107,7 @@ public class PublishManager {
     }
 
     /**
-     * Process a link hierarchy file, determine if it can link to a already copied file or if it needs to be copied.
+     * Process a link hierarchy file, determine if it can link to an already copied file or if it needs to be copied.
      * @param item The publish item to be processed
      * @param linkHierarchyFile The link hierarchy file to be processed
      * @return The symlink to be created
@@ -135,7 +144,6 @@ public class PublishManager {
      * @param node The node to publish the file from
      */
     private void publishFiles( List<FileWrapper> items, NodeLocation node ) {
-
         if ( items.isEmpty() ) {
             return;
         }
@@ -161,71 +169,139 @@ public class PublishManager {
         final List<LocationWrapper> locationWrappers = items.stream().map( FileWrapper::locationWrapper ).toList();
         scheduler.useLocations( locationWrappers );
         final String daemonName = scheduler.getDaemonNameOnNode( node.getIdentifier() );
-        final Runnable runnable = () -> {
+        final Runnable onFinish = () -> {
             scheduler.freeLocations( locationWrappers );
             synchronized ( processingPublishItems ) {
                 items.forEach( fw -> processingPublishItems.remove( fw.item ) );
             }
+            execHolder.finishedOnNode( node );
         };
-        final PublishListener publishListener = new PublishListener( scheduler, name, runnable );
-        client.execCommand( daemonName, scheduler.getNamespace(), command, publishListener );
+        final PublishListener publishListener = new PublishListener( scheduler, name, onFinish );
+        execHolder.addRunnable( node, () ->
+            client.execCommand( daemonName, scheduler.getNamespace(), command, publishListener )
+        );
     }
 
     /**
      * Create symlinks to be published
      * @param symlinks The symlinks to be created
      */
-    private void createSymlinks( List<Symlink> symlinks ) {
-        if ( symlinks.isEmpty() ) {
+    private void createSymlinks( Symlink[] symlinks ) {
+        if ( symlinks.length == 0 ) {
             return;
         }
+        int start = 0;
+        while ( start < symlinks.length ) {
+            int end = Math.min( start + MAX_ARGS, symlinks.length );
+            createSymlinksIntern( symlinks, start, end );
+            start = end;
+        }
+    }
 
-        String[] command = new String[symlinks.size() * 2 + 2];
+    private void createSymlinksIntern( final Symlink[] symlinks, final int start, int end ) {
+        String[] command = new String[(end - start) * 2 + 2];
         command[0] = "publish.sh";
         command[1] = "ln -s";
 
+        end = Math.min( end, symlinks.length );
         int i = 2;
-        for ( Symlink item : symlinks ) {
+        for ( int j = start; j < end; j++ ) {
+            final Symlink item = symlinks[j];
             command[i++] = item.dst.toString();
             command[i++] = item.src.toString();
         }
         String node = scheduler.getRandomDaemonset();
+        final NodeLocation location = NodeLocation.getLocation( node );
 
         String name = "Copying from node: " +  node;
         final String daemonName = scheduler.getDaemonNameOnNode( node );
-        final Runnable runnable = () -> {};
-        final PublishListener publishListener = new PublishListener( scheduler, name, runnable );
-        client.execCommand( daemonName, scheduler.getNamespace(), command, publishListener );
+        final Runnable onFinish = new InformPublishFinishedRunnable( execHolder, location );
+        final PublishListener publishListener = new PublishListener( scheduler, name, onFinish );
+        execHolder.addRunnable( location, () ->
+                client.execCommand( daemonName, scheduler.getNamespace(), command, publishListener )
+        );
     }
 
     public int getUnpublishedCount() {
         return openPublishItems.size() + processingPublishItems.size() + symlinkItems.size();
     }
 
-    public void triggerPublish( Map<NodeLocation, Integer> currentlyCopyingTasksOnNode ) {
+    /**
+     * Publish items as long as the node has free queue.
+     * For every node in nodeItemsMap, take the first items until either the maxSize or MAX_ARGS,
+     * start publishing for these items.
+     * @param nodeItemsMap A map of all items to be published, grouped by node where the file is located.
+     * @param currentlyCopyingTasksOnNode A map of the currently copying tasks on each node
+     * @param maxSize The maximum sum of file sizes to be copied withing one run
+     * @param maxCopyPerNode The maximum number of files to be copied in one run
+     */
+    private void publishFirstX( final Map<NodeLocation, LinkedList<FileWrapper>> nodeItemsMap,
+                                final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode,
+                                final long maxSize,
+                                final int maxCopyPerNode ) {
+        for ( Map.Entry<NodeLocation, LinkedList<FileWrapper>> entry : nodeItemsMap.entrySet() ) {
+            final NodeLocation node = entry.getKey();
+            LinkedList<FileWrapper> items = entry.getValue();
+            while ( currentlyCopyingTasksOnNode.getOrDefault( node, 0 ) < maxCopyPerNode && items != null && !items.isEmpty() ) {
+                currentlyCopyingTasksOnNode.compute( node, ( k, v ) -> v == null ? 1 : v + 1 );
+                publishFiles( removeUntil( items, maxSize ), node );
+            }
+        }
+        nodeItemsMap.forEach( ( node, items ) -> publishFiles( items, node ) );
+    }
+
+    private List<FileWrapper> removeUntil( LinkedList<FileWrapper> items, long maxSize ) {
+        List<FileWrapper> result = new LinkedList<>();
+        long currentSize = 0;
+        while ( !items.isEmpty() && result.size() < MAX_ARGS && currentSize < maxSize ) {
+            final FileWrapper firstItem = items.poll();
+            currentSize += firstItem.locationWrapper.getSizeInBytes();
+            result.add( firstItem );
+        }
+        return result;
+    }
+
+    /**
+     * Trigger to publish some files to the nodes depending on the available copy capacity.
+     * @param currentlyCopyingTasksOnNode A map of the currently copying tasks on each node
+     * @param maxSize The maximum sum of file sizes to be copied withing one run
+     */
+    public void triggerPublish( final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode, final long maxSize ) {
         // check for all publish items which node they belong to
-        //TODO intelligently distribute the publish items to the nodes
+        synchronized ( openPublishItems ) {
+            final Map<NodeLocation, LinkedList<FileWrapper>> nodeItemsMap = getNodeItemsMap();
+            publishFirstX( nodeItemsMap, currentlyCopyingTasksOnNode, maxSize, 1 );
+        }
     }
 
     /**
      * Copy all remaining files
      */
     private void copyAll() {
+        log.info( "Triggered: Publish All, {} in queue", openPublishItems.size() );
         synchronized ( openPublishItems ) {
-            openPublishItems.parallelStream()
-                    .map( p -> {
-                        final LocationWrapper lastUpdate = p.file.getLastUpdate( LocationType.NODE );
-                        if ( lastUpdate != null ) {
-                            return new FileWrapper( p, lastUpdate );
-                        } else {
-                            log.error( "No location found for file: {}", p.item.getSource() );
-                            return null;
-                        }
-                    } )
-                    .filter( Objects::nonNull )
-                    .collect( Collectors.groupingBy( p -> (NodeLocation) p.locationWrapper.getLocation() ) )
-                    .forEach( ( node, items ) -> publishFiles( items, node ) );
+            final Map<NodeLocation, LinkedList<FileWrapper>> nodeItemsMap = getNodeItemsMap();
+            publishFirstX( nodeItemsMap, new HashMap<>(), Long.MAX_VALUE, Integer.MAX_VALUE );
         }
+    }
+
+    /**
+     * Create a Map of all items to be published, grouped by node where the file is located.
+     * @return A map of all items to be published, grouped by node where the file is located.
+     */
+    private Map<NodeLocation, LinkedList<FileWrapper>> getNodeItemsMap() {
+        return openPublishItems.parallelStream()
+                .map( p -> {
+                    final LocationWrapper lastUpdate = p.file.getLastUpdate( LocationType.NODE );
+                    if ( lastUpdate != null ) {
+                        return new FileWrapper( p, lastUpdate );
+                    } else {
+                        log.error( "No location found for file: {}", p.item.getSource() );
+                        return null;
+                    }
+                } )
+                .filter( Objects::nonNull )
+                .collect( Collectors.groupingBy( p -> (NodeLocation) p.locationWrapper.getLocation(), Collectors.toCollection(LinkedList::new) ) );
     }
 
     /**
@@ -233,13 +309,13 @@ public class PublishManager {
      */
     public void finalizePublish(){
         // Add symlinks at the end when no new real files will be published
-        final List<Symlink> symlinks;
+        final Symlink[] symlinks;
         synchronized ( symlinkItems ) {
             symlinks = symlinkItems
                     .stream()
                     .map( symlinkItem
                             -> processLinkHierachyFile( symlinkItem.item, symlinkItem.linkHierarchyFile ) )
-                    .toList();
+                    .toArray( Symlink[]::new );
             symlinkItems.clear();
         }
         createSymlinks( symlinks );
