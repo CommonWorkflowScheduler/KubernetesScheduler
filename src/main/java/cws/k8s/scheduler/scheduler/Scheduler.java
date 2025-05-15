@@ -98,6 +98,12 @@ public abstract class Scheduler implements Informable {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
+
+        if ( unscheduledTasks.isEmpty() ) {
+            scheduleAdditionalTasks();
+            return 0;
+        }
+
         final LinkedList<Task> unscheduledTasksCopy = new LinkedList<>( unscheduledTasks );
         long startSchedule = System.currentTimeMillis();
         if( traceEnabled ) {
@@ -152,6 +158,7 @@ public abstract class Scheduler implements Informable {
         }
         //Use instance object that does not contain yet scheduled tasks
         postScheduling( unscheduledTasksCopy, getAvailableByNode( false ) );
+        scheduleAdditionalTasks();
         return unscheduledTasks.size() - taskNodeAlignment.size() + failure;
     }
 
@@ -160,6 +167,11 @@ public abstract class Scheduler implements Informable {
      * @param unscheduledTasks
      */
     void postScheduling( final List<Task> unscheduledTasks, Map<NodeWithAlloc, Requirements> availableByNode ) {}
+
+    /**
+     * This method is called after the scheduling. This can trigger tasks that are independent of the tasks to be scheduled.
+     */
+    void scheduleAdditionalTasks(){}
 
     /**
      * Call this method in case of any scheduling problems

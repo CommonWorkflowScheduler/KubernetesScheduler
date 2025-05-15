@@ -28,15 +28,13 @@ public class TaskprocessingThread extends Thread {
             try{
                 LinkedList<Task> tasks;
                 synchronized (unprocessedTasks) {
-                    do {
-                        if ( !otherResourceChange && unscheduled == unprocessedTasks.size()) {
-                            unprocessedTasks.wait( 10000 );
-                        }
-                        if( Thread.interrupted() ) {
-                            return;
-                        }
-                        otherResourceChange = false;
-                    } while ( unprocessedTasks.isEmpty() );
+                    if ( !otherResourceChange && unscheduled == unprocessedTasks.size()) {
+                        unprocessedTasks.wait( 1000 );
+                    }
+                    if( Thread.interrupted() ) {
+                        return;
+                    }
+                    otherResourceChange = false;
                     tasks = new LinkedList<>(unprocessedTasks);
                 }
                 unscheduled = function.apply( tasks );

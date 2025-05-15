@@ -44,6 +44,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final ConcurrentHashMap<Long, LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     final String localWorkDir;
     protected final PublishManager publishManager;
+    private final static long MAX_SIZE_TO_PUBLISH = 2L * 1024 * 1024 * 1024; // 2GB
 
     /**
      * Which node is currently copying files from which node
@@ -216,6 +217,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     public int getUnpublishedItems() {
         return publishManager.getUnpublishedCount();
+    }
+
+    @Override
+    void scheduleAdditionalTasks(){
+        final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode = getCurrentlyCopying().getCurrentlyCopyingTasksOnNode();
+        publishManager.triggerPublish( currentlyCopyingTasksOnNode, MAX_SIZE_TO_PUBLISH );
+        super.scheduleAdditionalTasks();
     }
 
     /**
