@@ -1,10 +1,7 @@
-package cws.k8s.scheduler.scheduler.la2.copystrategy;
+package cws.k8s.scheduler.publishDir;
 
-import cws.k8s.scheduler.scheduler.LocationAwareSchedulerV2;
-import cws.k8s.scheduler.util.CopyTask;
-import cws.k8s.scheduler.util.LogCopyTask;
+import cws.k8s.scheduler.scheduler.Scheduler;
 import cws.k8s.scheduler.util.MyExecListner;
-import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
 import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import lombok.RequiredArgsConstructor;
@@ -15,23 +12,19 @@ import java.io.ByteArrayOutputStream;
 
 @Slf4j
 @RequiredArgsConstructor
-public class LaListener implements MyExecListner {
+public class PublishListener implements MyExecListner {
 
     @Setter
     private ExecWatch exec;
-    private final CopyTask copyTask;
-    private final String name;
     @Setter
     private ByteArrayOutputStream out = new ByteArrayOutputStream();
     @Setter
     private ByteArrayOutputStream error = new ByteArrayOutputStream();
+    private final Scheduler scheduler;
+    private final String name;
+    private final Runnable onFinish;
+
     private boolean finished = false;
-
-    private final NodeTaskFilesAlignment nodeTaskFilesAlignment;
-
-    private final LocationAwareSchedulerV2 scheduler;
-
-    private final LogCopyTask logCopyTask;
 
     private void close() {
         //Maybe exec was not yet set
@@ -54,7 +47,6 @@ public class LaListener implements MyExecListner {
     public void onClose( int exitCode, String reason ) {
         if ( !finished ) {
             log.error( "Copy task was not finished, but closed. ExitCode: " + exitCode + " Reason: " + reason );
-            scheduler.copyTaskFinished( copyTask, exitCode == 0 );
         }
         scheduler.informResourceChange();
     }
@@ -65,7 +57,6 @@ public class LaListener implements MyExecListner {
         log.info( "{} Exec Output: {} ", name, out );
         log.info( "{} Exec Error Output: {} ", name,  error );
         close();
-        logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "failed" );
     }
 
     @Override
@@ -80,8 +71,8 @@ public class LaListener implements MyExecListner {
             log.debug( "{} Exec Output: {} ", name, out );
             log.debug( "{} Exec Error Output: {} ", name, error );
         }
-        scheduler.copyTaskFinished( copyTask, exitCode == 0 );
+        onFinish.run();
         close();
-        logCopyTask.copy( nodeTaskFilesAlignment.task.getConfig().getName(), nodeTaskFilesAlignment.node.getName(), copyTask.getInputFiles().size(), "finished(" + exitCode + ")" );
     }
+
 }

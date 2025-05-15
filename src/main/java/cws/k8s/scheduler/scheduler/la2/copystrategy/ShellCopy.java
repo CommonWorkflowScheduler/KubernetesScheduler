@@ -1,6 +1,5 @@
 package cws.k8s.scheduler.scheduler.la2.copystrategy;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.scheduler.LocationAwareSchedulerV2;
@@ -32,8 +31,6 @@ public class ShellCopy implements CopyRunner {
         command[2] = "cd " + nodeTaskFilesAlignment.task.getWorkingDir() + " && ";
         try {
             new ObjectMapper().writeValue( Path.of( nodeTaskFilesAlignment.task.getWorkingDir(), filename ).toFile(), copyTask.getInputs() );
-        } catch ( JsonProcessingException e ) {
-            throw new RuntimeException( e );
         } catch ( IOException e ) {
             throw new RuntimeException( e );
         }

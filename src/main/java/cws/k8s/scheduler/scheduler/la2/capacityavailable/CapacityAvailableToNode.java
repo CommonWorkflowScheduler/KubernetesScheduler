@@ -18,7 +18,7 @@ public abstract class CapacityAvailableToNode extends CreateCopyTasks {
             CurrentlyCopying currentlyCopying,
             InputAlignment inputAlignment,
             int copySameTaskInParallel ) {
-        super( currentlyCopying, inputAlignment, copySameTaskInParallel );
+        super( currentlyCopying, inputAlignment, copySameTaskInParallel, 2 );
     }
 
     public abstract List<NodeTaskFilesAlignment> createAlignmentForTasksWithEnoughCapacity(

@@ -49,6 +49,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
     private final LogCopyTask logCopyTask = new LogCopyTask();
 
+    protected final TraceObserver traceObserver = new TraceObserver();
+
     private final ReadyToRunToNode readyToRunToNode;
 
     private final CopyRunner copyRunner;
@@ -62,8 +64,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     @Setter(AccessLevel.PACKAGE)
     private TaskStatComparator phaseThreeComparator;
 
-    private final int copySameTaskInParallel;
-    private final int maxHeldCopyTaskReady;
+    protected final int copySameTaskInParallel;
+    protected final int maxHeldCopyTaskReady;
 
     /**
      * This value must be between 1 and 100.
@@ -159,6 +161,11 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 .stream()
                 .filter( td -> !td.getNodesWithAllData().isEmpty() )
                 .collect( Collectors.toList() );
+
+        taskWithAllData.forEach(
+                x -> traceObserver.addWasPreparedOnNode( x.getTask(), x.getNodesWithAllData() )
+        );
+
         final List<NodeTaskLocalFilesAlignment> alignment = readyToRunToNode.createAlignmentForTasksWithAllDataOnNode( taskWithAllData, availableByNode );
         final ScheduleObject scheduleObject = new ScheduleObject( (List) alignment );
         scheduleObject.setCheckStillPossible( true );
@@ -204,6 +211,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                                                     currentlyCopyingTasksOnNode,
                                                     100
                                                 );
+            // Phase 3: Copy data only for nodes that are prepared on less than @maxHeldCopyTaskReady nodes.
+            taskStats.filter( t -> t.getTask().getPreparedOnNodesCount() < maxHeldCopyTaskReady );
             for ( TaskStat taskStat : getAdditionalTaskStatPhaseThree() ) {
                 taskStats.add( taskStat );
             }
@@ -231,6 +240,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
 
 
     void startCopyTask( final NodeTaskFilesAlignment nodeTaskFilesAlignment ) {
+        traceObserver.addCopyTask( nodeTaskFilesAlignment.task, nodeTaskFilesAlignment.node, nodeTaskFilesAlignment.phase );
         nodeTaskFilesAlignment.task.getTraceRecord().copyTask();
         final CopyTask copyTask = initializeCopyTask( nodeTaskFilesAlignment );
         //Files that will be copied
@@ -278,6 +288,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
             if( success ){
                     copyTask.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
                     removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
+                    copyTask.getTask().preparedOnNode( copyTask.getNodeLocation() );
             } else {
                     removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
                     handleProblematicCopy( copyTask );
@@ -446,12 +457,15 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     @Override
     public void close() {
         logCopyTask.close();
+        traceObserver.close();
         super.close();
     }
 
     @Override
     Task createTask( TaskConfig conf ){
-        return new Task( conf, getDag(), hierarchyWrapper );
+        final Task task = new Task( conf, getDag(), hierarchyWrapper );
+        traceObserver.addTask( task );
+        return task;
     }
 
 }

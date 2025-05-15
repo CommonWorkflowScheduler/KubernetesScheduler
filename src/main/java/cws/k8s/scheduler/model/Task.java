@@ -2,7 +2,7 @@ package cws.k8s.scheduler.model;
 
 import cws.k8s.scheduler.dag.DAG;
 import cws.k8s.scheduler.dag.Process;
-import cws.k8s.scheduler.model.cluster.OutputFiles;
+import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.model.location.hierachy.HierarchyWrapper;
 import cws.k8s.scheduler.model.location.hierachy.LocationWrapper;
 import cws.k8s.scheduler.model.tracing.TraceRecord;
@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -81,9 +82,7 @@ public class Task {
 
     private final HierarchyWrapper hierarchyWrapper;
 
-    @Getter
-    @Setter
-    private OutputFiles outputFiles;
+    private final Set<NodeLocation> preparedOnNodes = new HashSet<>();
 
     public Task( TaskConfig config, DAG dag ) {
         this( config, dag, null );
@@ -149,10 +148,6 @@ public class Task {
 
     public void submitted(){
         traceRecord.setSchedulerTimeInQueue( System.currentTimeMillis() - timeAddedToQueue );
-    }
-
-    public Set<String> getOutLabel(){
-        return config.getOutLabel();
     }
 
     private long inputSize = -1;
@@ -222,6 +217,14 @@ public class Task {
 
     public boolean requirementsChanged(){
         return !oldRequirements.equals( planedRequirements );
+    }
+
+    public void preparedOnNode( NodeLocation nodeLocation ) {
+        preparedOnNodes.add( nodeLocation );
+    }
+
+    public int getPreparedOnNodesCount() {
+        return preparedOnNodes.size();
     }
 
 }

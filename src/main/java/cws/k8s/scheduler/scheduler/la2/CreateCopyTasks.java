@@ -22,6 +22,7 @@ public abstract class CreateCopyTasks {
     protected final CurrentlyCopying currentlyCopying;
     protected final InputAlignment inputAlignment;
     protected final int copySameTaskInParallel;
+    protected final int phase;
 
     protected FileAlignment getFileAlignmentForTaskAndNode(
             final NodeWithAlloc node,
@@ -61,7 +62,7 @@ public abstract class CreateCopyTasks {
         final FileAlignment fileAlignmentForTaskAndNode = getFileAlignmentForTaskAndNode( node, task, poll.getInputsOfTask(), planedToCopy );
         if ( fileAlignmentForTaskAndNode != null && fileAlignmentForTaskAndNode.copyFromSomewhere( node.getNodeLocation() ) ) {
             planedToCopy.addAlignment( fileAlignmentForTaskAndNode.getNodeFileAlignment(), task, node );
-            nodeTaskAlignments.add( new NodeTaskFilesAlignment( node, task, fileAlignmentForTaskAndNode, prio ) );
+            nodeTaskAlignments.add( new NodeTaskFilesAlignment( node, task, fileAlignmentForTaskAndNode, prio, phase ) );
             currentlyCopyingTasksOnNode.compute( node.getNodeLocation(), ( nodeLocation, value ) -> value == null ? 1 : value + 1 );
             poll.copyToNodeWithAvailableResources();
             return true;

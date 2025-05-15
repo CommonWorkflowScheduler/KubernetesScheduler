@@ -14,6 +14,7 @@ public class SchedulerConfig {
 
     public final List<LocalClaim> localClaims;
     public final List<VolumeClaim> volumeClaims;
+    public final String localWorkDir;
     public final String workDir;
     public final String dns;
     public final String copyStrategy;

@@ -7,9 +7,13 @@ import cws.k8s.scheduler.dag.Vertex;
 import cws.k8s.scheduler.model.SchedulerConfig;
 import cws.k8s.scheduler.model.TaskConfig;
 import cws.k8s.scheduler.model.TaskMetrics;
+import cws.k8s.scheduler.publishDir.PublishItem;
 import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
-import cws.k8s.scheduler.scheduler.*;
+import cws.k8s.scheduler.scheduler.LocationAwareSchedulerV2;
+import cws.k8s.scheduler.scheduler.PrioritizeAssignScheduler;
+import cws.k8s.scheduler.scheduler.Scheduler;
+import cws.k8s.scheduler.scheduler.SchedulerWithDaemonSet;
 import cws.k8s.scheduler.scheduler.filealignment.GreedyAlignment;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
@@ -133,16 +137,6 @@ public class SchedulerRestController {
                     costFunction = new MinSizeCost( 0 );
                 }
                 scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
-                break;
-            case "wowgroup" :
-                if ( !config.locationAware ) {
-                    log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
-                    return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
-                }
-                if ( costFunction == null ) {
-                    costFunction = new MinSizeCost( 0 );
-                }
-                scheduler = new LocationAwareSchedulerGroups( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
                 break;
             default: {
                 final String[] split = strategy.split( "-" );
@@ -456,6 +450,68 @@ public class SchedulerRestController {
 
         return new ResponseEntity<>( HttpStatus.OK );
 
+    }
+
+    @Operation(summary = "Publish a file to a destination")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully assigned PublishItem",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Scheduler does not support publish items",
+                    content = @Content) })
+    @PutMapping("/v1/file/{execution}/publish")
+    ResponseEntity<String> publishData( @PathVariable String execution, @RequestBody PublishItem publishItem ) {
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+        if ( scheduler instanceof SchedulerWithDaemonSet schedulerWithDaemonSet ) {
+            schedulerWithDaemonSet.addPublishItem( publishItem );
+            return new ResponseEntity<>( HttpStatus.OK );
+        }
+        return new ResponseEntity<>( "Scheduler does not support publish items", HttpStatus.FORBIDDEN );
+    }
+
+    @Operation(summary = "Publish all remaining files")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully triggered",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Scheduler does not support publish items",
+                    content = @Content) })
+    @PostMapping("/v1/file/{execution}/publish")
+    ResponseEntity<String> publishData( @PathVariable String execution ) {
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+        if ( scheduler instanceof SchedulerWithDaemonSet schedulerWithDaemonSet ) {
+            schedulerWithDaemonSet.publishAllRemaining();
+            return new ResponseEntity<>( HttpStatus.OK );
+        }
+        return new ResponseEntity<>( "Scheduler does not support publish items", HttpStatus.FORBIDDEN );
+    }
+
+    @Operation(summary = "Request open publish items")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Scheduler found",
+                    content = @Content),
+            @ApiResponse(responseCode = "400", description = "No scheduler found for this execution",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Scheduler does not support publish items",
+                    content = @Content) })
+    @GetMapping("/v1/file/{execution}/publish")
+    ResponseEntity<?> getUnpublishedData( @PathVariable String execution ) {
+        final Scheduler scheduler = schedulerHolder.get( execution );
+        if ( scheduler == null ) {
+            return noSchedulerFor( execution );
+        }
+        if ( scheduler instanceof SchedulerWithDaemonSet schedulerWithDaemonSet ) {
+            return new ResponseEntity<>( schedulerWithDaemonSet.getUnpublishedItems(), HttpStatus.OK );
+        }
+        return new ResponseEntity<>( "Scheduler does not support publish items", HttpStatus.FORBIDDEN );
     }
 
     @GetMapping ("/health")

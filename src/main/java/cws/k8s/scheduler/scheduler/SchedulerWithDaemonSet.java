@@ -2,7 +2,6 @@ package cws.k8s.scheduler.scheduler;
 
 import cws.k8s.scheduler.client.CWSKubernetesClient;
 import cws.k8s.scheduler.model.*;
-import cws.k8s.scheduler.model.cluster.OutputFiles;
 import cws.k8s.scheduler.model.location.LocationType;
 import cws.k8s.scheduler.model.location.NodeLocation;
 import cws.k8s.scheduler.model.location.hierachy.*;
@@ -11,14 +10,13 @@ import cws.k8s.scheduler.model.outfiles.PathLocationWrapperPair;
 import cws.k8s.scheduler.model.outfiles.SymlinkOutput;
 import cws.k8s.scheduler.model.taskinputs.SymlinkInput;
 import cws.k8s.scheduler.model.taskinputs.TaskInputs;
+import cws.k8s.scheduler.publishDir.PublishItem;
+import cws.k8s.scheduler.publishDir.PublishManager;
 import cws.k8s.scheduler.rest.exceptions.NotARealFileException;
 import cws.k8s.scheduler.rest.response.getfile.FileResponse;
 import cws.k8s.scheduler.util.DaemonHolder;
-import cws.k8s.scheduler.util.NodeTaskAlignment;
-import cws.k8s.scheduler.util.NodeTaskFilesAlignment;
 import cws.k8s.scheduler.util.copying.CurrentlyCopying;
 import cws.k8s.scheduler.util.copying.CurrentlyCopyingOnNode;
-import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Watcher;
@@ -28,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.ftp.FTPClient;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,6 +43,8 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     private final InputFileCollector inputFileCollector;
     private final ConcurrentHashMap<Long, LocationWrapper> requestedLocations = new ConcurrentHashMap<>();
     final String localWorkDir;
+    protected final PublishManager publishManager;
+    private final static long MAX_SIZE_TO_PUBLISH = 2L * 1024 * 1024 * 1024; // 2GB
 
     /**
      * Which node is currently copying files from which node
@@ -55,12 +54,13 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
 
     SchedulerWithDaemonSet( String execution, CWSKubernetesClient client, String namespace, SchedulerConfig config) {
         super(execution, client, namespace, config);
-        this.hierarchyWrapper = new HierarchyWrapper( config.workDir );
+        this.hierarchyWrapper = new HierarchyWrapper( config.localWorkDir );
         this.inputFileCollector = new InputFileCollector( hierarchyWrapper );
         if ( config.copyStrategy == null ) {
             throw new IllegalArgumentException( "Copy strategy is null" );
         }
-        this.localWorkDir = config.workDir;
+        this.localWorkDir = config.localWorkDir;
+        publishManager = new PublishManager( hierarchyWrapper, client, this, Path.of( config.workDir ), Path.of(this.localWorkDir) );
     }
 
     public String getDaemonIpOnNode( String node ){
@@ -78,25 +78,15 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
     /**
      * Mark all locationWrappers as used
      */
-    void useLocations( List<LocationWrapper> locationWrappers ){
+    public void useLocations( List<LocationWrapper> locationWrappers ){
         locationWrappers.parallelStream().forEach( LocationWrapper::use );
     }
 
     /**
      * Mark all locationWrappers as unused
      */
-    void freeLocations( List<LocationWrapper> locationWrappers ){
+    public void freeLocations( List<LocationWrapper> locationWrappers ){
         locationWrappers.parallelStream().forEach( LocationWrapper::free );
-    }
-
-    @Override
-    void assignPodToNode( PodWithAge pod, NodeTaskAlignment alignment ) {
-        if ( !pod.getSpec().getInitContainers().isEmpty() && ((NodeTaskFilesAlignment) alignment).isRemoveInit() ) {
-            log.info( "Removing init container from pod {}", pod.getMetadata().getName() );
-            client.assignPodToNodeAndRemoveInit( pod, alignment.node.getName() );
-        } else {
-            super.assignPodToNode( pod, alignment );
-        }
     }
 
     @Override
@@ -125,7 +115,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     //Init failure
                     final Path workdir = Paths.get(finishedTask.getWorkingDir());
                     if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
-                        log.info( "Task " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ") had an init failure: won't parse the in- and out files" );
+                        log.info( "Task {} ({}) had an init failure: won't parse the in- and out files", finishedTask.getConfig().getRunName(), finishedTask.getConfig().getName() );
                     } else {
                         final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
                                 workdir,
@@ -133,26 +123,20 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                                 !finishedTask.wasSuccessfullyExecuted(),
                                 finishedTask
                         );
-                        final Set<PathLocationWrapperPair> outputFiles = new HashSet<>();
                         for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
-                            if( newAndUpdatedFile instanceof PathLocationWrapperPair ) {
+                            if( newAndUpdatedFile instanceof PathLocationWrapperPair pathLocationWrapperPair ) {
                                 hierarchyWrapper.addFile(
                                         newAndUpdatedFile.getPath(),
-                                        ((PathLocationWrapperPair) newAndUpdatedFile).getLocationWrapper()
+                                        pathLocationWrapperPair.getLocationWrapper()
                                 );
-                                outputFiles.add( (PathLocationWrapperPair) newAndUpdatedFile );
-                            } else if ( newAndUpdatedFile instanceof SymlinkOutput ){
-                                hierarchyWrapper.addSymlink(
-                                        newAndUpdatedFile.getPath(),
-                                        ((SymlinkOutput) newAndUpdatedFile).getDst()
-                                );
+                            } else if ( newAndUpdatedFile instanceof SymlinkOutput symlinkOutput ){
+                                hierarchyWrapper.addSymlink( newAndUpdatedFile.getPath(), symlinkOutput.getDst() );
                             }
                         }
-                        finishedTask.setOutputFiles( new OutputFiles( outputFiles ) );
                     }
                 }
             } catch ( Exception e ){
-                log.info( "Problem while finishing task: " + finishedTask.getConfig().getRunName() + " (" + finishedTask.getConfig().getName() + ")", e );
+                log.info( "Problem while finishing task: {} ({})", finishedTask.getConfig().getRunName(), finishedTask.getConfig().getName(), e );
             }
             super.taskWasFinished( finishedTask );
         });
@@ -188,8 +172,7 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         LinkedList<SymlinkInput> symlinks = new LinkedList<>();
         Path currentPath = Paths.get(path);
         HierarchyFile currentFile = hierarchyWrapper.getFile( currentPath );
-        while ( currentFile instanceof LinkHierarchyFile){
-            final LinkHierarchyFile linkFile = (LinkHierarchyFile) currentFile;
+        while ( currentFile instanceof LinkHierarchyFile linkFile ){
             symlinks.add( new SymlinkInput( currentPath, linkFile.getDst() ) );
             currentPath = linkFile.getDst();
             currentFile = hierarchyWrapper.getFile( currentPath );
@@ -199,11 +182,10 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         if ( currentFile == null ) {
             return new FileResponse( currentPath.toString(), symlinks );
         }
-        if ( ! (currentFile instanceof RealHierarchyFile) ){
+        if ( ! (currentFile instanceof RealHierarchyFile file) ){
             log.info( "File was: {}", currentFile );
             throw new NotARealFileException();
         }
-        final RealHierarchyFile file = (RealHierarchyFile) currentFile;
         final LocationWrapper lastUpdate = file.getLastUpdate(LocationType.NODE);
         if( lastUpdate == null ) {
             return null;
@@ -211,33 +193,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         requestedLocations.put( lastUpdate.getId(), lastUpdate );
         String node = lastUpdate.getLocation().getIdentifier();
         return new FileResponse( currentPath.toString(), node, getDaemonIpOnNode(node), node.equals(workflowEngineNode), symlinks, lastUpdate.getId() );
-    }
-
-    MatchingFilesAndNodes getMatchingFilesAndNodes( final Task task, final Map<NodeWithAlloc, Requirements> availableByNode ){
-        final Set<NodeWithAlloc> matchingNodesForTask = getMatchingNodesForTask(availableByNode, task);
-        if( matchingNodesForTask.isEmpty() ) {
-            log.trace( "No node with enough resources for {}", task.getConfig().getRunName() );
-            return null;
-        }
-
-        final TaskInputs inputsOfTask;
-        try {
-            inputsOfTask = getInputsOfTask(task);
-        } catch (NoAlignmentFoundException e) {
-            return null;
-        }
-        if( inputsOfTask == null ) {
-            log.info( "No node where the pod can start, pod: {}", task.getConfig().getRunName() );
-            return null;
-        }
-
-        filterNotMatchingNodesForTask( matchingNodesForTask, inputsOfTask );
-        if( matchingNodesForTask.isEmpty() ) {
-            log.info( "No node which fulfills all requirements {}", task.getConfig().getRunName() );
-            return null;
-        }
-
-        return new MatchingFilesAndNodes( matchingNodesForTask, inputsOfTask );
     }
 
     /**
@@ -256,36 +211,30 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
         hierarchyWrapper.addFile( Paths.get( path ), overwrite, locationWrapper );
     }
 
-    private void handleProblematicInit( Task task ){
-        String file = this.localWorkDir + "/sync/" + task.getConfig().getRunName();
-        try {
-            Map<String,TaskInputFileLocationWrapper> wrapperByPath = new HashMap<>();
-            task.getCopiedFiles().forEach( x -> wrapperByPath.put( x.getPath(), x ));
-            log.info( "Get daemon on node {}; daemons: {}", task.getNode().getNodeLocation().getIdentifier(), daemonHolder );
-            final InputStream inputStream = getConnection( getDaemonIpOnNode(task.getNode().getNodeLocation().getIdentifier())).retrieveFileStream(file);
-            if (inputStream == null) {
-                //Init has not even started
-                return;
-            }
-            Scanner scanner = new Scanner(inputStream);
-            Set<String> openedFiles = new HashSet<>();
-            while( scanner.hasNext() ){
-                String line = scanner.nextLine();
-                if ( line.startsWith( "S-" ) ){
-                    openedFiles.add( line.substring( 2 ) );
-                } else if ( line.startsWith( "F-" ) ){
-                    openedFiles.remove( line.substring( 2 ) );
-                    wrapperByPath.get( line.substring( 2 ) ).success();
-                    log.info("task {}, file: {} success", task.getConfig().getName(), line);
-                }
-            }
-            for ( String openedFile : openedFiles ) {
-                wrapperByPath.get( openedFile ).failure();
-                log.info("task {}, file: {} deactivated on node {}", task.getConfig().getName(), openedFile, wrapperByPath.get( openedFile ).getWrapper().getLocation());
-            }
-        } catch ( Exception e ){
-            log.error( "Can't handle failed init from pod " + task.getPod().getName(), e);
-        }
+    public void addPublishItem( PublishItem item ) {
+        publishManager.addPublishItem( item );
+    }
+
+    public int getUnpublishedItems() {
+        return publishManager.getUnpublishedCount();
+    }
+
+    @Override
+    void scheduleAdditionalTasks(){
+        final Map<NodeLocation, Integer> currentlyCopyingTasksOnNode = getCurrentlyCopying().getCurrentlyCopyingTasksOnNode();
+        publishManager.triggerPublish( currentlyCopyingTasksOnNode, MAX_SIZE_TO_PUBLISH );
+        super.scheduleAdditionalTasks();
+    }
+
+    /**
+     * This method is supposed to be called when all tasks are finished
+     */
+    public void publishAllRemaining() {
+        publishManager.finalizePublish();
+    }
+
+    public String getRandomDaemonset() {
+        return daemonHolder.getRandomDaemonNode();
     }
 
     FTPClient getConnection( String daemon ){
@@ -310,29 +259,6 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                 }
             }
         }
-    }
-
-    private void podWasInitialized( Pod pod ){
-        final Integer exitCode = pod.getStatus().getInitContainerStatuses().get(0).getState().getTerminated().getExitCode();
-        final Task task = changeStateOfTask(pod, exitCode == 0 ? State.PREPARED : State.INIT_WITH_ERRORS);
-        task.setPod( new PodWithAge( pod ) );
-        log.info( "Pod {}, Init Code: {}", pod.getMetadata().getName(), exitCode);
-        removeFromCopyingToNode( task, task.getNode().getNodeLocation(), task.getCopyingToNode() );
-        if( exitCode == 0 ){
-            task.getCopiedFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
-        } else {
-            handleProblematicInit( task );
-            task.setInputFiles( null );
-        }
-        task.setCopiedFiles( null );
-        task.setCopyingToNode( null );
-    }
-
-    /**
-     * Remove all Nodes with a location contained in taskInputs.excludedNodes
-     */
-    void filterNotMatchingNodesForTask(Set<NodeWithAlloc> matchingNodes, TaskInputs taskInputs ){
-        matchingNodes.removeIf( next -> !taskInputs.canRunOnLoc( next.getNodeLocation() ) );
     }
 
     public void taskHasFinishedCopyTask( String name ){
@@ -387,15 +313,12 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     }
                 }
             }
-        } else if ( this.getName().equals(pod.getSpec().getSchedulerName())
-                && action == Watcher.Action.MODIFIED
-                && getTaskByPod( pod ).getState().getState() == State.SCHEDULED )
-        {
-            final List<ContainerStatus> initContainerStatuses = pod.getStatus().getInitContainerStatuses();
-            if ( ! initContainerStatuses.isEmpty() && initContainerStatuses.get(0).getState().getTerminated() != null ) {
-                podWasInitialized( pod );
-            }
         }
     }
 
+    @Override
+    public void close() {
+        log.info( "There are {} item(s) not copied!", publishManager.getUnpublishedCount() );
+        super.close();
+    }
 }

@@ -16,8 +16,10 @@ public class MinSizeComparator implements Comparator<TaskStat.NodeAndStatWrapper
         final TaskNodeStats o1Stats = o1.getTaskNodeStats();
         final TaskNodeStats o2Stats = o2.getTaskNodeStats();
         if ( o1Stats.getSizeRemaining() == o2Stats.getSizeRemaining() ) {
-            //Prefer the one that is copying fewer data --> expected to finish faster
-            return Long.compare( o1Stats.getSizeCurrentlyCopying(), o2Stats.getSizeCurrentlyCopying() );
+            // Prefer larger rank
+            final int rankO1 = o1.getTask().getProcess().getRank();
+            final int rankO2 = o2.getTask().getProcess().getRank();
+            return Integer.compare( rankO2, rankO1  );
         } else {
             return Long.compare( o1Stats.getSizeRemaining(), o2Stats.getSizeRemaining() );
         }

@@ -61,7 +61,7 @@ public abstract class Scheduler implements Informable {
         this.execution = execution;
         this.name = System.getenv( "SCHEDULER_NAME" ) + "-" + execution;
         this.namespace = namespace;
-        log.trace( "Register scheduler for " + this.name );
+        log.trace( "Register scheduler for {}", this.name );
         this.client = client;
         this.dns = config.dns.endsWith( "/" ) ? config.dns : config.dns + "/";
         this.dag = new DAG();
@@ -98,6 +98,12 @@ public abstract class Scheduler implements Informable {
      * @return the number of unscheduled Tasks
      */
     public int schedule( final List<Task> unscheduledTasks ) {
+
+        if ( unscheduledTasks.isEmpty() ) {
+            scheduleAdditionalTasks();
+            return 0;
+        }
+
         final LinkedList<Task> unscheduledTasksCopy = new LinkedList<>( unscheduledTasks );
         long startSchedule = System.currentTimeMillis();
         if( traceEnabled ) {
@@ -152,6 +158,7 @@ public abstract class Scheduler implements Informable {
         }
         //Use instance object that does not contain yet scheduled tasks
         postScheduling( unscheduledTasksCopy, getAvailableByNode( false ) );
+        scheduleAdditionalTasks();
         return unscheduledTasks.size() - taskNodeAlignment.size() + failure;
     }
 
@@ -160,6 +167,11 @@ public abstract class Scheduler implements Informable {
      * @param unscheduledTasks
      */
     void postScheduling( final List<Task> unscheduledTasks, Map<NodeWithAlloc, Requirements> availableByNode ) {}
+
+    /**
+     * This method is called after the scheduling. This can trigger tasks that are independent of the tasks to be scheduled.
+     */
+    void scheduleAdditionalTasks(){}
 
     /**
      * Call this method in case of any scheduling problems
@@ -566,19 +578,6 @@ public abstract class Scheduler implements Informable {
             log.info(String.join("\n", logInfo));
         }
         return availableByNode;
-    }
-
-    /**
-     * Filters all nodes, that have enough resources and fulfill the affinities
-     */
-    public Set<NodeWithAlloc> getMatchingNodesForTask( Map<NodeWithAlloc, Requirements> availableByNode, Task task ){
-        Set<NodeWithAlloc> result = new HashSet<>();
-        for (Map.Entry<NodeWithAlloc, Requirements> entry : availableByNode.entrySet()) {
-            if ( this.canScheduleTaskOnNode( entry.getValue(), task, entry.getKey() ) ){
-                result.add( entry.getKey() );
-            }
-        }
-        return result;
     }
 
     LinkedList<Task> getUpcomingTasksCopy() {

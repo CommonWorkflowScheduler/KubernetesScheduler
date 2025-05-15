@@ -19,14 +19,14 @@ public enum PodPhase {
     }
 
     public static PodPhase get(String name){
-        switch ( name.toUpperCase() ) {
-            case "PENDING": return PENDING;
-            case "RUNNING": return RUNNING;
-            case "SUCCEEDED": return SUCCEEDED;
-            case "FAILED": return FAILED;
-            case "UNKNOWN": return UNKNOWN;
-            default: throw new IllegalArgumentException( "No enum with name: " + name );
-        }
+        return switch ( name.toUpperCase() ) {
+            case "PENDING" -> PENDING;
+            case "RUNNING" -> RUNNING;
+            case "SUCCEEDED" -> SUCCEEDED;
+            case "FAILED" -> FAILED;
+            case "UNKNOWN" -> UNKNOWN;
+            default -> throw new IllegalArgumentException( "No enum with name: " + name );
+        };
     }
 
 }

@@ -5,8 +5,8 @@ import cws.k8s.scheduler.model.PodWithAge;
 import cws.k8s.scheduler.model.Task;
 import cws.k8s.scheduler.util.MyExecListner;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.dsl.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -164,18 +164,6 @@ public class CWSKubernetesClient {
                 .inNamespace(pod.getMetadata().getNamespace())
                 .resource( pod )
                 .create();
-    }
-
-    public void assignPodToNodeAndRemoveInit( PodWithAge pod, String node ) {
-        if ( pod.getSpec().getInitContainers().size() > 0 ) {
-            pod.getSpec().getInitContainers().remove( 0 );
-        }
-        pod.getMetadata().setResourceVersion( null );
-        pod.getMetadata().setManagedFields( null );
-        pod.getSpec().setNodeName( node );
-
-        forceDeletePod( pod );
-        createPod( pod );
     }
 
     public void execCommand( String podName, String namespace, String[] command, MyExecListner listener ){

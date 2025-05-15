@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MemoryScalerTest {
 
-    long MB = 1024 * 1024;
+    final long MB = 1024 * 1024;
 
     private SchedulerConfig getSchedulerConfig( long minMemory, long maxMemory, String memoryPredictor ) {
         ObjectMapper objectMapper = new ObjectMapper();

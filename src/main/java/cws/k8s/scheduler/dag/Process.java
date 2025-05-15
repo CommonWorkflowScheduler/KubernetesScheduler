@@ -12,8 +12,8 @@ public class Process extends Vertex {
     private final Set<Process> descendants;
     private final Set<Process> ancestors;
 
-    private AtomicInteger successfullyFinished = new AtomicInteger(0);
-    private AtomicInteger failed = new AtomicInteger(0);
+    private final AtomicInteger successfullyFinished = new AtomicInteger(0);
+    private final AtomicInteger failed = new AtomicInteger(0);
 
     public int getSuccessfullyFinished() {
         return successfullyFinished.get();

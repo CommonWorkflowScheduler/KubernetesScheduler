@@ -191,7 +191,7 @@ class TaskResultParserTest {
         };
 
         final TaskResultParser taskResultParser = new TaskResultParser();
-        Set<String> inputData = new HashSet();
+        Set<String> inputData = new HashSet<>();
         taskResultParser.processInput(Arrays.stream(infiles),inputData);
         final HashSet<String> expected = new HashSet<>();
         log.info("{}", inputData);
@@ -260,7 +260,7 @@ class TaskResultParserTest {
                 "/localdata/localwork/30/adb97e8cffa8a086608565fb4c4ea9/c;1;;265581;regular file;1658328570391616989;1658328559231585386;1658328569707615053",
         };
 
-        Set<String> inputData = new HashSet();
+        Set<String> inputData = new HashSet<>();
         taskResultParser.processInput(Arrays.stream(infiles),inputData);
         log.info("{}", inputData);
 
@@ -283,14 +283,14 @@ class TaskResultParserTest {
     @Test
     void test7(){
         long a = System.currentTimeMillis();
-        long b = (long) (1658328570467617203l / 1.0E6);
+        long b = (long) (1658328570467617203L / 1.0E6);
         log.info("{} {}", a - b, b);
     }
 
 
     @Test
     void fileWalker() throws IOException {
-        FileVisitor<? super Path> visitor = new FileVisitor<Path>() {
+        FileVisitor<? super Path> visitor = new FileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 log.info("preVisitDirectory: {}", dir);
