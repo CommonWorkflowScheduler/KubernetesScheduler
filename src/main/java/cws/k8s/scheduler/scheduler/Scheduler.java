@@ -69,10 +69,10 @@ public abstract class Scheduler implements Informable {
 
         PodHandler handler = new PodHandler(this );
 
-        schedulingThread = new TaskprocessingThread( unscheduledTasks, this::schedule );
+        schedulingThread = new TaskprocessingThread( "Scheduling Thread", unscheduledTasks, this::schedule );
         schedulingThread.start();
 
-        finishThread = new TaskprocessingThread(unfinishedTasks, this::terminateTasks );
+        finishThread = new TaskprocessingThread( "Finisher Thread", unfinishedTasks, this::terminateTasks );
         finishThread.start();
 
         log.info("Start watching: {}", this.namespace );

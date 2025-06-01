@@ -114,32 +114,35 @@ public abstract class SchedulerWithDaemonSet extends Scheduler {
                     log.info( "Pod finished with exitCode: {}", exitCode );
                     //Init failure
                     final Path workdir = Paths.get(finishedTask.getWorkingDir());
-                    if ( exitCode == 123 && Files.exists( workdir.resolve(".command.init.failure") ) ) {
-                        log.info( "Task {} ({}) had an init failure: won't parse the in- and out files", finishedTask.getConfig().getRunName(), finishedTask.getConfig().getName() );
-                    } else {
-                        final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
-                                workdir,
-                                finishedTask.getNode().getNodeLocation(),
-                                !finishedTask.wasSuccessfullyExecuted(),
-                                finishedTask
-                        );
-                        for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
-                            if( newAndUpdatedFile instanceof PathLocationWrapperPair pathLocationWrapperPair ) {
-                                hierarchyWrapper.addFile(
-                                        newAndUpdatedFile.getPath(),
-                                        pathLocationWrapperPair.getLocationWrapper()
-                                );
-                            } else if ( newAndUpdatedFile instanceof SymlinkOutput symlinkOutput ){
-                                hierarchyWrapper.addSymlink( newAndUpdatedFile.getPath(), symlinkOutput.getDst() );
+                    final Set<OutputFile> newAndUpdatedFiles = taskResultParser.getNewAndUpdatedFiles(
+                            workdir,
+                            finishedTask.getNode().getNodeLocation(),
+                            !finishedTask.wasSuccessfullyExecuted(),
+                            finishedTask
+                    );
+                    final Set<PathLocationWrapperPair> outputFiles = new HashSet<>();
+                    for (OutputFile newAndUpdatedFile : newAndUpdatedFiles) {
+                        if( newAndUpdatedFile instanceof PathLocationWrapperPair pathLocationWrapperPair ) {
+                            final LocationWrapper locationWrapper = hierarchyWrapper.addFile(
+                                    newAndUpdatedFile.getPath(),
+                                    pathLocationWrapperPair.getLocationWrapper()
+                            );
+                            if ( locationWrapper != null ) {
+                                outputFiles.add( pathLocationWrapperPair );
                             }
+                        } else if ( newAndUpdatedFile instanceof SymlinkOutput symlinkOutput ){
+                            hierarchyWrapper.addSymlink( newAndUpdatedFile.getPath(), symlinkOutput.getDst() );
                         }
                     }
                 }
             } catch ( Exception e ){
                 log.info( "Problem while finishing task: {} ({})", finishedTask.getConfig().getRunName(), finishedTask.getConfig().getName(), e );
             }
-            super.taskWasFinished( finishedTask );
         });
+        // run in a separate thread to avoid blocking the finishedTasks list
+        for ( Task finishedTask : finishedTasks ) {
+            super.taskWasFinished( finishedTask );
+        }
         return 0;
     }
 

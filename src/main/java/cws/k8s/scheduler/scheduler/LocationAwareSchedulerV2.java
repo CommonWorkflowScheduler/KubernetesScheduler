@@ -302,6 +302,7 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 handleProblematicCopy( copyTask );
             }
         }
+        informResourceChange();
     }
 
     private void handleProblematicCopy( CopyTask copyTask ){
