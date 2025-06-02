@@ -9,13 +9,18 @@ import java.util.List;
 import java.util.function.Function;
 
 @Slf4j
-@RequiredArgsConstructor
 public class TaskprocessingThread extends Thread {
 
     private final List<Task> unprocessedTasks;
     private final Function<List<Task>, Integer> function;
 
     private boolean otherResourceChange = false;
+
+    public TaskprocessingThread( String name, List<Task> unprocessedTasks, Function<List<Task>, Integer> function) {
+        super(name );
+        this.unprocessedTasks = unprocessedTasks;
+        this.function = function;
+    }
 
     public void otherResourceChange() {
         otherResourceChange = true;

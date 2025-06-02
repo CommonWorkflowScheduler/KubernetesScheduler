@@ -56,7 +56,6 @@ public class LaListener implements MyExecListner {
             log.error( "Copy task was not finished, but closed. ExitCode: " + exitCode + " Reason: " + reason );
             scheduler.copyTaskFinished( copyTask, exitCode == 0 );
         }
-        scheduler.informResourceChange();
     }
 
     @Override

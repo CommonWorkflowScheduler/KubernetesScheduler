@@ -67,6 +67,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     protected final int copySameTaskInParallel;
     protected final int maxHeldCopyTaskReady;
 
+    private final FinalizerThread<Tuple<CopyTask, Boolean>> finalizerThread;
+
     /**
      * This value must be between 1 and 100.
      * 100 means that the data will be copied with full speed.
@@ -127,6 +129,8 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
         this.copyInAdvance = new CopyInAdvanceNodeWithMostData( getCurrentlyCopying(), inputAlignment, this.copySameTaskInParallel );
         this.maxHeldCopyTaskReady = config.maxHeldCopyTaskReady == null ? 3 : config.maxHeldCopyTaskReady;
         this.prioPhaseThree = config.prioPhaseThree == null ? 70 : config.prioPhaseThree;
+        finalizerThread = new FinalizerThread<>( x -> processCopyTaskFinished( x.getA(), x.getB() ) );
+        finalizerThread.start();
     }
 
     @Override
@@ -283,17 +287,22 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
     }
 
     public void copyTaskFinished( CopyTask copyTask, boolean success ) {
+        finalizerThread.addItem( new Tuple<CopyTask, Boolean>(copyTask, success) );
+    }
+
+    private void processCopyTaskFinished( CopyTask copyTask, boolean success ) {
         synchronized ( copyLock ) {
             freeLocations( copyTask.getAllLocationWrapper() );
             if( success ){
-                    copyTask.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
-                    removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-                    copyTask.getTask().preparedOnNode( copyTask.getNodeLocation() );
+                copyTask.getInputFiles().parallelStream().forEach( TaskInputFileLocationWrapper::success );
+                removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
+                copyTask.getTask().preparedOnNode( copyTask.getNodeLocation() );
             } else {
-                    removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
-                    handleProblematicCopy( copyTask );
+                removeFromCopyingToNode( copyTask.getTask(), copyTask.getNodeLocation(), copyTask.getFilesForCurrentNode() );
+                handleProblematicCopy( copyTask );
             }
         }
+        informResourceChange();
     }
 
     private void handleProblematicCopy( CopyTask copyTask ){
