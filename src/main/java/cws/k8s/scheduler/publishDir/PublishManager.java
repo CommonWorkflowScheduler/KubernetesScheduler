@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,6 +29,9 @@ public class PublishManager {
     // Used to check if symlink target is already published
     private final Map<Path, Set<Path>> publishMap = new HashMap<>();
     private final PublishExecHolder execHolder = new PublishExecHolder();
+    private final Map<NodeLocation, Integer> currentPublishJobsPerNode = new ConcurrentHashMap<>();
+    // Maximum number of parallel publish jobs per node
+    private final static int MAX_COPY_PER_NODE = 1;
 
     /**
      * Maximum number of arguments for the publish command.
@@ -176,6 +180,7 @@ public class PublishManager {
             }
             execHolder.finishedOnNode( node );
         };
+        currentPublishJobsPerNode.compute( node, ( k, v ) -> v == null ? 1 : v + 1 );
         final PublishListener publishListener = new PublishListener( scheduler, name, onFinish );
         execHolder.addRunnable( node, () ->
             client.execCommand( daemonName, scheduler.getNamespace(), command, publishListener )
@@ -215,7 +220,7 @@ public class PublishManager {
 
         String name = "Copying from node: " +  node;
         final String daemonName = scheduler.getDaemonNameOnNode( node );
-        final Runnable onFinish = new InformPublishFinishedRunnable( execHolder, location );
+        final Runnable onFinish = new InformPublishFinishedRunnable( execHolder, location, currentPublishJobsPerNode );
         final PublishListener publishListener = new PublishListener( scheduler, name, onFinish );
         execHolder.addRunnable( location, () ->
                 client.execCommand( daemonName, scheduler.getNamespace(), command, publishListener )
@@ -242,7 +247,9 @@ public class PublishManager {
         for ( Map.Entry<NodeLocation, LinkedList<FileWrapper>> entry : nodeItemsMap.entrySet() ) {
             final NodeLocation node = entry.getKey();
             LinkedList<FileWrapper> items = entry.getValue();
-            while ( currentlyCopyingTasksOnNode.getOrDefault( node, 0 ) < maxCopyPerNode && items != null && !items.isEmpty() ) {
+            while ( currentPublishJobsPerNode.getOrDefault( node, 0 ) < MAX_COPY_PER_NODE
+                && currentlyCopyingTasksOnNode.getOrDefault( node, 0 ) < maxCopyPerNode
+                    && items != null && !items.isEmpty() ) {
                 currentlyCopyingTasksOnNode.compute( node, ( k, v ) -> v == null ? 1 : v + 1 );
                 publishFiles( removeUntil( items, maxSize ), node );
             }
