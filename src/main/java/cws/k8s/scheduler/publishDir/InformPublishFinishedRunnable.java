@@ -16,6 +16,6 @@ public class InformPublishFinishedRunnable implements Runnable {
     @Override
     public void run() {
         execHolder.finishedOnNode( nodeLocation );
-        currentPublishJobsPerNode.compute( nodeLocation, ( k, v ) -> v == null ? 0 : v - 1 );
+        currentPublishJobsPerNode.compute( nodeLocation, ( k, v ) -> v == null ? 0 : Math.max(0, v - 1) );
     }
 }

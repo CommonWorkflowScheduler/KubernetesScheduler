@@ -31,7 +31,7 @@ public class PublishManager {
     private final PublishExecHolder execHolder = new PublishExecHolder();
     private final Map<NodeLocation, Integer> currentPublishJobsPerNode = new ConcurrentHashMap<>();
     // Maximum number of parallel publish jobs per node
-    private final int MAX_COPY_PER_NODE = 1;
+    private final static int MAX_COPY_PER_NODE = 1;
 
     /**
      * Maximum number of arguments for the publish command.
