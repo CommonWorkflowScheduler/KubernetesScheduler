@@ -23,6 +23,9 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    // 256 MiB buffer
+    private final static Requirements BUFFER = new Requirements(BigDecimal.ZERO, BigDecimal.valueOf(256L * 1024 * 1024));
+
     private Requirements maxResources;
 
     private final Map<String, Requirements> assignedPods;
@@ -161,7 +164,8 @@ public class NodeWithAlloc extends Node implements Comparable<NodeWithAlloc> {
     }
 
     public Requirements getAvailableResources(){
-        return maxResources.sub(getRequestedResources());
+        Requirements base = maxResources.sub(getRequestedResources());
+        return base.sub(BUFFER);
     }
 
     public boolean canSchedule( final Requirements request ){
