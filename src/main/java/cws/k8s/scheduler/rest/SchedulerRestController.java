@@ -17,12 +17,16 @@ import cws.k8s.scheduler.scheduler.SchedulerWithDaemonSet;
 import cws.k8s.scheduler.scheduler.filealignment.GreedyAlignment;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.CostFunction;
 import cws.k8s.scheduler.scheduler.filealignment.costfunctions.MinSizeCost;
+import cws.k8s.scheduler.scheduler.la2.LeastFinishedFirstMaxRankAndMinCopyingComparator;
+import cws.k8s.scheduler.scheduler.la2.MaxSizeComparator;
 import cws.k8s.scheduler.scheduler.la2.ready2run.OptimalReadyToRunToNode;
 import cws.k8s.scheduler.scheduler.nodeassign.FairAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.NodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RandomNodeAssign;
 import cws.k8s.scheduler.scheduler.nodeassign.RoundRobinAssign;
 import cws.k8s.scheduler.scheduler.prioritize.*;
+import cws.k8s.scheduler.util.score.FileSizeRankScore;
+import cws.k8s.scheduler.util.score.LFFFileSizeRankScore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -128,7 +132,7 @@ public class SchedulerRestController {
         }
 
         switch ( strategy.toLowerCase() ){
-            case "wow" :
+            case "wow" , "wowlff", "wow_lff", "wow-lff" :
                 if ( !config.locationAware ) {
                     log.warn( "Register execution: {} - LA scheduler only works if location aware", execution );
                     return new ResponseEntity<>( "LA scheduler only works if location aware", HttpStatus.BAD_REQUEST );
@@ -136,7 +140,32 @@ public class SchedulerRestController {
                 if ( costFunction == null ) {
                     costFunction = new MinSizeCost( 0 );
                 }
-                scheduler = new LocationAwareSchedulerV2( execution, client, namespace, config, new GreedyAlignment( 0.5, costFunction ), new OptimalReadyToRunToNode() );
+                if ( strategy.equalsIgnoreCase("wow") ) {
+                    scheduler = new LocationAwareSchedulerV2(
+                            execution,
+                            client,
+                            namespace,
+                            config,
+                            new GreedyAlignment( 0.5, costFunction ),
+                            new OptimalReadyToRunToNode()
+                    );
+                } else if ( strategy.equalsIgnoreCase("wowlff")
+                        || strategy.equalsIgnoreCase("wow-lff")
+                        || strategy.equalsIgnoreCase("wow_lff") ) {
+                    scheduler = new LocationAwareSchedulerV2(
+                            execution,
+                            client,
+                            namespace,
+                            config,
+                            new GreedyAlignment( 0.5, costFunction ),
+                            new OptimalReadyToRunToNode(),
+                            new LeastFinishedFirstMaxRankAndMinCopyingComparator( MaxSizeComparator.INSTANCE ),
+                            new LFFFileSizeRankScore()
+                    );
+                } else {
+                    // This should never happen, but just in case
+                    throw new IllegalArgumentException( "Unknown strategy: " + strategy );
+                }
                 break;
             default: {
                 final String[] split = strategy.split( "-" );

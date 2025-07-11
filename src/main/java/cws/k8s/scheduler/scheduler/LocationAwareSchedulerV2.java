@@ -99,10 +99,32 @@ public class LocationAwareSchedulerV2 extends SchedulerWithDaemonSet {
                 config,
                 inputAlignment,
                 readyToRunToNode,
+                new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE ),
                 new FileSizeRankScore()
         );
+    }
+
+    public LocationAwareSchedulerV2(
+            String name,
+            CWSKubernetesClient client,
+            String namespace,
+            SchedulerConfig config,
+            InputAlignment inputAlignment,
+            ReadyToRunToNode readyToRunToNode,
+            TaskStatComparator phaseThreeComparator,
+            FileSizeRankScore calculateScore
+    ) {
+        this(
+                name,
+                client,
+                namespace,
+                config,
+                inputAlignment,
+                readyToRunToNode,
+                calculateScore
+        );
         setPhaseTwoComparator( new MinCopyingComparator( MinSizeComparator.INSTANCE ) );
-        setPhaseThreeComparator( new RankAndMinCopyingComparator( MaxSizeComparator.INSTANCE ) );
+        setPhaseThreeComparator( phaseThreeComparator );
     }
 
     LocationAwareSchedulerV2(

@@ -8,6 +8,7 @@ public class FileSizeScore implements CalculateScore {
     @Override
     public long getScore( Task task, NodeWithAlloc location, long size ) {
         //add one to prefer two tasks which sum up to the same score otherwise
-        return size + 1;
+        long score = (long) Math.pow( size, 0.83 );
+        return score + 1;
     }
 }
